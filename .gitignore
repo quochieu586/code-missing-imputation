@@ -1,0 +1,11 @@
+# files in .vscode/
+.vscode/
+
+# files and directories in data/ (only in the root directory)
+data/*
+
+# __pycache__
+__pycache__/
+
+# .DS_Store (macOS)
+.DS_Store
