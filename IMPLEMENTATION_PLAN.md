@@ -13,20 +13,21 @@ Tạo M_observed (raw != NaN) và M_target (raw == NaN); đóng băng vĩnh vi�
         +-----------------------------+
         |                             |
         v                             v
-3 Tsagris baselines              Fit ZINB chỉ trên observed
+3 Tsagris baselines              Reduced/pooled ZINB chỉ trên observed
         |                             |
         v                             v
-dataset_00_tsagris               dataset_01_zinb + zero-state posterior
+dataset_00_tsagris               posterior + quality/abstain masks
+                                  (+ optional dataset_01_zinb diagnostic)
         |                             |
         +-------------+---------------+
                       v
-       Hợp nhất theo observed/zero/non-zero masks
+       Hợp nhất theo observed/confident-zero/non-zero/uncertain masks
                       |
                       v
-dataset_0_fused: observed + target-zero khóa cứng + target-nonzero warm-start Tsagris
+dataset_0_fused: observed + confident-zero khóa cứng + phần còn lại warm-start Tsagris
                       |
                       v
-GAN chỉ dự đoán magnitude trên target-nonzero
+GAN dự đoán magnitude trên target-nonzero và target-uncertain/abstain
                       |
                       v
 dataset_i -> dataset_(i+1), lặp đến điều kiện dừng
@@ -35,10 +36,11 @@ dataset_i -> dataset_(i+1), lặp đến điều kiện dừng
 Mục tiêu của framework được chốt theo thứ tự:
 
 1. Tsagris tạo một tensor full sơ bộ để không còn `NaN` và cung cấp warm-start cho magnitude.
-2. ZINB mô hình hóa riêng quá trình sinh zero/count và quyết định target cell thuộc zero hay non-zero.
-3. Mask hợp nhất hai nhánh để observed values và target-zero không bao giờ bị GAN sửa.
-4. GAN chỉ reconstruct magnitude của `M_target_nonzero`; không học lại zero state.
-5. Đánh giá tập trung vào reconstruction MSE và độ khớp phân phối trước/sau imputation; chưa làm downstream task trong v1.
+2. Zero-state branch ưu tiên reduced per-variant ZINB; variant thưa dùng pooled ZINB để mượn thông tin.
+3. Chỉ model vượt quality gate mới được khóa confident-zero; model yếu phải abstain thay vì ép zero.
+4. Mask hợp nhất hai nhánh để observed values và confident-zero không bao giờ bị GAN sửa.
+5. GAN reconstruct magnitude của `M_target_nonzero OR M_target_uncertain`, giữ vai trò imputation chính.
+6. Đánh giá tập trung vào reconstruction MSE và độ khớp phân phối trước/sau imputation; chưa làm downstream task trong v1.
 
 Sản phẩm cuối phải bao gồm mã nguồn, cấu hình, kiểm thử, báo cáo đánh giá, manifest tái lập và các bộ dữ liệu bàn giao trên GitHub repository:
 
@@ -47,7 +49,9 @@ Sản phẩm cuối phải bao gồm mã nguồn, cấu hình, kiểm thử, bá
 ### Ngoài phạm vi của phiên bản đầu
 
 - Không triển khai downstream classification, regression, survival hoặc causal task.
-- Không để GAN tự quyết định zero/non-zero; quyết định này thuộc ZINB zero-state branch.
+- Không dùng Hurdle model.
+- Không dùng ZIP/Poisson fallback để tạo hard zero gate; chúng chỉ được phép làm diagnostic baseline.
+- Không bắt zero-state branch phải quyết định mọi target; `abstain` là output hợp lệ và được chuyển sang GAN.
 - Không coi positive magnitude do ZINB sample ra là giá trị imputation cuối.
 - Không tuyên bố structural/sampling state là nhãn sinh học chắc chắn khi không có ground truth tương ứng.
 - Không coi giá trị 0 quan sát được là missing.
@@ -102,10 +106,10 @@ Với mỗi cell `(location, date, variant)`:
 
 ```text
 M_observed = 1 nếu raw value không phải NaN; ngược lại bằng 0
-M_target   = 1 - M_observed
+M_target   = 1 nếu raw value là NaN trên một hàng raw tồn tại; ngược lại bằng 0
 ```
 
-`M_observed` chứa cả observed positive count và observed zero. Cả hai đều là dữ liệu thật được ghi nhận, phải được giữ nguyên tuyệt đối. `M_target` chỉ chứa các cell ban đầu là `NaN`; đây là miền duy nhất được phép impute.
+`M_observed` chứa cả observed positive count và observed zero. Cả hai đều là dữ liệu thật được ghi nhận, phải được giữ nguyên tuyệt đối. `M_target` chỉ chứa các cell ban đầu là `NaN`; đây là miền duy nhất được phép impute. Trên miền raw rows, `M_target = 1 - M_observed`; trên padding, cả hai bằng 0.
 
 Hai mask này phải được tạo trực tiếp từ raw CSV trước mọi phép điền, lưu thành artifact có checksum và không bao giờ suy lại từ một dataset full.
 
@@ -116,11 +120,12 @@ Hai mask này phải được tạo trực tiếp từ raw CSV trước mọi ph
 3. Mọi giá trị quan sát ban đầu được giữ nguyên tuyệt đối.
 4. `sum(17 variants) + other == total_sequence` trên từng dòng.
 5. Khóa `(location, date)` là duy nhất và thứ tự dòng đầu ra ổn định.
-6. `M_observed` và `M_target` được lưu riêng, bù nhau hoàn toàn và không suy lại từ `dataset_i`.
+6. `M_observed` và `M_target` được lưu riêng, bù nhau hoàn toàn trên raw rows, cùng bằng 0 trên padding và không suy lại từ `dataset_i`.
 7. Mỗi artifact có checksum, config, seed, Git commit và source dataset checksum.
 8. Mọi `M_observed=1`, kể cả observed zero, phải bằng raw data ở từng bit/count.
-9. Chỉ `M_target_nonzero` được phép nhận output magnitude từ GAN.
-10. Mọi target cell được ZINB gate là zero phải luôn bằng 0 trong run tương ứng.
+9. Chỉ `M_target_nonzero OR M_target_uncertain` được phép nhận output magnitude từ GAN.
+10. Mọi target cell được quality-gated là confident-zero phải luôn bằng 0 trong lineage tương ứng.
+11. Model không đạt quality gate không được tạo confident-zero; các cell đó phải thuộc `M_target_uncertain`.
 
 ## 3. Quyết định chọn bài báo cho nhánh `dataset_00_tsagris`
 
@@ -195,9 +200,12 @@ code-missing-imputation/
 │   │   ├── jsd_alpha_knn.py
 │   │   └── adaptive_jsd_alpha_knn.py
 │   ├── zero_state/
+│   │   ├── design.py
 │   │   ├── zinb.py
+│   │   ├── pooled_zinb.py
+│   │   ├── routing.py
 │   │   ├── posterior.py
-│   │   ├── sampler.py
+│   │   ├── gating.py
 │   │   └── calibration.py
 │   ├── deepmicrogen/
 │   │   ├── preprocessing.py
@@ -210,7 +218,7 @@ code-missing-imputation/
 │   ├── pipeline/
 │   │   ├── run_baselines.py
 │   │   ├── select_baseline.py
-│   │   ├── run_zinb.py
+│   │   ├── run_zero_state.py
 │   │   ├── fuse_initializations.py
 │   │   └── refine.py
 │   ├── evaluation/
@@ -249,13 +257,14 @@ Tensor longitudinal chuẩn:
 ```text
 X_raw             : [location, time, feature], còn NaN
 M_observed        : 1 nếu X_raw được quan sát, gồm cả zero và positive
-M_target          : 1 nếu X_raw là NaN; M_target = 1 - M_observed
+M_target          : 1 nếu X_raw là NaN trên raw row; padding luôn bằng 0
 M_artificial_zero : observed zero/positive cells che giả lập để calibrate ZINB
 M_artificial_mag  : observed positive cells che giả lập để train/evaluate GAN magnitude
-M_target_zero     : target cells được ZINB sample/gate là zero
-M_target_nonzero  : target cells được ZINB sample/gate là non-zero
+M_target_zero     : target cells được model đạt quality gate khóa confident-zero
+M_target_nonzero  : target cells có bằng chứng non-zero đủ mạnh
+M_target_uncertain: target cells model abstain/không đủ tin cậy
 M_fixed           : M_observed OR M_target_zero
-M_gan             : M_target_nonzero
+M_gan             : M_target_nonzero OR M_target_uncertain
 M_row             : [location, time], 1 nếu dòng có trong CSV gốc
 M_padding         : [location, time], 1 nếu là padding nội bộ
 delta_f, delta_b  : time gap thuận/nghịch
@@ -265,15 +274,21 @@ Các đẳng thức bắt buộc:
 
 ```text
 M_observed AND M_target = 0
-M_observed OR  M_target = 1
-M_target_zero AND M_target_nonzero = 0
-M_target_zero OR  M_target_nonzero = M_target
+M_observed OR M_target = broadcast(M_row) AND NOT broadcast(M_padding)
+pairwise_disjoint(M_target_zero, M_target_nonzero, M_target_uncertain)
+M_target_zero OR M_target_nonzero OR M_target_uncertain = M_target
 M_fixed AND M_gan = 0
 ```
 
 Hai artificial masks chỉ được lấy từ `M_observed`, tạm che trong một batch rồi khôi phục raw value sau khi tính loss. `M_artificial_mag` còn phải thỏa `X_raw > 0`, vì GAN không chịu trách nhiệm học zero state. Chúng không làm thay đổi `M_observed`, `M_target` hoặc output dataset.
 
-Toàn bộ location được reindex nội bộ lên lưới 14 ngày. Dòng bổ sung chỉ phục vụ mô hình; output mặc định chỉ trả lại các khóa có trong CSV gốc. Tùy chọn `--emit-grid` mới được phép xuất thêm các dòng thời gian chưa có trong dữ liệu gốc.
+`M_target` phải được tạo từ các `NaN` thật trên những hàng tồn tại trong raw CSV:
+
+```text
+M_target = (X_raw is NaN) AND M_row AND NOT M_padding
+```
+
+Padding trên lưới 14 ngày là context nội bộ, không phải missing target. Số cell của `M_target` phải bằng đúng số `NaN` trong 17 cột variant của raw CSV (hiện tại 86,050), không phải toàn bộ ô 0 trong tensor reindex. Output mặc định chỉ trả lại các khóa có trong CSV gốc; tùy chọn `--emit-grid` là một bài toán forecasting/interpolation riêng và nằm ngoài v1.
 
 ### 4.3 Nhánh A - Tsagris tạo `dataset_00_tsagris`
 
@@ -296,57 +311,169 @@ Fallback của adaptive algorithm:
 - Nếu không đủ support, dùng `(alpha, k)` global của `JSD-alpha-kNN` và ghi rõ fallback trong manifest.
 - Không âm thầm bỏ qua pattern hiếm.
 
-### 4.4 Nhánh B - ZINB tạo `dataset_01_zinb` và zero-state masks
+### 4.4 Nhánh B - Reduced/Pooled ZINB với abstain-to-GAN
 
-#### 4.4.1 Mục tiêu thống kê
+#### 4.4.1 Vai trò giới hạn của zero-state branch
 
-Fit một ZINB riêng cho mỗi variant trên **các cell thuộc `M_observed` duy nhất**. Với count `Y`, ZINB có hai quá trình:
+Zero-state branch chỉ trả lời:
+
+> Có đủ bằng chứng xác suất và calibration để khóa target cell này bằng 0 hay không?
+
+Nó không phải mô hình imputation magnitude chính. ZINB không cung cấp positive magnitude cho fusion; Tsagris cung cấp warm-start và GAN học magnitude cuối. Với count `Y`:
 
 ```text
-pi(x)  = P(structural zero | context)
+pi(x) = P(structural zero | observed context)
 Y | non-structural ~ NegativeBinomial(mu(x), theta)
-```
 
-`log(total_sequence)` phải được dùng làm offset/exposure hoặc một predictor được kiểm soát tương đương, vì xác suất sampling zero phụ thuộc sequencing depth. Context tối thiểu gồm variant, date/time basis, location representation và temporal neighbor features không gây leakage.
-
-Với một target cell chưa quan sát, predictive state probabilities là:
-
-```text
 P(structural) = pi
 P(sampling)   = (1 - pi) * NB(Y = 0 | mu, theta)
 P(non-zero)   = (1 - pi) * (1 - NB(Y = 0 | mu, theta))
 ```
 
-Ba xác suất phải hữu hạn, không âm và tổng bằng 1. Đây là posterior/predictive state, không phải nhãn sinh học chắc chắn.
+Ba xác suất phải hữu hạn, không âm và tổng bằng 1. Structural/sampling là latent posterior, không phải ground-truth biological labels.
 
-#### 4.4.2 Fit, calibration và sampling
+#### 4.4.2 Reduced per-variant ZINB
 
-1. Fit ZINB chỉ bằng raw observed cells; không đọc giá trị Tsagris tại `M_target`.
-2. Observed positive count chắc chắn thuộc count component. Observed zero đóng góp qua mixture likelihood, không được gán cứng structural hay sampling.
-3. Dùng `M_artificial_zero` để che observed zero/positive cells, dự đoán lại zero/non-zero và đo NLL, Brier score, calibration curve, precision/recall/F1.
-4. Tune model/threshold trên validation masks; test masks phải được giữ kín.
-5. Với mỗi `M_target=1`, lưu `P(structural)`, `P(sampling)`, `P(non-zero)`.
-6. Sample state bằng seed cố định:
-   - structural hoặc NB draw bằng 0 -> `M_target_zero=1`, output bằng 0;
-   - NB draw dương -> `M_target_nonzero=1`.
-7. Project sampled states về miền khả thi theo từng dòng trước khi tạo mask chính thức:
-   - đặt `remaining = total_sequence - sum(observed counts)`;
-   - mỗi target-nonzero count nguyên cần tối thiểu 1;
-   - nếu số sampled non-zero lớn hơn `remaining`, giữ các cell có `P(non-zero)` cao nhất trong budget và override phần còn lại về target-zero;
-   - lưu cả `sampled_state_raw` và `sampled_state_feasible`; không override âm thầm.
-8. Tạo `dataset_01_zinb` full/closed: khóa observed, khóa target-zero bằng 0, cấp tối thiểu 1 cho feasible target-nonzero, phân bổ phần dư theo positive ZINB draws và để `other` hấp thụ residual.
-9. Xuất `dataset_01_zinb.csv`, zero-state posterior, hai state masks, seed, feasibility overrides và model manifest.
+Không dùng 149 location fixed effects trong per-variant model. Mỗi variant chỉ dùng khoảng 8-12 predictors để tránh separation và non-identifiability.
 
-`dataset_01_zinb` là một full stochastic draw phục vụ gating/audit và phải thỏa closure sau feasibility projection. Positive count do ZINB draw ra **không được dùng làm magnitude cuối**. Để tránh quyết định phụ thuộc một draw may rủi, evaluation phải chạy nhiều seed hoặc so sánh thêm mode MAP/threshold; mỗi draw tạo một imputation lineage riêng.
+Zero-inflation component:
 
-#### 4.4.3 Structural và sampling zero
+```text
+logit(pi_itj) = gamma_0j
+              + natural_spline(global_day_index, df=3..5)
+              + gamma_depth * log(total_sequence_it)
+              + gamma_lag  * I(observed y_i,t-1,j > 0)
+              + gamma_lead * I(observed y_i,t+1,j > 0)
+              + gamma_avail_lag  * I(lag is observed)
+              + gamma_avail_lead * I(lead is observed)
+              + optional time-gap terms
+```
 
-- Với observed zero, ZINB có thể tính posterior structural-vs-sampling sau khi đã thấy `Y=0`.
-- Với target chưa quan sát, framework chỉ có predictive probabilities của ba outcome và một sampled state.
-- Cả structural zero và sampling zero đều có output count bằng 0, nên chúng được gộp vào `M_target_zero` để khóa magnitude. Phân biệt hai loại vẫn được lưu trong posterior để nghiên cứu và audit.
-- Không báo cáo accuracy structural-vs-sampling nếu không có nhãn ngoại sinh; chỉ báo calibration zero-vs-non-zero và phân bố posterior.
+Count component:
 
-### 4.5 Hợp nhất `dataset_00` và `dataset_01` thành `dataset_0_fused`
+```text
+log(mu_itj) = offset(log(total_sequence_it))
+            + beta_0j
+            + natural_spline(global_day_index, df=3..5)
+            + beta_lag  * log1p(observed lag count)
+            + beta_lead * log1p(observed lead count)
+            + beta_availability/time-gap terms
+```
+
+Quy tắc predictor:
+
+- `global_day_index` tính từ ngày đầu toàn dataset, không reset theo location.
+- Lag/lead chỉ được dùng nếu cell lân cận thuộc `M_observed`; Tsagris/ZINB/GAN values không bao giờ làm predictor khi fit/calibrate.
+- Khi lag/lead không observed, magnitude predictor được đặt giá trị trung tính và availability indicator bắt buộc bằng 0.
+- `log(total_sequence)` là exposure offset trong count component; trong zero component nó có thể là predictor để học sampling-depth effect.
+- Không dùng toàn bộ 16 variant còn lại làm predictors trong MVP.
+- L1 regularization dùng native `statsmodels.fit_regularized`; penalty tune trong training/validation folds, không tune trên test.
+
+#### 4.4.3 Phân tầng support và pooled ZINB
+
+Trước fit, tạo `variant_support_report.csv` gồm: observed count, observed zero, observed positive, positive rate, số location có positive, events-per-parameter và missing rate.
+
+Routing mặc định:
+
+| Support | Model thử đầu tiên | Ghi chú |
+|---|---|---|
+| `n_positive > 500` và đủ location support | Reduced per-variant ZINB | Model riêng từng variant |
+| `200 <= n_positive <= 500` | Reduced per-variant ZINB | Chỉ dùng nếu vượt quality gate |
+| `n_positive < 200` hoặc events-per-parameter thấp | Pooled sparse-variant ZINB | Không cố fit model riêng lớn |
+
+Các ngưỡng là default khởi đầu, phải được version hóa trong config và kiểm tra sensitivity. Pooled ZINB stack các sparse variants thành long table, thêm categorical variant intercept trong cả zero và count components, nhưng chia sẻ spline/exposure/temporal coefficients. Đây vẫn là ZINB, không phải Hurdle.
+
+Nếu reduced per-variant ZINB không vượt quality gate, thử pooled ZINB. Nếu pooled ZINB vẫn không vượt quality gate, model **abstain** cho variant/cell liên quan; không fallback sang ZIP/Poisson để tạo hard gate.
+
+#### 4.4.4 Out-of-fold calibration và quality gate
+
+Ba recipe bắt buộc: random-cell, empirical-pattern và time-block. Với mỗi fold:
+
+1. Tạo `M_artificial_zero` từ observed zero và positive cells.
+2. Refit model từ đầu chỉ trên train fold.
+3. Recompute lag/lead features sau khi áp fold mask; held-out counts không được xuất hiện trong neighbor predictors.
+4. Tune L1/predictor tier chỉ bằng train/validation.
+5. Predict held-out fold chưa từng được model thấy.
+6. Gom out-of-fold predictions để tune threshold.
+7. Đóng băng model specification và threshold trước final test.
+8. Refit final model trên toàn observed data chỉ sau khi evaluation đã hoàn thành.
+
+Metrics bắt buộc: NLL, Brier score, calibration curve/ECE, precision, recall và F1 cho zero-vs-non-zero. Threshold không tối ưu F1 đơn thuần; ưu tiên non-zero recall cao vì false zero sẽ chặn GAN. Default acceptance target là non-zero recall >= 0.95, sau đó chọn threshold có precision/calibration tốt nhất trong miền đạt recall; ngưỡng phải cấu hình được.
+
+Một model chỉ `PASS` khi:
+
+- optimizer hội tụ và tham số hữu hạn;
+- design matrix không rank-deficient; dispersion hợp lệ;
+- out-of-fold NLL/Brier tốt hơn prevalence-only baseline;
+- non-zero recall đạt ngưỡng;
+- prediction không collapse thành all-zero/all-non-zero;
+- prediction schema đúng bằng fit schema.
+
+Cờ `converged=True` một mình không đủ để chấp nhận model.
+
+#### 4.4.5 Gate có khả năng abstain
+
+Release mặc định dùng calibrated deterministic threshold theo variant/model tier:
+
+```text
+if model_quality != PASS:
+    state = UNCERTAIN
+elif P(non-zero) >= threshold_nonzero:
+    state = NONZERO
+elif P(zero) >= threshold_zero:
+    state = CONFIDENT_ZERO
+else:
+    state = UNCERTAIN
+```
+
+Trong đó `P(zero) = P(structural) + P(sampling)`. MAP và stochastic draws chỉ dùng sensitivity analysis, không phải release default.
+
+- `CONFIDENT_ZERO` -> `M_target_zero=1`, khóa 0.
+- `NONZERO` -> `M_target_nonzero=1`, Tsagris warm-start rồi GAN.
+- `UNCERTAIN/ABSTAIN` -> `M_target_uncertain=1`, Tsagris warm-start rồi GAN, đồng thời giữ uncertainty flag.
+
+Feasibility projection chỉ được phép giảm số `NONZERO` vượt count budget. Cell bị override không được chuyển thành confident zero; nó phải chuyển thành `UNCERTAIN` để GAN/fusion xử lý và audit.
+
+#### 4.4.6 Artifacts và model schema
+
+Artifacts bắt buộc:
+
+- `zero_state_posterior.npz` với ba probabilities và model-quality flag.
+- `M_target_zero.npz`, `M_target_nonzero.npz`, `M_target_uncertain.npz`.
+- `variant_support_report.csv`, `model_routing.csv`, `oof_predictions.parquet`.
+- `zero_state_metrics.csv`, calibration curves, thresholds theo variant/tier.
+- `design_schema.json` cho từng fitted model: predictor names/order, spline knots/basis metadata, centering/scaling, offset policy, variant levels và model tier.
+- `model_manifest.json` với optimizer status, QC, fallback/routing reason, checksums và Git commit.
+
+Fit, posterior, calibration và inference phải gọi cùng một `DesignEncoder.fit/transform`; không được tự build lại matrix bằng hard-coded spline df hoặc full predictor set. `dataset_01_zinb.csv` có thể xuất như diagnostic artifact để tương thích lineage, nhưng positive ZINB draws bị loại khỏi critical path và không phải input magnitude cho fusion.
+
+#### 4.4.7 Acceptance gate từ log thực tế
+
+Run hiện tại cho thấy cả 17 variant rơi xuống Poisson sau khi regularized ZINB với khoảng 153 parameters thất bại QC; vì vậy run này không được coi là zero-state ZINB hợp lệ. Trước khi cho phép fusion, pipeline phải kiểm tra:
+
+- `M_target.sum()` bằng đúng số raw NaN variant cells và loại `M_padding`;
+- không có variant nào dùng ZIP/Poisson để tạo `M_target_zero`;
+- calibration là out-of-fold refit thật;
+- threshold theo variant được truyền vào gate, không hard-code `0.5`;
+- transform matrix có đúng số/tên cột của fitted model;
+- mọi zero-state artifact tồn tại và checksum hợp lệ; nếu stage thất bại, fusion phải fail fast với lỗi parent-stage, không chạy tiếp rồi báo thiếu file.
+
+Support quan sát giải thích vì sao cần routing:
+
+| Variant ví dụ | Observed positive | Hướng mặc định |
+|---|---:|---|
+| `S:677` | 95 | Pooled sparse-variant ZINB |
+| `20C` | 112 | Pooled sparse-variant ZINB |
+| `Kappa` | 180 | Pooled sparse-variant ZINB |
+| `Iota` | 199 | Pooled sparse-variant ZINB |
+| `Epsilon` | 249 | Thử reduced per-variant, fail thì pooled |
+| `Alpha` | 1,894 | Reduced per-variant ZINB |
+| `Delta` | 2,968 | Reduced per-variant ZINB |
+| `Omicron` | 6,783 | Reduced per-variant ZINB |
+
+Log cũng cho thấy lỗi prediction `size 5 is different from 154`: fallback Poisson được fit với design rút gọn nhưng sampler dựng lại full design. Đây là lý do `DesignEncoder` và schema assertions là release blocker, không phải cải tiến tùy chọn.
+
+### 4.5 Hợp nhất Tsagris và zero-state posterior thành `dataset_0_fused`
 
 Đây là contract quyết định duy nhất cho fusion:
 
@@ -354,8 +481,9 @@ Ba xác suất phải hữu hạn, không âm và tổng bằng 1. Đây là pos
 |---|---|---|---:|
 | `M_observed=1`, raw positive | Raw data | Fixed observed | Không |
 | `M_observed=1`, raw zero | Raw data bằng 0 | Fixed observed zero | Không |
-| `M_target=1` và `M_target_zero=1` | Ép bằng 0 theo ZINB sampled gate | Fixed inferred zero trong lineage | Không |
+| `M_target=1` và `M_target_zero=1` | Ép bằng 0 theo confident calibrated gate | Fixed inferred zero trong lineage | Không |
 | `M_target=1` và `M_target_nonzero=1` | Giá trị từ `dataset_00_tsagris` | Warm-start magnitude | Có |
+| `M_target=1` và `M_target_uncertain=1` | Giá trị từ `dataset_00_tsagris` | Abstain warm-start + uncertainty flag | Có |
 
 Công thức cell-wise:
 
@@ -369,16 +497,17 @@ Sau fusion phải thực hiện constrained closure theo từng dòng:
 
 1. Khóa raw observed counts và target-zero ở 0.
 2. Tính `remaining = total_sequence - sum(fixed observed variant counts)`.
-3. Cấp tối thiểu 1 cho mỗi feasible `M_target_nonzero`, rồi rescale/integerize phần magnitude Tsagris còn lại cùng thành phần `other` trong budget `remaining`.
-4. Nếu không có target-nonzero, toàn bộ phần dư đi vào `other`.
-5. Không được thay observed count để cứu closure; conflict phải fail fast và ghi audit report.
+3. Cấp tối thiểu 1 cho feasible `M_target_nonzero`; `M_target_uncertain` không bị ép positive trước GAN.
+4. Rescale/integerize magnitude Tsagris trên `M_gan` cùng `other` trong budget `remaining`; lưu uncertainty flags độc lập với count warm-start.
+5. Nếu không có `M_gan`, toàn bộ phần dư đi vào `other`.
+6. Không được thay observed count để cứu closure; conflict phải fail fast và ghi audit report.
 
 Artifacts bắt buộc:
 
 - `dataset_0_fused.csv`.
-- `M_fixed.npz`, `M_gan.npz`, `M_target_zero.npz`, `M_target_nonzero.npz`.
-- `cell_provenance.parquet` với source enum: `RAW_OBSERVED`, `ZINB_ZERO`, `TSAGRIS_WARM_START`, `GAN_ROUND_i`.
-- `fusion_audit.md` kiểm tra truth-table, closure và checksum của hai parent datasets.
+- `M_fixed.npz`, `M_gan.npz`, `M_target_zero.npz`, `M_target_nonzero.npz`, `M_target_uncertain.npz`.
+- `cell_provenance.parquet` với source enum: `RAW_OBSERVED`, `ZINB_CONFIDENT_ZERO`, `TSAGRIS_NONZERO_WARM_START`, `TSAGRIS_ABSTAIN_WARM_START`, `GAN_ROUND_i`.
+- `fusion_audit.md` kiểm tra truth-table, closure, abstain rate, quality flags và checksum của parent artifacts.
 
 ### 4.6 Port DeepMicroGen
 
@@ -419,12 +548,12 @@ Các khác biệt bắt buộc phải xử lý:
    - `feature_groups.yaml` nếu nhóm variant đã được chuyên gia duyệt.
    - Một nhóm duy nhất với Spearman ordering làm fallback.
    - Ablation `identity/no-CNN` để xác định CNN có thực sự mang lại lợi ích.
-4. CLR không nhận zero. Pseudocount chỉ được dùng bên trong bước GAN, phải được ghi trong config và không làm thay đổi observed zero hoặc ZINB-gated zero ở output.
+4. CLR không nhận zero. Pseudocount chỉ được dùng bên trong bước GAN, phải được ghi trong config và không làm thay đổi observed zero hoặc confident-zero ở output.
 5. Postprocessing phải project về simplex, khóa toàn bộ `M_fixed` và dùng largest-remainder chỉ trên `M_gan` cùng `other` để trả về count nguyên.
 
 ### 4.8 GAN magnitude refinement: `dataset_i -> dataset_(i+1)`
 
-`M_observed`, `M_target_zero`, `M_target_nonzero`, `M_fixed` và `M_gan` được đóng băng trong một ZINB lineage. GAN không được tự đổi gate giữa các vòng. Muốn đổi sampled gate phải tạo lineage mới với seed/model manifest khác.
+`M_observed`, `M_target_zero`, `M_target_nonzero`, `M_target_uncertain`, `M_fixed` và `M_gan` được đóng băng trong một zero-state lineage. GAN không được tự đổi confident-zero gate giữa các vòng. Muốn đổi model/threshold phải tạo lineage mới với manifest khác.
 
 Ở vòng `i`:
 
@@ -433,7 +562,7 @@ Các khác biệt bắt buộc phải xử lý:
 3. Dùng magnitude hiện tại tại `M_gan` làm warm-start/context với stop-gradient.
 4. Sinh `M_artificial_mag` chỉ từ observed positive cells (`M_observed=1 AND X_raw>0`) theo random-cell, empirical-pattern và time-block recipes.
 5. Train/continue DeepMicroGen; reconstruction MSE chỉ tính tại `M_artificial_mag` với raw observed positive làm ground truth. Không lấy Tsagris, ZINB draw hoặc output GAN vòng trước làm target.
-6. Sinh positive magnitude candidate chỉ tại `M_gan`; dùng positive activation/floor để không tự tạo zero.
+6. Sinh magnitude candidate tại `M_gan`; giữ cờ `NONZERO` và `UNCERTAIN` riêng để phân tích sensitivity. Positive floor chỉ bắt buộc cho `M_target_nonzero`; uncertain cells không được diễn giải là proven-positive.
 7. Khóa `M_fixed`, inverse CLR và constrained closure trong remaining budget; không threshold output GAN thành zero vì zero state đã do ZINB quyết định.
 8. Ghi `dataset_(i+1)`, provenance `GAN_ROUND_(i+1)`, checkpoint, reconstruction/distribution metrics và manifest.
 
@@ -465,16 +594,16 @@ Tên thật có thể thay vào GitHub issue assignee mà không làm đổi dep
 | T04 | P1 | T03 | Implement Fréchet mean và `JSD-alpha-kNN` | `frechet.py`, `jsd_alpha_knn.py`, tests | `alpha=1` khớp arithmetic mean; CV chọn được `(alpha,k)` | 2 ngày |
 | T05 | P1 | T04 | Implement adaptive algorithm và fallback cho sparse pattern | `adaptive_jsd_alpha_knn.py`, config, tests | Pattern đủ support tune riêng; pattern thiếu support ghi fallback | 2 ngày |
 | T06 | P1 | T05 | Repeated masking CV, chọn Tsagris champion và sinh `dataset_00_tsagris` | 3 baseline outputs, `dataset_00_tsagris.csv`, report, manifest | Full, giữ observed, không bị dùng làm ground truth | 2.5 ngày |
-| T07 | P1 | T02 | Implement per-variant ZINB với exposure/context và posterior ba trạng thái | `zero_state/zinb.py`, `posterior.py`, tests | Fit chỉ trên observed; probabilities tổng bằng 1; không đọc Tsagris target | 3 ngày |
-| T08 | P1 | T07 | Artificial-mask calibration, seeded sampling và sinh `dataset_01_zinb` | sampler, calibration report, posterior/masks, manifest | Zero/non-zero calibrated; structural/sampling không claim accuracy thiếu nhãn | 2 ngày |
+| T07 | P1 | T02 | Implement shared `DesignEncoder`, reduced per-variant ZINB, support routing và pooled sparse-variant ZINB | `zero_state/design.py`, `zinb.py`, `pooled_zinb.py`, support report, tests | Fit chỉ observed; không location FE lớn; fit/predict schema giống hệt; không đọc Tsagris target | 4 ngày |
+| T08 | P1 | T07 | Implement OOF calibration, quality gate, calibrated thresholds và abstain masks | calibration report, posterior, three masks, routing/model manifest | Refit mỗi fold; non-zero recall gate; model fail -> uncertain; ZIP/Poisson không hard-gate | 3 ngày |
 | T09 | P2 | T00 | Lập source manifest và đặc tả parity cho DeepMicroGen commit đã pin | `source_manifest.yaml`, `deepmicrogen_mapping.md` | Mọi module/loss gốc có mapping và test plan | 1 ngày |
 | T10 | P2 | T09 | Port preprocessing, CNN, biRNN generator, time decay, discriminator và losses sang PyTorch | `src/.../deepmicrogen/*`, unit tests | Shape/loss test pass; không còn phụ thuộc TensorFlow 1.x | 4 ngày |
 | T11 | P2 | T10 | Chạy reproduction/parity trên dữ liệu mẫu chính thức | parity tests, `deepmicrogen_parity.md`, checkpoint test | Pipeline gốc và bản port khớp contract; sai khác trong tolerance | 2 ngày |
 | T12 | P2 | T01, T10 | Xây panel adapter: lưới 14 ngày, padding, actual delta và cell-level masks | `panel.py`, adapter tests | Hỗ trợ 150 chuỗi; không leakage qua padding | 2.5 ngày |
-| T13 | P2 | T02, T06, T08 | Implement fusion truth-table, provenance và sinh `dataset_0_fused` | `fuse_initializations.py`, masks, `fusion_audit.md` | Mỗi cell đúng source; fixed cells bất biến; closure chính xác | 2 ngày |
+| T13 | P2 | T02, T06, T08 | Implement four-state fusion, provenance và sinh `dataset_0_fused` | `fuse_initializations.py`, masks, `fusion_audit.md` | Observed/confident-zero/nonzero/uncertain đúng source; closure chính xác | 2.5 ngày |
 | T14 | P2 | T11, T12, T13 | Xây CLR/inverse CLR và constrained postprocessing trên `M_gan` | preprocessing/postprocessing, configs, tests | Chỉ `M_gan` thay đổi; không GAN-threshold về zero | 2 ngày |
 | T15 | P2 | T14 | Xây gated refinement `dataset_i -> dataset_(i+1)`, checkpoint/resume | `refine.py`, CLI, integration tests | GAN chỉ chạy `M_gan`; resume deterministic; lineage đầy đủ | 3 ngày |
-| T16 | P1 | T06, T08, T15 | Evaluation suite: reconstruction và distribution trên bốn split | `evaluation/*`, metrics tables | MSE/JSD/Wasserstein không leakage; cùng split cho mọi method | 2 ngày |
+| T16 | P1 | T06, T08, T15 | Evaluation suite: OOF zero-state, abstain coverage, reconstruction và distribution trên bốn split | `evaluation/*`, metrics tables | Không leakage; quality vs coverage; MSE/JSD/Wasserstein dùng cùng split | 2.5 ngày |
 | T17 | P2 | T15, T16 | Tuning/ablation và chạy nhiều GAN rounds/seeds | checkpoints, per-round metrics, candidates | Có MSE/distribution curves, seed variance, stopping reason | 2.5 ngày |
 | T18 | P1 | T16, T17 | Đánh giá cuối và chọn artifact | `final_evaluation.md`, bảng so sánh | Không downstream claim; ghi trung thực nếu GAN không hơn fused init | 1.5 ngày |
 | T19 | P1 + P2 | T18 | Hardening, README, CI, release notes và GitHub release | release `v1.0.0`, artifacts, checksums | Fresh clone chạy smoke test bằng một command | 2 ngày |
@@ -483,8 +612,8 @@ Tên thật có thể thay vào GitHub issue assignee mà không làm đổi dep
 
 | Người | Phạm vi chính | Ước lượng riêng |
 |---|---|---:|
-| P1 | Data/masks, 3 Tsagris algorithms, ZINB zero-state, evaluation | khoảng 20 ngày công, chưa tính task chung |
-| P2 | Fusion, DeepMicroGen port, longitudinal adapter, gated GAN | khoảng 19 ngày công, chưa tính task chung |
+| P1 | Data/masks, Tsagris, reduced/pooled ZINB, abstain calibration, evaluation | khoảng 22 ngày công, chưa tính task chung |
+| P2 | Four-state fusion, DeepMicroGen port, longitudinal adapter, gated GAN | khoảng 19.5 ngày công, chưa tính task chung |
 
 T00 và T19 là task chung. Mỗi PR của P1 do P2 review và ngược lại; người viết code không tự merge PR của mình.
 
@@ -507,7 +636,7 @@ Không có downstream metric trong v1. Metrics reconstruction chỉ được tí
 - Secondary: RMSE/MAE trên proportions và count; count metrics phân tầng theo `total_sequence`.
 - Distribution fidelity: JSD, Wasserstein theo variant, sai khác mean/variance/quantiles/zero prevalence và correlation matrix.
 - Temporal fidelity: temporal roughness, lag-1 change và JSD theo time window.
-- Zero-state: held-out zero/non-zero NLL, Brier score, calibration error, precision/recall/F1 và predicted zero prevalence.
+- Zero-state: out-of-fold zero/non-zero NLL, Brier score, calibration error, precision/recall/F1, non-zero recall, confident-zero coverage và abstain rate.
 - Structural-vs-sampling: chỉ báo posterior distribution/sensitivity; không báo accuracy nếu không có nhãn ngoại sinh.
 
 Metrics ràng buộc:
@@ -516,7 +645,7 @@ Metrics ràng buộc:
 - Tỷ lệ observed cell bị thay đổi.
 - Tỷ lệ output âm, không nguyên hoặc NaN.
 
-Mọi report phải tách kết quả của `dataset_00_tsagris`, `dataset_01_zinb`, `dataset_0_fused`, ungated GAN ablation và gated GAN. Không gộp các artifact sơ bộ thành một tên `dataset_0` mơ hồ.
+Mọi report phải tách kết quả của `dataset_00_tsagris`, zero-state posterior/routing, optional `dataset_01_zinb` diagnostic, `dataset_0_fused`, ungated GAN ablation và gated GAN. Không gộp các artifact sơ bộ thành một tên `dataset_0` mơ hồ.
 
 ### 6.3 Rule chọn thuật toán tạo `dataset_00_tsagris`
 
@@ -526,14 +655,26 @@ Mọi report phải tách kết quả của `dataset_00_tsagris`, `dataset_01_zi
 4. Không chọn adaptive method chỉ vì tốt trên random-cell nếu kém trên time-block.
 5. Ghi cả mean, standard deviation, seed list và runtime.
 
-### 6.4 Rule chấp nhận GAN
+### 6.4 Rule chấp nhận zero-state model
+
+Mỗi reduced/pooled ZINB được so sánh với prevalence-only baseline trên cùng out-of-fold predictions. Chỉ model `PASS` mới được tạo confident-zero.
+
+Thứ tự routing:
+
+1. Reduced per-variant ZINB nếu support đủ.
+2. Pooled sparse-variant ZINB nếu support thấp hoặc model riêng fail.
+3. Abstain-to-GAN nếu pooled model không đạt quality gate.
+
+Không dùng ZIP, Poisson, all-zero rule hoặc giá trị Tsagris để thay thế một zero-state model không đạt. Report phải biểu diễn quality-coverage curve: zero gate càng bảo thủ thì abstain/GAN coverage càng tăng.
+
+### 6.5 Rule chấp nhận GAN
 
 Gated GAN chỉ được coi là cải thiện nếu:
 
 - Không vi phạm invariant.
 - Validation magnitude-MSE thấp hơn `dataset_0_fused` và ungated GAN ablation, hoặc tương đương trong tolerance nhưng tốt hơn rõ về JSD/Wasserstein.
 - Mean JSD trên time-block không tệ hơn `dataset_0_fused` quá tolerance đã chốt trong ADR.
-- Zero prevalence của output phù hợp với ZINB gate; GAN không được tự tạo/xóa zero.
+- Zero prevalence của output phù hợp với confident-zero gate; uncertain cells được báo cáo riêng, không được diễn giải như zero-state ground truth.
 - Kết quả ổn định qua tối thiểu 5 seed hoặc có giải thích rõ độ biến thiên.
 
 Nếu GAN không vượt baseline, `dataset_0_fused` vẫn là output hợp lệ; báo cáo không được ép chọn checkpoint GAN kém hơn và không dùng downstream score để đảo quyết định.
@@ -548,29 +689,37 @@ Nếu GAN không vượt baseline, `dataset_0_fused` vẫn là output hợp lệ
 - Ví dụ 5 thành phần trong paper Tsagris cho kết quả gần `(0.20, 0.27, 0.30, 0.10, 0.13)`.
 - Largest-remainder giữ count quan sát và tổng chính xác.
 - `M_observed`/`M_target` bù nhau; observed zero và positive đều immutable.
+- `M_target.sum()` bằng raw variant NaN count; padding không xuất hiện trong target.
 - ZINB fit data không chứa bất kỳ Tsagris-imputed target value nào.
 - Ba zero-state probabilities hữu hạn, không âm và tổng bằng 1.
-- Seeded ZINB sampling tái lập được và sinh hai mask target zero/non-zero bù nhau.
+- Reduced model không tạo 149 location dummies; pooled model giữ đúng variant levels.
+- `DesignEncoder.transform` giữ đúng tên/thứ tự/số cột đã fit cho mọi model tier.
+- Ba masks confident-zero/nonzero/uncertain pairwise-disjoint và hợp đúng thành `M_target`.
+- Model quality fail luôn tạo uncertain, không tạo hard zero.
+- ZIP/Poisson diagnostic không được phép ghi vào `M_target_zero`.
 - Fusion truth-table chọn đúng source cho từng cell và ghi đúng provenance.
 - CLR/inverse CLR round-trip trong tolerance.
-- GAN mask chỉ bằng 1 tại `M_target_nonzero`; fixed cells không nhận gradient/update.
+- GAN mask bằng `M_target_nonzero OR M_target_uncertain`; fixed cells không nhận gradient/update.
 - Time decay và padding không tạo NaN.
 
 ### Property tests
 
 - Với nhiều `total_sequence` và missing patterns ngẫu nhiên, output luôn thỏa closure.
 - Thay scale count nhưng giữ proportions không làm đổi neighbor ranking ngoài sai số số học.
-- Thay positive magnitude trong `dataset_01_zinb` không làm đổi `dataset_0_fused` khi sampled state giữ nguyên.
+- Thay positive magnitude trong optional `dataset_01_zinb` không làm đổi masks hoặc `dataset_0_fused`.
 - Thay Tsagris target values không làm đổi ZINB fit/loss/posterior.
+- Thay padding extent không làm đổi raw target count hoặc zero-state evaluation cells.
+- Mọi artificial calibration fold refit model mà không chứa test indices.
 - Checkpoint resume và run liên tục cho cùng output khi dùng deterministic mode.
 
 ### Integration tests
 
 - Chạy ba baseline từ raw đến `dataset_00_tsagris`.
-- Chạy ZINB từ raw observed đến `dataset_01_zinb` và posterior artifacts.
-- Fuse end-to-end thành `dataset_0_fused`; kiểm tra từng source enum.
+- Chạy support routing -> reduced/pooled ZINB -> OOF quality gate -> posterior/abstain artifacts.
+- Test sparse variant đi qua pooled model; test cả reduced và pooled fail thì chuyển toàn bộ cell liên quan sang uncertain.
+- Fuse end-to-end thành `dataset_0_fused`; kiểm tra bốn source states.
 - Chạy một vòng gated GAN nhỏ `dataset_0_fused -> dataset_1` trên CPU.
-- Chứng minh GAN không sửa `M_observed` hoặc `M_target_zero`.
+- Chứng minh GAN không sửa `M_observed` hoặc `M_target_zero`, nhưng nhận cả nonzero và uncertain cells.
 - Chạy full CLI smoke test bằng config tối giản.
 - Kiểm tra manifest chain, checksum và provenance.
 
@@ -588,7 +737,8 @@ Nếu GAN không vượt baseline, `dataset_0_fused` vẫn là output hợp lệ
 - Bộ split đánh giá cố định.
 - Metrics raw và báo cáo chọn baseline.
 - `dataset_00_tsagris.csv` và manifest.
-- ZINB model, `dataset_01_zinb.csv`, posterior/calibration report và seeded state masks.
+- Reduced/pooled ZINB models, support/routing report, OOF posterior/calibration, quality flags và three-state operational masks.
+- Optional `dataset_01_zinb.csv` diagnostic artifact; positive draws không nằm trên critical path.
 - Reconstruction/distribution evaluation suite và final evaluation report.
 
 ### Output của P2
@@ -612,7 +762,12 @@ release/v1.0.0/
 ├── M_target.npz
 ├── M_target_zero.npz
 ├── M_target_nonzero.npz
+├── M_target_uncertain.npz
 ├── zero_state_posterior.npz
+├── variant_support_report.csv
+├── model_routing.csv
+├── oof_predictions.parquet
+├── design_schemas/
 ├── cell_provenance.parquet
 ├── baseline_metrics.csv
 ├── zero_state_metrics.csv
@@ -624,7 +779,7 @@ release/v1.0.0/
 └── model_checkpoint.pt
 ```
 
-Git repository lưu code, config, tests, report và manifest. Checkpoint lớn và các CSV trung gian được đưa vào GitHub Release assets; không commit toàn bộ checkpoint/history vào Git. Ba initialization artifacts, `dataset_final`, masks, posterior và checksums phải cùng xuất hiện trong release để tái lập lineage.
+Git repository lưu code, config, tests, report và manifest. Checkpoint lớn và các CSV trung gian được đưa vào GitHub Release assets; không commit toàn bộ checkpoint/history vào Git. Tsagris/fused datasets, `dataset_final`, three-state masks, posterior, routing/design schemas và checksums phải cùng xuất hiện trong release để tái lập lineage. `dataset_01_zinb.csv` là optional diagnostic, không phải parent magnitude bắt buộc của fusion.
 
 ## 9. CLI dự kiến
 
@@ -638,19 +793,21 @@ python -m missing_imputation run-baselines --config-dir configs/baseline
 # 3. Chọn champion và sinh dataset_00_tsagris + raw masks
 python -m missing_imputation select-baseline --metrics artifacts/baselines/metrics.csv
 
-# 4. Fit/calibrate ZINB và sample dataset_01_zinb
-python -m missing_imputation run-zinb \
+# 4. Support routing + reduced/pooled ZINB + OOF quality gate
+python -m missing_imputation run-zero-state \
   --raw data/covariants.csv \
   --observed-mask artifacts/M_observed.npz \
   --config configs/zero_state/zinb.yaml \
-  --seed 42
+  --gate-mode calibrated_threshold
 
 # 5. Fuse theo truth-table
 python -m missing_imputation fuse-initializations \
   --raw data/covariants.csv \
   --tsagris artifacts/dataset_00_tsagris.csv \
-  --zinb artifacts/dataset_01_zinb.csv \
-  --posterior artifacts/zero_state_posterior.npz
+  --posterior artifacts/zero_state/zero_state_posterior.npz \
+  --zero-mask artifacts/zero_state/M_target_zero.npz \
+  --nonzero-mask artifacts/zero_state/M_target_nonzero.npz \
+  --uncertain-mask artifacts/zero_state/M_target_uncertain.npz
 
 # 6. Parity DeepMicroGen
 python -m missing_imputation deepmicrogen-parity --config configs/gan/reproduction.yaml
@@ -659,7 +816,7 @@ python -m missing_imputation deepmicrogen-parity --config configs/gan/reproducti
 python -m missing_imputation refine \
   --input artifacts/dataset_0_fused.csv \
   --fixed-mask artifacts/M_fixed.npz \
-  --gan-mask artifacts/M_target_nonzero.npz \
+  --gan-mask artifacts/M_gan.npz \
   --config configs/gan/covariants.yaml \
   --max-rounds 10
 
@@ -695,7 +852,7 @@ PR chỉ được merge khi:
 | M0 | Data contract và repo scaffold | Không tag |
 | M1 | Ba Tsagris baselines + `dataset_00_tsagris` | `v0.1.0-baseline` |
 | M2 | DeepMicroGen reproduction/parity | `v0.2.0-deepmicrogen` |
-| M3 | ZINB `dataset_01_zinb` + fusion `dataset_0_fused` | `v0.3.0-fusion` |
+| M3 | Reduced/pooled ZINB + abstain masks + fusion `dataset_0_fused` | `v0.3.0-fusion` |
 | M4 | Gated magnitude refinement | `v0.4.0-integration` |
 | M5 | Reconstruction/distribution evaluation và handoff | `v1.0.0` |
 
@@ -707,7 +864,7 @@ Hai người làm song song, tổng thời gian dự kiến 5 tuần làm việc
 |---|---|---|---|
 | 1 | T00-T03 | T00, T09-T10 | Data/mask contract và core tests |
 | 2 | T04-T06, T07 | T10-T12 | Có `dataset_00_tsagris`; DeepMicroGen port gần hoàn tất |
-| 3 | T07-T08 | T11-T13 | Có calibrated ZINB, `dataset_01_zinb` và `dataset_0_fused` |
+| 3 | T07-T08 | T11-T13 | Có OOF-calibrated routing/abstain masks và `dataset_0_fused` |
 | 4 | T16 | T14-T17 | Chạy được gated `dataset_0_fused -> dataset_1` và ablations |
 | 5 | T18-T19 | T17, T19 | Final reconstruction/distribution report và release |
 
@@ -719,12 +876,18 @@ Nếu chỉ có CPU, T17 có thể kéo dài thêm. Smoke/parity phải chạy �
 |---|---|---|---|
 | Chỉ có 516 dòng complete cho neighbor pool | Cao | Neighbor yếu, adaptive pattern thiếu support | Repeated CV, fallback global, báo cáo coverage theo pattern |
 | 95.58% dòng có missing | Cao | Self-training dễ củng cố sai số baseline | Không coi initialization là truth; giữ raw masks bất biến |
-| ZINB độc lập theo variant vi phạm closure | Cao | `dataset_01_zinb` có tổng count sai | Chỉ dùng ZINB cho state gate; magnitude ZINB bị bỏ; fusion closure riêng |
-| Một ZINB draw làm gate không ổn định | Cao | Lineage đổi mạnh theo seed | Nhiều seed/MAP ablation, lưu posterior và seed, báo uncertainty |
+| ZINB độc lập theo variant vi phạm closure | Cao | Positive draws có tổng count sai | Bỏ positive draws khỏi critical path; fusion closure dùng Tsagris/GAN magnitude |
+| Binary gate ép model yếu phải quyết định | Cao | Sparse variant bị khóa zero sai | Thêm uncertain/abstain state; uncertain luôn chuyển GAN |
 | Structural và sampling zero không identifiable hoàn toàn | Cao | Dễ overclaim biological absence | Chỉ gọi posterior latent; không báo accuracy thiếu nhãn ngoại sinh |
-| ZINB convergence/separation ở variant quá thưa | Cao | Fit lỗi hoặc all-zero gate | Regularization/fallback pooled model, diagnostics, fail-fast theo variant |
-| ZINB gate nhầm non-zero thành zero | Cao | GAN mất cơ hội reconstruct magnitude | Tune threshold/cost, report recall non-zero, sensitivity analysis |
-| Sampled non-zero states vượt remaining count | Cao | Không thể vừa positive integer vừa closure | Feasibility projection theo posterior rank; audit mọi override |
+| 149 location FE gây separation/rank deficiency | Cao | Cả 17 model rơi xuống Poisson | Reduced design 8-12 predictors; location history qua observed lag/lead features |
+| ZINB convergence ở variant quá thưa | Cao | Fit lỗi hoặc all-zero gate | Support routing -> pooled ZINB -> abstain; không ZIP/Poisson hard gate |
+| ZINB gate nhầm non-zero thành zero | Cao | GAN mất cơ hội reconstruct magnitude | Tune threshold theo non-zero recall >= target; uncertain band; sensitivity analysis |
+| Pooled model che lấp đặc trưng variant hiếm | Trung bình | Posterior bị kéo về nhóm | Variant intercepts, per-variant OOF metrics và abstain nếu calibration kém |
+| Calibration leakage do không refit fold | Cao | NLL/Brier/F1 lạc quan | Bắt buộc refit mỗi fold; lưu train/test indices và OOF predictions |
+| Fit/predict design schema lệch | Cao | Runtime shape error hoặc prediction sai | Shared DesignEncoder + serialized schema; dimension/name assertions |
+| Padding bị coi là real target | Cao | Impute thêm 87k cell ngoài raw NaN | `M_target = raw_nan AND M_row AND NOT M_padding`; exact-count invariant |
+| Threshold tune nhưng inference hard-code | Cao | Gate không dùng calibration đã báo cáo | Serialize/apply threshold theo variant/tier; integration assertion |
+| Zero-state stage fail nhưng fusion vẫn chạy | Trung bình | Lỗi dây chuyền thiếu artifact khó chẩn đoán | Stage status/manifest gate; fail fast trước fusion |
 | Fusion rescale làm méo Tsagris warm-start | Trung bình | Initialization distribution đổi | Audit trước/sau closure và giữ `other` làm residual absorber |
 | Target-nonzero không có nhiều positive observed analogues | Cao | GAN magnitude học yếu | Per-variant support report, pooling/embedding và uncertainty flags |
 | Tsagris không có temporal model | Cao | `dataset_00_tsagris` thiếu mượt theo thời gian | Time-block evaluation; DeepMicroGen refinement |
@@ -742,14 +905,19 @@ Dự án chỉ được coi là hoàn tất khi:
 
 - [ ] Có implementation và test cho đủ ba Tsagris algorithms.
 - [ ] Có báo cáo định lượng giải thích vì sao chọn thuật toán tạo `dataset_00_tsagris`.
-- [ ] `M_observed`/`M_target` tạo từ raw, có checksum và observed zero/positive đều immutable.
-- [ ] ZINB fit chỉ trên observed raw data; có calibration và posterior ba trạng thái.
-- [ ] `dataset_01_zinb` tái lập theo seed; positive ZINB draw không được dùng làm magnitude cuối.
-- [ ] Fusion truth-table được test cho mọi cell và `dataset_0_fused` thỏa closure.
+- [ ] `M_observed`/`M_target` tạo từ raw, loại padding, target count khớp raw NaN và observed zero/positive immutable.
+- [ ] Có support report và routing reduced per-variant/pooled/abstain cho đủ 17 variants.
+- [ ] ZINB fit chỉ trên observed raw data, không dùng 149 location FE hoặc Tsagris predictors.
+- [ ] Calibration refit theo fold, có OOF predictions và quality gate so với prevalence baseline.
+- [ ] Threshold theo variant/tier đạt target non-zero recall và được dùng thật tại inference.
+- [ ] Model không đạt quality gate sinh `M_target_uncertain`, không sinh hard zero.
+- [ ] ZIP/Poisson/Hurdle không được dùng để tạo `M_target_zero`.
+- [ ] Fit/predict/sampling dùng cùng serialized DesignEncoder schema; không có dimension mismatch.
+- [ ] Fusion four-state truth-table được test cho mọi cell và `dataset_0_fused` thỏa closure.
 - [ ] Có `cell_provenance` truy được nguồn của từng cell.
 - [ ] DeepMicroGen source commit được pin và có parity/deviation report.
 - [ ] Chạy được ít nhất một vòng gated `dataset_0_fused -> dataset_1` bằng CLI.
-- [ ] GAN chỉ thay `M_target_nonzero`; không sửa observed hoặc target-zero.
+- [ ] GAN thay `M_target_nonzero OR M_target_uncertain`; không sửa observed hoặc confident-zero.
 - [ ] Vòng lặp có checkpoint, resume và stopping rule.
 - [ ] Đánh giá có random-cell, empirical-pattern, time-block và country-holdout.
 - [ ] Observed values và observed zeros không bị thay đổi.
@@ -767,9 +935,9 @@ Các điểm sau là gate của T00, không cản trở việc mở issue và sc
 2. Có mapping chuyên môn cho nhóm 17 variant hay dùng one-group + ablation.
 3. GPU mục tiêu và giới hạn thời gian cho full tuning.
 4. Có cần xuất thêm các country-date không tồn tại trong CSV gốc hay chỉ impute cell trong 11,671 dòng hiện có.
-5. ZINB gate mặc định dùng stochastic draw, MAP hay calibrated threshold; plan yêu cầu chạy sensitivity cho cả ba nhưng release cần một default.
-6. Chi phí ưu tiên của gate: tránh false zero (giữ recall non-zero) hay tránh false non-zero.
-7. Số ZINB seeds/multiple-imputation lineages cần bàn giao.
+5. Target non-zero recall tối thiểu của zero gate; default đề xuất 0.95, cần chốt theo validation coverage.
+6. Ngưỡng support/events-per-parameter chính thức để route reduced hay pooled ZINB; defaults hiện là 200/500 positives.
+7. Pooled sparse groups dùng một nhóm chung hay chia theo temporal era/variant family nếu có mapping chuyên môn.
 8. Tolerance cụ thể để chấp nhận GAN theo validation MSE, JSD và Wasserstein.
 
 ## 15. Nguồn kỹ thuật được dùng để lập plan
