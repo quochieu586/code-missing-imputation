@@ -473,6 +473,84 @@ Support quan sát giải thích vì sao cần routing:
 
 Log cũng cho thấy lỗi prediction `size 5 is different from 154`: fallback Poisson được fit với design rút gọn nhưng sampler dựng lại full design. Đây là lý do `DesignEncoder` và schema assertions là release blocker, không phải cải tiến tùy chọn.
 
+#### 4.4.8 Debug protocol sau run `zinb_1788164041`
+
+Run hoàn thành nhưng cả 17 variants `FAIL` quality gate và toàn bộ target được gán `UNCERTAIN`. Đây là **fail-safe đúng** của abstain contract, không phải lý do để nới quality gate. Tuy nhiên, chưa được kết luận ZINB không phù hợp vì run còn lỗi target indexing, rank deficiency và pooled OOF.
+
+Thứ tự debug bắt buộc:
+
+**D0 - Sửa miền target trước mọi model run**
+
+1. Không dùng `target_mask = M_target.any(axis=2)` rồi broadcast cho mọi variant.
+2. Posterior/gating của variant `j` phải nhận đúng `M_target[:, :, j]`.
+3. `M_target.sum()` phải bằng 86,050 raw NaN variant cells; observed cells trên một incomplete row không được biến thành target.
+4. Padding phải bằng 0 trong cả `M_observed` và `M_target`.
+5. Raw `covariants.csv` hiện không có dòng `total_sequence=0`; diagnostic/report code phải phân biệt “all 17 variant counts bằng 0” với `total_sequence=0`.
+
+Con số 276,828 trong run bằng `16,284 incomplete location-times x 17 variants`, còn 8,772 bằng `516 complete rows x 17`. Đây là bằng chứng target mask đã được broadcast theo row và là release blocker độc lập với ZINB.
+
+**D1 - Chốt spline/intercept convention full-rank**
+
+DesignEncoder dùng một convention duy nhất:
+
+```text
+Patsy formula: cr(global_day_index, df=4, constraints="center")
+Không thêm intercept thủ công; dùng intercept do Patsy tạo.
+```
+
+Centered constraint loại constant direction khỏi spline. Trên fixture chuẩn, `[Intercept + centered natural spline]` phải full column rank. `df=3/4/5` được kiểm tra trong validation, nhưng mọi candidate phải qua rank assertion trước khi fit.
+
+Sau khi thêm lag/lead features:
+
+- Drop zero-variance columns theo **training fold** (trừ intercept/offset policy).
+- Dùng pivoted QR hoặc SVD để phát hiện near-collinearity; lưu `active_columns`, dropped columns, rank, singular values và condition number vào schema/fold diagnostics.
+- `DesignEncoder.transform` chỉ xuất đúng active columns đã học từ train; không tự quyết định lại trên validation/test.
+
+**D2 - Chốt pooled variant coding và rank check đúng matrix**
+
+Pooled ZINB dùng `K-1` effect/treatment-coded variant columns với một reference level đã serialize; không append đủ `K` one-hot columns cùng intercept.
+
+OOF pooled rank check phải chạy trên **actual stacked pooled training matrix** chứa tất cả pooled variants của fold. Không được dựng matrix chỉ từ một variant với một dummy toàn 1, vì matrix đó collinear với intercept và không phải matrix đã dùng để fit.
+
+**D3 - OOF refit và baseline công bằng**
+
+Mỗi fold phải:
+
+1. Refit reduced model hoặc rebuild/refit toàn bộ pooled long-table model từ scratch.
+2. Recompute lag/lead sau khi áp fold mask.
+3. Fit `DesignEncoder` chỉ trên fold train và transform validation/test bằng schema đó.
+4. Tính prevalence baseline từ fold train rồi dự đoán fold test; không dùng prevalence từ toàn observed dataset để so với OOF model.
+5. Lưu cell-level `y_true`, raw/calibrated `p_nonzero`, baseline probability, recipe, fold và indices vào `oof_predictions.parquet`.
+
+Fold fit thất bại không được âm thầm bỏ khỏi aggregate. Thêm `fold_coverage_ok`: default yêu cầu ít nhất 80% folds thành công và mỗi recipe có số fold hợp lệ tối thiểu cấu hình được. Ví dụ Alpha chỉ thành công 11/15 folds phải bị flag coverage thay vì tính metric như thể đủ 15 folds.
+
+**D4 - Threshold và metric semantics**
+
+- Threshold được chọn từ OOF predictions theo recall constraint phải được serialize và dùng thật tại inference.
+- Các cột report phải đặt tên rõ: `frac_nonzero_at_selected_threshold` và `frac_nonzero_at_0_5`; không dùng chung một tên cho hai threshold.
+- Quality gate so sánh OOF model NLL/Brier với OOF prevalence baseline trên đúng cùng test cells.
+- Không nới `recall >= 0.95`, NLL/Brier hoặc rank gate trước khi D0-D3 pass.
+
+**D5 - Rerun theo phạm vi tăng dần**
+
+1. Unit test encoder rank với df 3/4/5, constant lag/lead và unseen transform.
+2. Smoke một high-support reduced variant (`Omicron` hoặc `Delta`).
+3. Smoke một pooled sparse group (`S:677`, `20C`, `Kappa`, `Iota`).
+4. Chạy một recipe/2 folds để xác minh OOF refit và artifacts.
+5. Chạy đủ 3 recipes x 5 folds x 17 variants chỉ sau khi các smoke gates pass.
+
+Sau khi D0-D5 hoàn tất:
+
+- Nếu rank full và NLL/Brier cải thiện: cho model tiếp tục qua recall/quality gate.
+- Nếu rank full nhưng calibration kém: kiểm tra predictor/spline ablation và một probability calibrator được fit trong nested validation; không calibrate trên final test.
+- Nếu discrimination/calibration vẫn không hơn prevalence baseline: giữ toàn bộ cell liên quan ở `UNCERTAIN` và chuyển GAN. Đây là kết quả khoa học hợp lệ, không phải pipeline failure.
+
+**D6 - Logging và artifact correctness**
+
+- `n_iterations` không truy xuất được từ statsmodels phải ghi `null/unknown`, không ghi sai là `0`; lưu optimizer metadata khả dụng (`mle_retvals` hoặc equivalent) nếu có.
+- Zero-state stage phải phát hành manifest `SUCCESS/FAILED`. Fusion chỉ chạy khi parent manifest `SUCCESS` và mask/posterior checksums hợp lệ.
+- Khi tất cả models abstain, integration test phải xác minh `M_target_uncertain == M_target`, `M_target_zero == 0`, `M_target_nonzero == 0`; fused target values lấy Tsagris và observed values giữ nguyên.
+
 ### 4.5 Hợp nhất Tsagris và zero-state posterior thành `dataset_0_fused`
 
 Đây là contract quyết định duy nhất cho fusion:
@@ -594,13 +672,13 @@ Tên thật có thể thay vào GitHub issue assignee mà không làm đổi dep
 | T04 | P1 | T03 | Implement Fréchet mean và `JSD-alpha-kNN` | `frechet.py`, `jsd_alpha_knn.py`, tests | `alpha=1` khớp arithmetic mean; CV chọn được `(alpha,k)` | 2 ngày |
 | T05 | P1 | T04 | Implement adaptive algorithm và fallback cho sparse pattern | `adaptive_jsd_alpha_knn.py`, config, tests | Pattern đủ support tune riêng; pattern thiếu support ghi fallback | 2 ngày |
 | T06 | P1 | T05 | Repeated masking CV, chọn Tsagris champion và sinh `dataset_00_tsagris` | 3 baseline outputs, `dataset_00_tsagris.csv`, report, manifest | Full, giữ observed, không bị dùng làm ground truth | 2.5 ngày |
-| T07 | P1 | T02 | Implement shared `DesignEncoder`, reduced per-variant ZINB, support routing và pooled sparse-variant ZINB | `zero_state/design.py`, `zinb.py`, `pooled_zinb.py`, support report, tests | Fit chỉ observed; không location FE lớn; fit/predict schema giống hệt; không đọc Tsagris target | 4 ngày |
-| T08 | P1 | T07 | Implement OOF calibration, quality gate, calibrated thresholds và abstain masks | calibration report, posterior, three masks, routing/model manifest | Refit mỗi fold; non-zero recall gate; model fail -> uncertain; ZIP/Poisson không hard-gate | 3 ngày |
+| T07 | P1 | T02 | Implement per-variant target indexing, centered-spline `DesignEncoder`, reduced ZINB, support routing và pooled ZINB | encoder/model/routing modules, support report, rank/schema tests | Target=86,050; full-rank centered spline; K-1 pooled coding; fit/predict schema giống hệt | 5 ngày |
+| T08 | P1 | T07 | Implement true reduced/pooled OOF refit, fold baseline, quality/coverage gates, thresholds và abstain masks | OOF predictions, diagnostics, posterior, three masks, manifest | Pooled refit mỗi fold; baseline cùng test cells; failed folds counted; model fail -> uncertain | 4 ngày |
 | T09 | P2 | T00 | Lập source manifest và đặc tả parity cho DeepMicroGen commit đã pin | `source_manifest.yaml`, `deepmicrogen_mapping.md` | Mọi module/loss gốc có mapping và test plan | 1 ngày |
 | T10 | P2 | T09 | Port preprocessing, CNN, biRNN generator, time decay, discriminator và losses sang PyTorch | `src/.../deepmicrogen/*`, unit tests | Shape/loss test pass; không còn phụ thuộc TensorFlow 1.x | 4 ngày |
 | T11 | P2 | T10 | Chạy reproduction/parity trên dữ liệu mẫu chính thức | parity tests, `deepmicrogen_parity.md`, checkpoint test | Pipeline gốc và bản port khớp contract; sai khác trong tolerance | 2 ngày |
 | T12 | P2 | T01, T10 | Xây panel adapter: lưới 14 ngày, padding, actual delta và cell-level masks | `panel.py`, adapter tests | Hỗ trợ 150 chuỗi; không leakage qua padding | 2.5 ngày |
-| T13 | P2 | T02, T06, T08 | Implement four-state fusion, provenance và sinh `dataset_0_fused` | `fuse_initializations.py`, masks, `fusion_audit.md` | Observed/confident-zero/nonzero/uncertain đúng source; closure chính xác | 2.5 ngày |
+| T13 | P2 | T02, T06, T08 | Implement parent-manifest gate, four-state fusion, provenance và sinh `dataset_0_fused` | fusion module, masks, `fusion_audit.md` | Fail fast nếu zero-state failed; four states đúng source; closure chính xác | 2.5 ngày |
 | T14 | P2 | T11, T12, T13 | Xây CLR/inverse CLR và constrained postprocessing trên `M_gan` | preprocessing/postprocessing, configs, tests | Chỉ `M_gan` thay đổi; không GAN-threshold về zero | 2 ngày |
 | T15 | P2 | T14 | Xây gated refinement `dataset_i -> dataset_(i+1)`, checkpoint/resume | `refine.py`, CLI, integration tests | GAN chỉ chạy `M_gan`; resume deterministic; lineage đầy đủ | 3 ngày |
 | T16 | P1 | T06, T08, T15 | Evaluation suite: OOF zero-state, abstain coverage, reconstruction và distribution trên bốn split | `evaluation/*`, metrics tables | Không leakage; quality vs coverage; MSE/JSD/Wasserstein dùng cùng split | 2.5 ngày |
@@ -612,7 +690,7 @@ Tên thật có thể thay vào GitHub issue assignee mà không làm đổi dep
 
 | Người | Phạm vi chính | Ước lượng riêng |
 |---|---|---:|
-| P1 | Data/masks, Tsagris, reduced/pooled ZINB, abstain calibration, evaluation | khoảng 22 ngày công, chưa tính task chung |
+| P1 | Data/masks, Tsagris, reduced/pooled ZINB, abstain calibration, evaluation | khoảng 24.5 ngày công, chưa tính task chung |
 | P2 | Four-state fusion, DeepMicroGen port, longitudinal adapter, gated GAN | khoảng 19.5 ngày công, chưa tính task chung |
 
 T00 và T19 là task chung. Mỗi PR của P1 do P2 review và ngược lại; người viết code không tự merge PR của mình.
@@ -690,9 +768,13 @@ Nếu GAN không vượt baseline, `dataset_0_fused` vẫn là output hợp lệ
 - Largest-remainder giữ count quan sát và tổng chính xác.
 - `M_observed`/`M_target` bù nhau; observed zero và positive đều immutable.
 - `M_target.sum()` bằng raw variant NaN count; padding không xuất hiện trong target.
+- Target coordinates của variant `j` bằng đúng `np.where(M_target[:, :, j])`; không broadcast row-level `any(axis=2)`.
 - ZINB fit data không chứa bất kỳ Tsagris-imputed target value nào.
 - Ba zero-state probabilities hữu hạn, không âm và tổng bằng 1.
 - Reduced model không tạo 149 location dummies; pooled model giữ đúng variant levels.
+- Centered natural spline + Patsy intercept full rank cho df 3/4/5; không có explicit duplicate intercept.
+- Pooled design dùng K-1 variant columns và full rank trên actual stacked long-table matrix.
+- Zero-variance/collinear feature pruning học trên train và được giữ nguyên khi transform test.
 - `DesignEncoder.transform` giữ đúng tên/thứ tự/số cột đã fit cho mọi model tier.
 - Ba masks confident-zero/nonzero/uncertain pairwise-disjoint và hợp đúng thành `M_target`.
 - Model quality fail luôn tạo uncertain, không tạo hard zero.
@@ -710,16 +792,21 @@ Nếu GAN không vượt baseline, `dataset_0_fused` vẫn là output hợp lệ
 - Thay Tsagris target values không làm đổi ZINB fit/loss/posterior.
 - Thay padding extent không làm đổi raw target count hoặc zero-state evaluation cells.
 - Mọi artificial calibration fold refit model mà không chứa test indices.
+- Pooled calibration refit toàn bộ stacked pooled model trong từng fold, không tái sử dụng full-data pooled model.
+- OOF prevalence baseline học từ train fold và được đánh giá trên đúng test indices của model.
+- Failed folds làm giảm fold coverage; không bị loại âm thầm khỏi aggregate.
 - Checkpoint resume và run liên tục cho cùng output khi dùng deterministic mode.
 
 ### Integration tests
 
 - Chạy ba baseline từ raw đến `dataset_00_tsagris`.
 - Chạy support routing -> reduced/pooled ZINB -> OOF quality gate -> posterior/abstain artifacts.
+- Chạy encoder-rank smoke, high-support reduced smoke và sparse pooled smoke trước full 17-variant run.
 - Test sparse variant đi qua pooled model; test cả reduced và pooled fail thì chuyển toàn bộ cell liên quan sang uncertain.
 - Fuse end-to-end thành `dataset_0_fused`; kiểm tra bốn source states.
 - Chạy một vòng gated GAN nhỏ `dataset_0_fused -> dataset_1` trên CPU.
 - Chứng minh GAN không sửa `M_observed` hoặc `M_target_zero`, nhưng nhận cả nonzero và uncertain cells.
+- Test all-abstain path tạo fused target giống Tsagris và không làm thay observed cells.
 - Chạy full CLI smoke test bằng config tối giản.
 - Kiểm tra manifest chain, checksum và provenance.
 
@@ -755,7 +842,7 @@ Nếu GAN không vượt baseline, `dataset_0_fused` vẫn là output hợp lệ
 ```text
 release/v1.0.0/
 ├── dataset_00_tsagris.csv
-├── dataset_01_zinb.csv
+├── dataset_01_zinb.csv                 # optional diagnostic
 ├── dataset_0_fused.csv
 ├── dataset_final.csv
 ├── M_observed.npz
@@ -888,6 +975,13 @@ Nếu chỉ có CPU, T17 có thể kéo dài thêm. Smoke/parity phải chạy �
 | Padding bị coi là real target | Cao | Impute thêm 87k cell ngoài raw NaN | `M_target = raw_nan AND M_row AND NOT M_padding`; exact-count invariant |
 | Threshold tune nhưng inference hard-code | Cao | Gate không dùng calibration đã báo cáo | Serialize/apply threshold theo variant/tier; integration assertion |
 | Zero-state stage fail nhưng fusion vẫn chạy | Trung bình | Lỗi dây chuyền thiếu artifact khó chẩn đoán | Stage status/manifest gate; fail fast trước fusion |
+| Natural spline basis chứa constant cùng explicit intercept | Cao | Rank deficiency ở mọi fold, tham số cực trị | Centered spline constraint + một Patsy intercept; rank/condition tests trước fit |
+| Pooled K one-hot columns cộng intercept | Cao | Pooled design rank-deficient | K-1 effect/treatment coding, frozen reference level |
+| Pooled OOF dùng full-data model | Cao | Leakage và metric không đại diện generalization | Rebuild stacked data và refit pooled model trong từng fold |
+| Rank check trên single-variant dummy matrix | Cao | False rank failure dù pooled fit matrix khác | Check actual stacked training matrix returned by encoder |
+| Baseline prevalence tính trên toàn observed | Trung bình | So sánh NLL/Brier không cùng information set | Fit baseline theo train fold, score cùng test cells |
+| Failed OOF folds bị bỏ khỏi aggregate | Cao | Metric lạc quan cho variant khó fit | Fold coverage gate và per-recipe minimum; failed fold được lưu rõ |
+| Diagnostic nhầm all-variant-zero với `total_sequence=0` | Thấp | Root-cause report sai hướng | Raw-data invariant và tên metric tách biệt; hiện raw có 0 dòng total_sequence=0 |
 | Fusion rescale làm méo Tsagris warm-start | Trung bình | Initialization distribution đổi | Audit trước/sau closure và giữ `other` làm residual absorber |
 | Target-nonzero không có nhiều positive observed analogues | Cao | GAN magnitude học yếu | Per-variant support report, pooling/embedding và uncertainty flags |
 | Tsagris không có temporal model | Cao | `dataset_00_tsagris` thiếu mượt theo thời gian | Time-block evaluation; DeepMicroGen refinement |
@@ -906,13 +1000,18 @@ Dự án chỉ được coi là hoàn tất khi:
 - [ ] Có implementation và test cho đủ ba Tsagris algorithms.
 - [ ] Có báo cáo định lượng giải thích vì sao chọn thuật toán tạo `dataset_00_tsagris`.
 - [ ] `M_observed`/`M_target` tạo từ raw, loại padding, target count khớp raw NaN và observed zero/positive immutable.
+- [ ] Posterior/masks dùng per-variant target coordinates; không broadcast incomplete row sang cả 17 variants.
 - [ ] Có support report và routing reduced per-variant/pooled/abstain cho đủ 17 variants.
 - [ ] ZINB fit chỉ trên observed raw data, không dùng 149 location FE hoặc Tsagris predictors.
+- [ ] Centered natural spline/intercept convention và pooled K-1 coding pass rank/condition tests trên mọi successful fold.
 - [ ] Calibration refit theo fold, có OOF predictions và quality gate so với prevalence baseline.
+- [ ] Pooled model được rebuild/refit trên stacked train data trong từng fold; rank check dùng đúng fitted matrix.
+- [ ] Prevalence baseline học theo train fold, score trên cùng held-out cells; fold coverage được quality-gate.
 - [ ] Threshold theo variant/tier đạt target non-zero recall và được dùng thật tại inference.
 - [ ] Model không đạt quality gate sinh `M_target_uncertain`, không sinh hard zero.
 - [ ] ZIP/Poisson/Hurdle không được dùng để tạo `M_target_zero`.
 - [ ] Fit/predict/sampling dùng cùng serialized DesignEncoder schema; không có dimension mismatch.
+- [ ] `n_iterations` không khả dụng được ghi `null`, không ghi sai `0`; metric fractions ghi rõ threshold tương ứng.
 - [ ] Fusion four-state truth-table được test cho mọi cell và `dataset_0_fused` thỏa closure.
 - [ ] Có `cell_provenance` truy được nguồn của từng cell.
 - [ ] DeepMicroGen source commit được pin và có parity/deviation report.
@@ -947,3 +1046,4 @@ Các điểm sau là gate của T00, không cản trở việc mở issue và sc
 - `missing_impute/research/tsagris.pdf`: Tsagris, Stewart và Alenazi, ba biến thể JSD-kNN được chọn cho `dataset_00_tsagris`.
 - `missing_impute/diffusion based/DeepMicroGen.pdf`: kiến trúc CNN, bidirectional RNN GAN, time-decay, losses và giới hạn irregular sampling.
 - `https://github.com/joungmin-choi/DeepMicroGen.git`: source chính thức, pin tại commit `da2093d3c054dddb29415da8838c351ad7349f8d`.
+- `diagnostic_report.md`: bằng chứng thực nghiệm của run `zinb_1788164041`; dùng để định nghĩa D0-D6 debug gates. Các claim trong report phải được kiểm tra lại với raw invariants trước khi đưa thành kết luận.
