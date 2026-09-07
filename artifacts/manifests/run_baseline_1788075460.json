@@ -1,0 +1,25 @@
+{
+  "run_id": "baseline_1788075460",
+  "timestamp": "2026-08-30T07:37:40.575820+00:00",
+  "method": "jsd_knn",
+  "params": {
+    "k": 7,
+    "alpha": 1.0
+  },
+  "metrics": {
+    "jsd_empirical": 0.045186990743624776,
+    "jsd_timeblock": 0.011538048351222909
+  },
+  "data_checksum": "bbb1aacdf46ebef345ca818f086d5586f4aded45475b00b6ee9bd89fc94a90ab",
+  "config_checksums": {
+    "configs\\data.yaml": "b549138af9389b250553ca5a92207cb426014b54be65f437387af1ebec7d5ded"
+  },
+  "seeds": [
+    42,
+    123
+  ],
+  "invariants_ok": true,
+  "python_version": "3.13.12 | packaged by Anaconda, Inc. | (main, Feb 24 2026, 16:05:56) [MSC v.1942 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "numpy_version": "2.4.4"
+}

@@ -1,0 +1,35 @@
+{
+  "run_id": "refinement_1788584124",
+  "timestamp": "2026-09-05T04:55:24.262956+00:00",
+  "method": "gated_gan_refinement_v2",
+  "params": {
+    "seed": 42,
+    "n_rounds": 1,
+    "config": "C:\\Users\\admin\\Tai_lieu\\detaikhoahoc\\COVID19\\missing_impute\\code-missing-imputation\\configs\\gan\\refinement.yaml"
+  },
+  "metrics": {
+    "rounds": [
+      {
+        "round": 1,
+        "seed": 42,
+        "best_recon": 0.0549904964864254,
+        "epochs_run": 115,
+        "invariants_ok": true,
+        "closure_violations": 0,
+        "output": "artifacts\\refined\\dataset_1_refined.csv"
+      }
+    ]
+  },
+  "data_checksum": "475c39441a1b97276af5a7713265ef85f9ccbad7936ecb8af891b4351d00a9e4",
+  "config_checksums": {
+    "C:\\Users\\admin\\Tai_lieu\\detaikhoahoc\\COVID19\\missing_impute\\code-missing-imputation\\configs\\gan\\refinement.yaml": "fd3e81ca5024fa85125f7507e1b6339dd779c520c6ca95f0e9b083943a3dab29"
+  },
+  "git_commit": "e220dc748c64f3b77a0b8f13e8801cd5df9817d6",
+  "seeds": [
+    42
+  ],
+  "invariants_ok": true,
+  "python_version": "3.13.12 | packaged by Anaconda, Inc. | (main, Feb 24 2026, 16:05:56) [MSC v.1942 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "numpy_version": "2.4.4"
+}

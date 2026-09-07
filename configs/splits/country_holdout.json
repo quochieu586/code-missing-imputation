@@ -1,0 +1,22 @@
+{
+ "recipe": "country-holdout",
+ "seed": 20260901,
+ "holdout_fraction": 0.1,
+ "held_out_locations": [
+  "Albania",
+  "Argentina",
+  "Brunei",
+  "Cook Islands",
+  "El Salvador",
+  "Gambia",
+  "Gibraltar",
+  "Lithuania",
+  "Malta",
+  "Papua New Guinea",
+  "Poland",
+  "Russia",
+  "Singapore",
+  "Switzerland",
+  "Vietnam"
+ ]
+}

@@ -1,0 +1,63 @@
+Metadata-Version: 2.4
+Name: missing-imputation
+Version: 0.1.0
+Summary: Compositional longitudinal missing imputation for COVID-19 variant data
+Author-email: Quoc Hieu <quochieu586@example.com>
+License: MIT
+Keywords: missing-data,compositional,longitudinal,covid-19,imputation
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Scientific/Engineering :: Bio-Informatics
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: pandas>=2.1.0
+Requires-Dist: numpy>=1.26.0
+Requires-Dist: scipy>=1.11.0
+Requires-Dist: scikit-learn>=1.3.0
+Requires-Dist: pydantic>=2.5.0
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: tqdm>=4.66.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.1.0; extra == "dev"
+Requires-Dist: hypothesis>=6.92.0; extra == "dev"
+Requires-Dist: ruff>=0.1.0; extra == "dev"
+Requires-Dist: mypy>=1.7.0; extra == "dev"
+Requires-Dist: pre-commit>=3.6.0; extra == "dev"
+Provides-Extra: test
+Requires-Dist: pytest>=7.4.0; extra == "test"
+Requires-Dist: pytest-cov>=4.1.0; extra == "test"
+Requires-Dist: hypothesis>=6.92.0; extra == "test"
+Provides-Extra: gan
+Requires-Dist: torch>=2.0.0; extra == "gan"
+
+# missing-imputation
+
+Compositional longitudinal missing imputation for SARS-CoV-2 variant count data (covariants).
+
+Pipeline: Tsagris JSD-kNN baselines → `dataset_00_tsagris` → ZINB zero-state → `dataset_01_zinb` → Fusion → `dataset_0_fused` → DeepMicroGen GAN refinement.
+
+## Install
+
+```bash
+pip install -e .[test]
+```
+
+## CLI
+
+```bash
+missing-imputation audit-data --config configs/data.yaml
+missing-imputation run-baselines --data data/covariants.csv --config-dir configs/baseline --output-dir artifacts/baselines
+missing-imputation select-baseline --metrics artifacts/baselines/baseline_metrics.json
+missing-imputation generate-dataset0 --config configs/data.yaml --method jsd_knn --output-dir artifacts
+```
+
+## Tests
+
+```bash
+pytest
+```

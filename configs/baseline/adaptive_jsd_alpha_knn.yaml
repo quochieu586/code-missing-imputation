@@ -1,0 +1,26 @@
+# Adaptive JSD-alpha-kNN baseline configuration (Variant 3)
+method: "adaptive_jsd_alpha_knn"
+description: "Per-missingness-pattern tuned (alpha, k) with fallback to global best"
+
+hyperparameters:
+  k_grid: [3, 5, 7, 10, 15]
+  alpha_grid: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+  min_pattern_support: 30  # minimum complete rows for pattern-specific tuning
+  fallback_method: "global_best"  # use global (k, alpha) from jsd_alpha_knn for sparse patterns
+
+cross_validation:
+  n_repeats: 10
+  n_folds: 5
+  seed_list: [42, 123, 456, 789, 999, 111, 222, 333, 444, 555]
+  # Per-pattern CV when support >= min_pattern_support
+
+evaluation:
+  metrics: ["jsd", "mae_prop", "rmse_prop", "mae_count", "zero_precision", "zero_recall", "zero_f1", "temporal_roughness"]
+  primary_metric: "jsd"
+  split_types: ["empirical-pattern", "time-block"]
+
+output:
+  save_predictions: true
+  save_metrics: true
+  save_manifest: true
+  log_fallback_patterns: true

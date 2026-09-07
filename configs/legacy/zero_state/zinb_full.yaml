@@ -1,0 +1,52 @@
+# ZINB Zero-State Branch Configuration
+# Nhánh B - Section 4.4: Zero-state initialization via ZINB (updated plan)
+
+zero_state:
+  zinb:
+    # Reduced model config
+    time_spline_df: 4
+    time_spline_type: "natural"
+
+    # Predictors
+    use_lag_lead: true
+    use_availability_indicators: true
+    center_spline: true
+
+    # Routing thresholds
+    routing:
+      high_support_n_positive: 500
+      medium_support_n_positive: 200
+      min_locations_with_positive: 10
+      min_events_per_param: 10
+
+    # Regularization
+    l1_penalty_grid: [0.0, 0.01, 0.1, 1.0]
+    tune_on_validation: true
+    max_starts: 5
+    max_iter: 500
+    convergence_tol: 1e-6
+
+    # Calibration
+    artificial_mask_recipes: ["random-cell", "empirical-pattern", "time-block"]
+    n_artificial_folds: 5
+    calibration_metrics: ["nll", "brier", "calibration_curve", "precision", "recall", "f1", "ece"]
+
+    # Gate
+    default_gate: "calibrated_threshold"
+    threshold_grid: [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+    min_nonzero_recall: 0.95
+    threshold_objective: "precision"
+
+    # Seeds
+    fit_seed: 42
+    sample_seeds: [42, 123, 456, 789, 999]
+
+    # Feasibility
+    feasibility_mode: "priority_nonzero_uncertain_on_override"
+
+    # Output
+    save_posterior: true
+    save_masks: true
+    save_oof_predictions: true
+    save_design_schema: true
+    save_manifest: true

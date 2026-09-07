@@ -1,0 +1,30 @@
+{
+  "run_id": "fusion_1788345660",
+  "timestamp": "2026-09-02T10:41:00.394636+00:00",
+  "method": "truth_table_fusion_v2",
+  "params": {
+    "tsagris_path": "artifacts/dataset_00_tsagris.csv",
+    "occurrence_dir": "artifacts\\occurrence",
+    "parent_manifest_run_id": null
+  },
+  "metrics": {
+    "n_fixed_cells": 189155,
+    "n_gan_cells": 9252,
+    "n_target_zero": 76798,
+    "closure_violations": 0,
+    "observed_preserved": true,
+    "confident_zero_locked": true
+  },
+  "data_checksum": "bbb1aacdf46ebef345ca818f086d5586f4aded45475b00b6ee9bd89fc94a90ab",
+  "config_checksums": {
+    "C:\\Users\\admin\\Tai_lieu\\detaikhoahoc\\COVID19\\missing_impute\\code-missing-imputation\\configs\\data.yaml": "b176c3d6cd0b1faf7be0864089858528399a8df4a64b09a22fafb0c4aef063a1"
+  },
+  "git_commit": "e220dc748c64f3b77a0b8f13e8801cd5df9817d6",
+  "seeds": [
+    42
+  ],
+  "invariants_ok": true,
+  "python_version": "3.13.12 | packaged by Anaconda, Inc. | (main, Feb 24 2026, 16:05:56) [MSC v.1942 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "numpy_version": "2.4.4"
+}

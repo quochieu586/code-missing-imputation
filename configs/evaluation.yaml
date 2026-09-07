@@ -1,0 +1,41 @@
+# Evaluation configuration
+evaluation:
+  recipes:
+    - "random-cell"
+    - "empirical-pattern"
+    - "time-block"
+    - "country-holdout"
+
+  test_fraction: 0.2
+  seed: 42
+
+  metrics:
+    primary: "mse_prop"
+    secondary:
+      - "rmse_prop"
+      - "mae_prop"
+      - "jsd"
+      - "wasserstein_per_variant"
+      - "mse_count"
+      - "mae_count"
+
+  distribution:
+    n_quantiles: 5
+    correlation_method: "spearman"
+
+  temporal:
+    window_days: 28
+
+  bins:
+    total_sequence_edges: [0, 50, 100, 200, 500, 1000, 5000, 50000]
+
+  seeds: [42, 123, 456]
+
+  stages:
+    - "tsagris"
+    - "fused"
+    - "refined"
+
+  ablation:
+    enabled: true
+    ungated_config: null  # use same config with gate disabled

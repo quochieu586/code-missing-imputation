@@ -1,0 +1,39 @@
+# Tracking and manifest configuration
+manifest:
+  required_fields:
+    - "run_id"
+    - "git_commit"
+    - "config_hash"
+    - "data_checksum"
+    - "seeds"
+    - "selected_method"
+    - "selected_params"
+    - "metrics"
+    - "invariants_ok"
+    - "timestamp"
+    - "python_version"
+    - "package_versions"
+
+artifact_paths:
+  baseline_outputs: "artifacts/baselines/{method}/"
+  dataset_0: "artifacts/dataset_0.csv"
+  original_mask: "artifacts/original_mask.npz"
+  baseline_selection_report: "reports/baseline_selection.md"
+  data_audit_report: "reports/data_audit.md"
+  run_manifest: "artifacts/manifests/run_{run_id}.json"
+  checksums: "artifacts/checksums.sha256"
+
+checksums:
+  algorithm: "sha256"
+  files_to_hash:
+    - "data/covariants.csv"
+    - "configs/data.yaml"
+    - "configs/baseline/*.yaml"
+    - "configs/evaluation.yaml"
+    - "artifacts/dataset_0.csv"
+    - "artifacts/original_mask.npz"
+
+provenance:
+  track_git: true
+  track_environment: true
+  track_random_seeds: true

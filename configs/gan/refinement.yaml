@@ -1,0 +1,33 @@
+# GAN/DeepMicroGen refinement configuration (PyTorch rewrite)
+gan:
+  framework: "pytorch"
+  device: "cpu"
+  seeds: [42, 123, 456]
+
+  architecture:
+    cnn_hidden1: 16
+    cnn_hidden2: 8
+    rnn_hidden: 10
+    lstm_hidden: 10
+
+  training:
+    epochs: 300
+    lr: 0.001
+    d_steps: 5
+    g_steps: 1
+    patience: 50
+    artificial_mask_fraction: 0.2
+
+  representation:
+    pseudo_count: null  # auto: min positive / 2
+    clr_internal_only: true
+
+  postprocess:
+    closure: "largest_remainder_residual_budget"
+    integer: true
+    non_negative: true
+    lock_m_fixed: true
+
+  refinement:
+    n_rounds: 1
+    stopping_rule: "recon_plateau_or_max_rounds"

@@ -1,0 +1,52 @@
+# ZINB Zero-State Branch Configuration - ULTRA-FAST MODE (verify end-to-end ~5-10p)
+# Absolute minimum for smoke test
+
+zero_state:
+  zinb:
+    # Reduced model config
+    time_spline_df: 3
+    time_spline_type: "natural"
+
+    # Predictors
+    use_lag_lead: true
+    use_availability_indicators: true
+    center_spline: true
+
+    # Routing thresholds
+    routing:
+      high_support_n_positive: 500
+      medium_support_n_positive: 200
+      min_locations_with_positive: 10
+      min_events_per_param: 10
+
+    # Regularization - MINIMAL
+    l1_penalty_grid: [0.1]           # single value, no grid search
+    tune_on_validation: false        # skip validation tuning
+    max_starts: 1                    # single start
+    max_iter: 50                     # very low
+    convergence_tol: 1e-4            # loose
+
+    # Calibration - MINIMAL
+    artificial_mask_recipes: ["random-cell"]  # chỉ 1 recipe
+    n_artificial_folds: 2                            # 2 folds
+    calibration_metrics: ["nll", "brier"]            # minimal metrics
+
+    # Gate
+    default_gate: "calibrated_threshold"
+    threshold_grid: [0.05, 0.5, 0.9]    # minimal grid
+    min_nonzero_recall: 0.8             # lower threshold
+    threshold_objective: "precision"
+
+    # Seeds - MINIMAL
+    fit_seed: 42
+    sample_seeds: [42]                   # 1 seed
+
+    # Feasibility
+    feasibility_mode: "priority_nonzero_uncertain_on_override"
+
+    # Output
+    save_posterior: true
+    save_masks: true
+    save_oof_predictions: false         # skip OOF parquet
+    save_design_schema: false           # skip schema
+    save_manifest: true

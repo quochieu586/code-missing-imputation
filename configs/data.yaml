@@ -1,0 +1,68 @@
+# Data configuration for covariants.csv
+data:
+  path: "data/covariants.csv"
+  index_cols: ["location", "date"]
+  total_sequence_col: "total_sequence"
+  date_col: "date"
+  location_col: "location"
+
+variant_components:  # 17 components in order
+  - "recombinant"
+  - "20A"
+  - "20B"
+  - "20C"
+  - "20E"
+  - "Beta"
+  - "Alpha"
+  - "Gamma"
+  - "Delta"
+  - "Kappa"
+  - "Epsilon"
+  - "Eta"
+  - "Iota"
+  - "Lambda"
+  - "Mu"
+  - "Omicron"
+  - "S:677"
+
+derived:
+  other_col: "other"
+  # other = total_sequence - sum(17 variant components)
+
+# Validation rules
+validation:
+  total_sequence_min: 1
+  allow_negative_counts: false
+  allow_observed_sum_exceed_total: false
+  require_unique_index: true
+
+# Time grid for longitudinal modeling
+time_grid:
+  freq_days: 14  # 14-day grid as per plan
+  method: "reindex"  # reindex to regular grid, pad with NaN
+
+# Lineage and invariants (frozen)
+lineage:
+  raw_checksum: "bbb1aacdf46ebef345ca818f086d5586f4aded45475b00b6ee9bd89fc94a90ab"
+  expected_m_target_count: 86050
+  expected_n_rows: 11671
+  expected_n_locations: 150
+  expected_n_complete_rows: 516
+  variant_order:
+    - "recombinant"
+    - "20A"
+    - "20B"
+    - "20C"
+    - "20E"
+    - "Beta"
+    - "Alpha"
+    - "Gamma"
+    - "Delta"
+    - "Kappa"
+    - "Epsilon"
+    - "Eta"
+    - "Iota"
+    - "Lambda"
+    - "Mu"
+    - "Omicron"
+    - "S:677"

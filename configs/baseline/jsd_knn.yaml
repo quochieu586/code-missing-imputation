@@ -1,0 +1,23 @@
+# JSD-kNN baseline configuration (Variant 1)
+method: "jsd_knn"
+description: "JSD distance with arithmetic mean of k nearest neighbors"
+
+hyperparameters:
+  k_grid: [3, 5, 7, 10, 15]
+  # alpha is fixed at 1.0 (arithmetic mean)
+
+cross_validation:
+  n_repeats: 10
+  n_folds: 5
+  seed_list: [42, 123, 456, 789, 999, 111, 222, 333, 444, 555]
+  # Stratification: by missingness pattern + location
+
+evaluation:
+  metrics: ["jsd", "mae_prop", "rmse_prop", "mae_count", "zero_precision", "zero_recall", "zero_f1", "temporal_roughness"]
+  primary_metric: "jsd"
+  split_types: ["empirical-pattern", "time-block"]  # for selection
+
+output:
+  save_predictions: true
+  save_metrics: true
+  save_manifest: true

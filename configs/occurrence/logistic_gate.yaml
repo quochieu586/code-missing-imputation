@@ -1,0 +1,43 @@
+# Occurrence gate configuration (replaces configs/zero_state/zinb.yaml)
+occurrence:
+  model:
+    type: "pooled_regularized_logistic"
+    C_grid: [0.01, 0.1, 1.0, 10.0]
+    max_iter: 2000
+    seed: 42
+
+  features:
+    use_location_fixed_effects: false
+    variant_coding: "treatment"
+    reference_variant: "recombinant"
+    time_feature: "linear_global_day"
+    challenger:
+      enabled: true
+      type: "spline_transformer"
+      n_knots: 5
+      degree: 3
+      select_by: "oof_log_loss"
+
+  oof:
+    recipes: ["random-cell", "empirical-pattern", "time-block", "country-holdout"]
+    n_folds: 5
+    min_fold_coverage: 0.8
+    min_valid_folds: 3
+    calibration: "isotonic"
+    calibration_split: "validation_within_train"
+
+  release_gate:
+    max_log_loss_excess_vs_baseline: 0.1
+    max_ece: 0.15
+    collapse_std_min: 0.01
+    min_fold_coverage: 0.8
+
+  selective_gate:
+    max_false_zero_rate: 0.05
+    min_zero_gate_support: 50
+    confidence: 0.95
+    threshold_grid: [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95]
+    abstain_default: true
+
+  splits_dir: "configs/splits"
+  output_dir: "artifacts/occurrence"

@@ -1,0 +1,24 @@
+# JSD-alpha-kNN baseline configuration (Variant 2)
+method: "jsd_alpha_knn"
+description: "JSD distance with Fréchet mean (alpha-tuned) of k nearest neighbors"
+
+hyperparameters:
+  k_grid: [3, 5, 7, 10, 15]
+  alpha_grid: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+  # alpha=1.0 corresponds to arithmetic mean (JSD-kNN)
+
+cross_validation:
+  n_repeats: 10
+  n_folds: 5
+  seed_list: [42, 123, 456, 789, 999, 111, 222, 333, 444, 555]
+  # Grid search over (k, alpha) pairs
+
+evaluation:
+  metrics: ["jsd", "mae_prop", "rmse_prop", "mae_count", "zero_precision", "zero_recall", "zero_f1", "temporal_roughness"]
+  primary_metric: "jsd"
+  split_types: ["empirical-pattern", "time-block"]
+
+output:
+  save_predictions: true
+  save_metrics: true
+  save_manifest: true

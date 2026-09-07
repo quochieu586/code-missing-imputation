@@ -1,0 +1,66 @@
+{
+  "champion": "adaptive_jsd_alpha_knn",
+  "champion_params": {
+    "global_k": 5,
+    "global_alpha": 10.0,
+    "min_pattern_support": 30
+  },
+  "scores": [
+    {
+      "method": "jsd_knn",
+      "mse_empirical": 0.022568488445230205,
+      "mse_timeblock": 0.08169296049689652,
+      "mse_mean": 0.05213072447106336,
+      "jsd_empirical": 0.060552772196409935,
+      "jsd_timeblock": 0.05012168236739063,
+      "jsd_mean": 0.055337227281900284,
+      "params": {
+        "k": 15,
+        "alpha": 1.0
+      },
+      "runtime_seconds": 1.6055066585540771,
+      "notes": ""
+    },
+    {
+      "method": "jsd_alpha_knn",
+      "mse_empirical": 0.06738372626308262,
+      "mse_timeblock": 0.06661440839746599,
+      "mse_mean": 0.0669990673302743,
+      "jsd_empirical": 0.06738372626308262,
+      "jsd_timeblock": 0.03933789048121743,
+      "jsd_mean": 0.05336080837215002,
+      "params": {
+        "k": 5,
+        "alpha": 10.0
+      },
+      "runtime_seconds": 6.351311922073364,
+      "notes": "per-seed tuned params: [{'k': 15, 'alpha': 2.0}, {'k': 15, 'alpha': 0.5}, {'k': 5, 'alpha': 1.0}, {'k': 3, 'alpha': 1.0}, {'k': 5, 'alpha': 10.0}]"
+    },
+    {
+      "method": "adaptive_jsd_alpha_knn",
+      "mse_empirical": 0.027062287651540597,
+      "mse_timeblock": 0.04278177036541675,
+      "mse_mean": 0.03492202900847867,
+      "jsd_empirical": 0.06036726461040991,
+      "jsd_timeblock": 0.023364386375266003,
+      "jsd_mean": 0.04186582549283795,
+      "params": {
+        "global_k": 5,
+        "global_alpha": 10.0,
+        "min_pattern_support": 30
+      },
+      "runtime_seconds": 779.3667817115784,
+      "notes": "6 patterns fell back to global params"
+    }
+  ],
+  "artifacts": {
+    "dataset_00_tsagris": "artifacts\\baselines\\dataset_00_tsagris.csv",
+    "M_observed": "artifacts\\baselines\\M_observed.npz",
+    "M_target": "artifacts\\baselines\\M_target.npz",
+    "original_mask": "artifacts\\baselines\\original_mask.npz",
+    "metrics_csv": "artifacts\\baselines\\baselines\\metrics.csv",
+    "report": "artifacts\\reports\\baseline_selection.md",
+    "manifest": "baseline_1788345534",
+    "invariants_ok": true
+  }
+}
