@@ -8,5 +8,5 @@
   "n_gan_cells": 65328,
   "n_cells_changed_vs_fused": 9270,
   "soft_weights_applied": true,
-  "output": "artifacts\\refined\\dataset_1_refined.csv"
+  "output": "artifacts\\refined_seed_42\\dataset_1_refined.csv"
 }
