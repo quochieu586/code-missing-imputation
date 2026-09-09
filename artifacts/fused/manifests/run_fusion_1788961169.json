@@ -1,0 +1,59 @@
+{
+  "run_id": "fusion_1788961169",
+  "timestamp": "2026-09-09T13:39:29.930292+00:00",
+  "method": "truth_table_fusion_v3_zpgf",
+  "params": {
+    "tsagris_path": "artifacts/dataset_00_tsagris.csv",
+    "occurrence_dir": "artifacts\\occurrence",
+    "parent_manifest_run_id": null,
+    "temperature": 1.0298421586955677,
+    "crc_bias": {
+      "recombinant": 0.0,
+      "20A": 2.1911524357756207,
+      "20B": 2.3965803988812695,
+      "20C": 4.9999999999954525,
+      "20E": 2.3965803988812695,
+      "Beta": 1.7794779989071685,
+      "Alpha": 0.0,
+      "Gamma": 1.6882680799471927,
+      "Delta": 0.0,
+      "Kappa": 4.9999999999954525,
+      "Epsilon": 2.4281925008017424,
+      "Eta": 2.1911524357756207,
+      "Iota": 3.357691949331638,
+      "Lambda": 2.109277870195001,
+      "Mu": 1.6882680799471927,
+      "Omicron": 1.2479565275089044,
+      "S:677": 4.9999999999954525
+    },
+    "zpgf_config": "C:\\Missing imputation\\code-missing-imputation\\configs\\fusion\\zpgf.yaml",
+    "crc_alpha": 0.05,
+    "crc_b_max": 5.0,
+    "crc_min_positive": 10,
+    "tau_hard_abs": 0.05,
+    "cap_fraction": 0.9
+  },
+  "metrics": {
+    "n_fixed_cells": 133079,
+    "n_gan_cells": 65328,
+    "n_target_zero": 20722,
+    "n_hard_locked": 20722,
+    "n_soft_fusion": 65328,
+    "n_gan_cells_parent_occurrence": 29,
+    "closure_violations": 0,
+    "observed_preserved": true,
+    "confident_zero_locked": true
+  },
+  "data_checksum": "bbb1aacdf46ebef345ca818f086d5586f4aded45475b00b6ee9bd89fc94a90ab",
+  "config_checksums": {
+    "C:\\Missing imputation\\code-missing-imputation\\configs\\data.yaml": "74d062441618a00eff38b2fdf389854ee2704e73856525a19bfaee05ee9c78ba"
+  },
+  "git_commit": "14997f01476129dfd13a7d10bf8abbc33cfb7f67",
+  "seeds": [
+    42
+  ],
+  "invariants_ok": true,
+  "python_version": "3.14.6 | packaged by Anaconda, Inc. | (main, Jul  9 2026, 14:29:05) [MSC v.1942 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26100-SP0",
+  "numpy_version": "2.4.6"
+}

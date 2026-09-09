@@ -22,6 +22,47 @@ def counts_to_proportions(
     return counts.astype(np.float64) / total_sequence[:, np.newaxis]
 
 
+def build_full_composition(
+    df,
+    variant_cols: list[str],
+    total_sequence_col: str = "total_sequence",
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Build the full (n_variants + 1)-part composition including the residual.
+
+    The 17 variants do NOT close on their own: `other = total_sequence - sum(17)`
+    carries real mass (44% of the complete rows have other > 0). Imputing only the
+    17 variants and then renormalising them to sum 1 silently forces other to 0
+    on every imputed row, which contradicts plan S3 ("other chua biet va la
+    residual trong closure"). Treating `other` as the last component of the
+    composition lets the neighbour pool close exactly and lets kNN impute the
+    residual alongside the variants.
+
+    `other` is observed only when all 17 variants are observed; on any row with a
+    missing variant the residual is unknown and is imputed too.
+
+    Returns:
+        counts:      (n_rows, n_variants + 1) int64, NaN -> 0, last column = other
+        observed:    (n_rows, n_variants + 1) bool, last column = row is complete
+        proportions: (n_rows, n_variants + 1) float64, counts / total_sequence
+        total_seq:   (n_rows,) float64
+    """
+    variant_counts = df[variant_cols].fillna(0).to_numpy().astype(np.int64)
+    variant_observed = df[variant_cols].notna().to_numpy()
+    total_seq = df[total_sequence_col].to_numpy(dtype=np.float64)
+
+    row_complete = variant_observed.all(axis=1)
+    other = np.where(
+        row_complete,
+        total_seq.astype(np.int64) - variant_counts.sum(axis=1),
+        0,
+    ).astype(np.int64)
+
+    counts = np.column_stack([variant_counts, other])
+    observed = np.column_stack([variant_observed, row_complete])
+    proportions = counts_to_proportions(counts, total_seq)
+    return counts, observed, proportions, total_seq
+
+
 def proportions_to_counts_largest_remainder(
     proportions: np.ndarray,
     total_sequence: np.ndarray,

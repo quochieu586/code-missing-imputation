@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
-from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -233,9 +232,11 @@ def validate_dataframe(df: pd.DataFrame, config: DataConfig) -> tuple[bool, list
             n_dup = dup.sum()
             errors.append(f"Duplicate (location, date) keys: {n_dup} rows")
 
-    # Check total_sequence > 0
-    if (df[config.total_sequence_col] <= 0).any():
-        errors.append("total_sequence must be > 0")
+    # Check total_sequence against the configured floor
+    total_min = config.validation.get("total_sequence_min", 1)
+    if (df[config.total_sequence_col] < total_min).any():
+        n_bad = int((df[config.total_sequence_col] < total_min).sum())
+        errors.append(f"total_sequence < {total_min} in {n_bad} rows")
 
     # Check variant counts non-negative
     if not config.validation.get("allow_negative_counts", False):

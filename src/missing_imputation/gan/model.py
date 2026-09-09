@@ -108,7 +108,22 @@ class DeepMicroGenDiscriminator(nn.Module):
 
 
 class DeepMicroGenGAN(nn.Module):
-    def __init__(self, n_features: int, n_timepoints: int):
+    def __init__(
+        self,
+        n_features: int,
+        n_timepoints: int,
+        cnn_hidden1: int = 16,
+        cnn_hidden2: int = 8,
+        rnn_hidden: int = 10,
+        lstm_hidden: int = 10,
+    ):
         super().__init__()
-        self.generator = DeepMicroGenGenerator(n_features)
-        self.discriminator = DeepMicroGenDiscriminator(n_features, n_timepoints)
+        self.generator = DeepMicroGenGenerator(
+            n_features,
+            rnn_hidden=rnn_hidden,
+            cnn_hidden1=cnn_hidden1,
+            cnn_hidden2=cnn_hidden2,
+        )
+        self.discriminator = DeepMicroGenDiscriminator(
+            n_features, n_timepoints, lstm_hidden=lstm_hidden
+        )

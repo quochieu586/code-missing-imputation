@@ -65,26 +65,53 @@ def cmd_run_baselines(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_select_baseline(args: argparse.Namespace) -> int:
+    from .pipeline.select_baseline import select_baseline
+
+    with Path(args.metrics).open(encoding="utf-8") as f:
+        payload = json.load(f)
+
+    scores = payload.get("scores", [])
+    if not scores:
+        print(f"No 'scores' entries in {args.metrics}")
+        return 1
+    results = {s["method"]: s for s in scores}
+    method, details = select_baseline(results)
+    print(f"Champion: {method}")
+    print(f"  reason: {details['reason']}")
+    for name, mse in (details.get("all_results") or {}).items():
+        print(f"  {name:24} mse_mean={mse}")
+    if payload.get("champion") and payload["champion"] != method:
+        print(
+            f"NOTE: run-baselines recorded champion '{payload['champion']}', "
+            f"selection rule (S6.3) gives '{method}'"
+        )
+    return 0
+
+
 def cmd_generate_dataset0(args: argparse.Namespace) -> int:
     from .baselines.adaptive_jsd_alpha_knn import AdaptiveJSDAlphaKNN
     from .baselines.jsd_alpha_knn import JSDAlphaKNN
     from .baselines.jsd_knn import JSDKNN
     from .data.closure import (
-        compute_other,
-        counts_to_proportions,
+        build_full_composition,
         proportions_to_counts_largest_remainder,
         validate_closure,
     )
     from .data.loader import load_config, load_covariants
+    from .data.masks import extract_patterns
 
     config = load_config(args.config)
     df = load_covariants(config.path, config)
-
     variant_cols = config.variant_components
-    observed_mask = df[variant_cols].notna().values
-    counts = df[variant_cols].fillna(0).values.astype(np.int64)
-    total_seq = df[config.total_sequence_col].values.astype(np.float64)
-    proportions = counts_to_proportions(counts, total_seq)
+    n_vars = len(variant_cols)
+
+    # The composition includes the residual `other` as its last part, so the
+    # neighbour pool closes exactly and the residual is imputed rather than
+    # being forced to zero.
+    counts, observed_mask, proportions, total_seq = build_full_composition(
+        df, variant_cols, config.total_sequence_col
+    )
 
     complete_mask = observed_mask.all(axis=1)
     complete_props = proportions[complete_mask]
@@ -96,43 +123,55 @@ def cmd_generate_dataset0(args: argparse.Namespace) -> int:
         model = JSDKNN(k=args.k)
         model.fit(complete_props)
         result = model.impute(incomplete_props, incomplete_obs)
-        imputed_props = result.imputed_proportions
     elif args.method == "jsd_alpha_knn":
         model = JSDAlphaKNN(k=args.k, alpha=args.alpha)
         model.fit(complete_props)
         result = model.impute(incomplete_props, incomplete_obs)
-        imputed_props = result.imputed_proportions
     else:
         model = AdaptiveJSDAlphaKNN(
             k_grid=[3, 5, 7, 10, 15],
             alpha_grid=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0],
-            min_pattern_support=30,
+            min_pattern_support=args.min_pattern_support,
             global_k=args.k,
             global_alpha=args.alpha,
         )
         model.fit(complete_props)
+        # Without this the per-pattern table stays empty and every row silently
+        # falls back to the global (alpha, k) -- i.e. not adaptive at all.
+        patterns = extract_patterns(incomplete_obs)
+        model.tune_patterns(complete_props, patterns, seed=args.seed)
+        tuned = sum(
+            1 for p in patterns if p.n_rows >= args.min_pattern_support
+        )
+        print(
+            f"adaptive: {tuned}/{len(patterns)} patterns tuned per-pattern, "
+            f"{len(patterns) - tuned} fell back to global (k={args.k}, alpha={args.alpha})"
+        )
         result = model.impute(incomplete_props, incomplete_obs)
-        imputed_props = result.imputed_proportions
 
     full_props = proportions.copy()
-    full_props[incomplete_idx] = imputed_props
+    full_props[incomplete_idx] = result.imputed_proportions
 
     new_counts = proportions_to_counts_largest_remainder(
         full_props, total_seq, observed_mask, counts
     )
-    other = compute_other(new_counts, total_seq)
-    is_valid, n_violations = validate_closure(new_counts, total_seq, other)
+    variant_counts = new_counts[:, :n_vars]
+    other = new_counts[:, n_vars]
+    is_valid, n_violations = validate_closure(variant_counts, total_seq, other)
 
     df_out = df.copy()
     for j, col in enumerate(variant_cols):
-        df_out[col] = new_counts[:, j]
-    df_out["other"] = other
+        df_out[col] = variant_counts[:, j]
+    df_out[config.other_col] = other
 
     output_path = Path(args.output_dir) / "dataset_00_tsagris.csv"
     output_path.parent.mkdir(parents=True, exist_ok=True)
     df_out.to_csv(output_path, index=False)
-    print(f"dataset_00_tsagris written to {output_path}; closure valid: {is_valid}")
-    return 0
+    n_other_pos = int((other > 0).sum())
+    print(f"dataset_00_tsagris written to {output_path}")
+    print(f"  closure valid: {is_valid} (violations: {n_violations})")
+    print(f"  rows with other > 0: {n_other_pos}/{len(df_out)}")
+    return 0 if is_valid else 1
 
 
 def cmd_run_occurrence_gate(args: argparse.Namespace) -> int:
@@ -160,10 +199,16 @@ def cmd_fuse_initializations(args: argparse.Namespace) -> int:
         output_dir=args.output_dir,
         config_path=args.config,
         emit_grid=not args.no_grid,
+        zpgf_config_path=args.zpgf_config,
     )
-    print(f"Fused raw dataset: {result.fused_path_raw if hasattr(result, 'fused_path_raw') else result.fused_raw_path}")
+    metrics = result.manifest.get("metrics", {})
+    print(f"Fused raw dataset: {result.fused_raw_path}")
+    print(
+        f"M_target_zero: {metrics.get('n_target_zero')}, "
+        f"M_gan: {metrics.get('n_gan_cells')}"
+    )
     print(f"Invariants OK: {result.invariants_ok}")
-    return 0
+    return 0 if result.invariants_ok else 1
 
 
 def cmd_refine(args: argparse.Namespace) -> int:
@@ -179,9 +224,18 @@ def cmd_refine(args: argparse.Namespace) -> int:
         output_dir=output_dir,
         seed=args.seed,
         n_rounds=args.n_rounds,
+        w_gan_path=args.w_gan,
+        data_config_path=args.data_config,
+        apply_soft_weights=not args.no_soft_weights,
     )
     print(f"Refinement complete: {len(result['rounds'])} round(s)")
-    return 0
+    for r in result["rounds"]:
+        print(
+            f"  round {r['round']}: seed={r['seed']} recon={r['best_recon']:.6f} "
+            f"epochs={r['epochs_run']} changed={r['n_cells_changed_vs_fused']} "
+            f"invariants_ok={r['invariants_ok']}"
+        )
+    return 0 if all(r["invariants_ok"] for r in result["rounds"]) else 1
 
 
 def cmd_evaluate(args: argparse.Namespace) -> int:
@@ -265,7 +319,6 @@ def _transform_results_for_report(raw: dict) -> dict:
             continue
         stage = raw[stage_name]
         overall = stage.get("overall_metrics", {})
-        dist = stage.get("distribution_fidelity", {})
         temp = stage.get("temporal_fidelity", {})
 
         transformed["stage_metrics"][stage_name] = {
@@ -296,10 +349,10 @@ def _transform_results_for_report(raw: dict) -> dict:
                 if "mean" in tw:
                     transformed["temporal_metrics"][f"{stage_name}_tw_jsd_mean"] = tw["mean"]
 
-    # Seed variance
+    # Seed variance: keep the full {metric: {mean, std, cv}} record; collapsing it
+    # to the mean discarded exactly the variance the report is meant to show.
     if "seed_stability" in raw and "seed_stability" in raw["seed_stability"]:
-        for metric, stats in raw["seed_stability"]["seed_stability"].items():
-            transformed["seed_variance"][metric] = stats.get("mean", 0)
+        transformed["seed_variance"] = raw["seed_stability"]["seed_stability"]
 
     # Stage times - copy from raw results
     if "stage_times" in raw:
@@ -367,11 +420,17 @@ def main() -> int:
     p.add_argument("--output-dir", default="artifacts/baselines")
     p.set_defaults(func=cmd_run_baselines)
 
+    p = subparsers.add_parser("select-baseline", help="Apply the S6.3 champion selection rule")
+    p.add_argument("--metrics", default="artifacts/baselines/baseline_metrics.json")
+    p.set_defaults(func=cmd_select_baseline)
+
     p = subparsers.add_parser("generate-dataset0", help="Generate dataset_00_tsagris")
     p.add_argument("--config", default="configs/data.yaml")
     p.add_argument("--method", default="jsd_knn", choices=["jsd_knn", "jsd_alpha_knn", "adaptive_jsd_alpha_knn"])
     p.add_argument("--k", type=int, default=7)
     p.add_argument("--alpha", type=float, default=1.0)
+    p.add_argument("--min-pattern-support", type=int, default=30)
+    p.add_argument("--seed", type=int, default=42)
     p.add_argument("--output-dir", default="artifacts")
     p.set_defaults(func=cmd_generate_dataset0)
 
@@ -390,6 +449,7 @@ def main() -> int:
     p.add_argument("--config", default="configs/data.yaml")
     p.add_argument("--output-dir", default="artifacts/fused")
     p.add_argument("--no-grid", action="store_true", help="Skip 14-day grid output")
+    p.add_argument("--zpgf-config", default="configs/fusion/zpgf.yaml")
     p.set_defaults(func=cmd_fuse_initializations)
 
     p = subparsers.add_parser("refine", help="Gated GAN magnitude refinement")
@@ -398,9 +458,18 @@ def main() -> int:
     p.add_argument("--m-gan", default="artifacts/fused/M_gan.npz")
     p.add_argument("--posterior", default="artifacts/occurrence/occurrence_posterior.npz")
     p.add_argument("--config", default="configs/gan/refinement.yaml")
+    p.add_argument("--data-config", default="configs/data.yaml")
+    p.add_argument("--w-gan", default="artifacts/fused/w_gan.npz")
+    p.add_argument(
+        "--no-soft-weights",
+        action="store_true",
+        help="Skip the ZPGF w_gan weighting (ungated ablation)",
+    )
     p.add_argument("--output-dir", default="artifacts/refined")
-    p.add_argument("--seed", type=int, default=42)
-    p.add_argument("--n-rounds", type=int, default=1)
+    p.add_argument("--seed", type=int, default=None, help="Default: gan.seeds[0] from config")
+    p.add_argument(
+        "--n-rounds", type=int, default=None, help="Default: gan.refinement.n_rounds from config"
+    )
     p.set_defaults(func=cmd_refine)
 
     p = subparsers.add_parser("evaluate", help="Run full evaluation suite")

@@ -18,7 +18,9 @@ class GANDataset:
     M_gan: np.ndarray
     M_padding: np.ndarray
     M_row: np.ndarray
+    row_index: np.ndarray  # grid cell -> df_fused row index, -1 for padding
     p_nonzero: np.ndarray
+    w_gan: np.ndarray
     time_decay_f: np.ndarray
     time_decay_b: np.ndarray
     location_index: list
@@ -31,7 +33,8 @@ def build_gan_panel(
     df_fused: pd.DataFrame,
     M_fixed: np.ndarray,
     M_gan: np.ndarray,
-    p_nonzero_flat: np.ndarray | None = None,
+    p_nonzero_rows: np.ndarray | None = None,
+    w_gan_rows: np.ndarray | None = None,
     variant_cols: list[str] | None = None,
     location_col: str = "location",
     date_col: str = "date",
@@ -39,6 +42,19 @@ def build_gan_panel(
     other_col: str = "other",
     pseudo_count: float | None = None,
 ) -> GANDataset:
+    """Build the [location, time, feature] panel consumed by the GAN.
+
+    p_nonzero_rows carries the occurrence-gate posterior aligned with df_fused rows:
+    shape (n_rows, n_variants), defined on target cells and zero elsewhere. It is
+    broadcast into the panel as a conditioning channel; on cells locked by M_fixed
+    (raw observed and occurrence confident-zero) the channel holds the known
+    indicator I(count > 0) instead, since occurrence there is not in question.
+
+    w_gan_rows carries the ZPGF soft weights, same shape and alignment. They are
+    not model inputs: postprocess_gan_output multiplies them into the generated
+    magnitude (y_hat = w_gan * m) before closure projection, per plan S18.6.
+    Cells outside M_gan get weight 1.0 so locked values pass through untouched.
+    """
     from .clr import clr_transform
 
     if variant_cols is None:
@@ -52,7 +68,6 @@ def build_gan_panel(
 
     counts = df_fused[feature_names].fillna(0).to_numpy(dtype=np.float64)
     total_seq = df_fused[total_seq_col].to_numpy(dtype=np.float64)
-    dates = pd.to_datetime(df_fused[date_col]).to_numpy()
 
     loc_to_idx = {loc: i for i, loc in enumerate(locations)}
     
@@ -68,10 +83,22 @@ def build_gan_panel(
     n_times = len(all_times)
     n_locs = len(locations)
 
+    if p_nonzero_rows is not None:
+        p_nonzero_rows = np.asarray(p_nonzero_rows, dtype=np.float64).reshape(
+            len(df_fused), n_variants
+        )
+    if w_gan_rows is not None:
+        w_gan_rows = np.asarray(w_gan_rows, dtype=np.float64).reshape(
+            len(df_fused), n_variants
+        )
+
     X = np.zeros((n_locs, n_times, n_features), dtype=np.float64)
     M_obs = np.zeros((n_locs, n_times, n_features), dtype=np.uint8)
     M_pad = np.zeros((n_locs, n_times), dtype=np.uint8)
     M_row = np.zeros((n_locs, n_times), dtype=np.uint8)
+    # Grid cell -> df_fused row index, so masks and posteriors are joined by
+    # (location, date) instead of relying on row order matching grid order.
+    row_index = np.full((n_locs, n_times), -1, dtype=np.int64)
     total_seq_panel = np.zeros((n_locs, n_times), dtype=np.float64)
 
     for i in range(len(df_fused)):
@@ -82,6 +109,7 @@ def build_gan_panel(
             continue
         t_idx = time_to_idx[t]
         M_row[loc_idx, t_idx] = 1
+        row_index[loc_idx, t_idx] = i
         total_seq_panel[loc_idx, t_idx] = total_seq[i]
         for j in range(n_features):
             X[loc_idx, t_idx, j] = counts[i, j]
@@ -144,20 +172,39 @@ def build_gan_panel(
     M_fixed_panel = np.zeros((n_locs, n_times, n_features), dtype=np.uint8)
     M_gan_panel = np.zeros((n_locs, n_times, n_features), dtype=np.uint8)
     p_nz_panel = np.zeros((n_locs, n_times, n_features), dtype=np.float64)
-    flat_idx = 0
+    # Weight 1.0 by default: anything the GAN is not allowed to edit must survive
+    # the multiplication unchanged.
+    w_gan_panel = np.ones((n_locs, n_times, n_features), dtype=np.float64)
     for loc_idx in range(n_locs):
         for t_idx in range(n_times):
-            if M_row[loc_idx, t_idx] == 1:
-                M_fixed_panel[loc_idx, t_idx, :n_variants] = M_fixed[flat_idx]
-                M_gan_panel[loc_idx, t_idx, :n_variants] = M_gan[flat_idx]
-                # "other" is never GAN-editable
-                M_fixed_panel[loc_idx, t_idx, n_variants] = 1
-                M_gan_panel[loc_idx, t_idx, n_variants] = 0
-                if p_nonzero_flat is not None:
-                    for j in range(n_variants):
-                        if M_gan[flat_idx, j]:
-                            pass
-                flat_idx += 1
+            i = int(row_index[loc_idx, t_idx])
+            if i < 0:
+                continue
+            M_fixed_panel[loc_idx, t_idx, :n_variants] = M_fixed[i]
+            M_gan_panel[loc_idx, t_idx, :n_variants] = M_gan[i]
+            # "other" is never GAN-editable
+            M_fixed_panel[loc_idx, t_idx, n_variants] = 1
+            M_gan_panel[loc_idx, t_idx, n_variants] = 0
+
+            # Conditioning channel: occurrence posterior on GAN-editable cells,
+            # known I(count > 0) on everything locked by M_fixed.
+            p_row = np.zeros(n_features, dtype=np.float64)
+            if p_nonzero_rows is not None:
+                p_row[:n_variants] = p_nonzero_rows[i]
+            locked = M_fixed_panel[loc_idx, t_idx].astype(bool) & ~M_gan_panel[
+                loc_idx, t_idx
+            ].astype(bool)
+            p_nz_panel[loc_idx, t_idx] = np.where(
+                locked, (X[loc_idx, t_idx] > 0).astype(np.float64), p_row
+            )
+
+            if w_gan_rows is not None:
+                gan_row = M_gan_panel[loc_idx, t_idx].astype(bool)
+                w_row = np.ones(n_features, dtype=np.float64)
+                w_row[:n_variants] = np.where(
+                    gan_row[:n_variants], w_gan_rows[i], 1.0
+                )
+                w_gan_panel[loc_idx, t_idx] = w_row
 
     return GANDataset(
         X_clr=X_clr.reshape(n_locs, n_times, n_features),
@@ -168,7 +215,9 @@ def build_gan_panel(
         M_gan=M_gan_panel,
         M_padding=M_pad,
         M_row=M_row,
+        row_index=row_index,
         p_nonzero=p_nz_panel,
+        w_gan=w_gan_panel,
         time_decay_f=time_decay_f,
         time_decay_b=time_decay_b,
         location_index=locations,

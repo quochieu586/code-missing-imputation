@@ -1,18 +1,18 @@
-variant,status,tau_zero,tau,n,fzr,ucb,reason
-recombinant,GATED,0.05,0.05,307.0,0.035830618892508145,0.06301090548611889,
-20A,GATED,0.05,0.05,311.0,0.01607717041800643,0.03707701327174931,
-20B,GATED,0.05,0.05,180.0,0.0,0.02089549792161305,
-20C,GATED,0.05,0.05,88.0,0.0,0.0418270666648922,
-20E,GATED,0.05,0.05,304.0,0.006578947368421052,0.02366635101771468,
-Beta,GATED,0.05,0.05,341.0,0.01466275659824047,0.03385972853604606,
-Alpha,GATED,0.05,0.05,439.0,0.03189066059225513,0.05281263681765469,
-Gamma,GATED,0.05,0.05,248.0,0.012096774193548387,0.03495562770097791,
-Delta,ABSTAIN_TO_GAN,,,,,,insufficient_support
-Kappa,GATED,0.05,0.05,195.0,0.0,0.019319204573721077,
-Epsilon,GATED,0.05,0.05,163.0,0.006134969325153374,0.03392823906508486,
-Eta,GATED,0.05,0.05,277.0,0.018050541516245487,0.04155152784738287,
-Iota,GATED,0.05,0.05,159.0,0.006289308176100629,0.03476098006676309,
-Lambda,GATED,0.05,0.05,143.0,0.006993006993006993,0.03854521317655134,
-Mu,GATED,0.05,0.05,187.0,0.03208556149732621,0.06822204298405105,
-Omicron,ABSTAIN_TO_GAN,,,,,,insufficient_support
-S:677,GATED,0.05,0.05,92.0,0.0,0.04008138928562172,
+variant,status,reason
+recombinant,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
+20A,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
+20B,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
+20C,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
+20E,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
+Beta,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
+Alpha,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
+Gamma,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
+Delta,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
+Kappa,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
+Epsilon,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
+Eta,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
+Iota,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
+Lambda,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
+Mu,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
+Omicron,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
+S:677,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615

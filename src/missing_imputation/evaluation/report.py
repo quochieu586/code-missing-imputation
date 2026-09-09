@@ -185,17 +185,23 @@ def generate_evaluation_report(
             lines.append("")
 
     # Section 7: Seed Variance
-    if "seed_variance" in results:
+    # seed_stability() aggregates ACROSS seeds, so each row is a metric with its
+    # mean/std/cv, not a single seed.
+    if results.get("seed_variance"):
         lines.extend([
             "## 7. Seed Variance",
             "",
-            "| Seed | MSE (prop) | JSD |",
-            "|------|-----------|-----|",
+            "| Metric | Mean | Std | CV |",
+            "|--------|------|-----|-----|",
         ])
-        for seed, metrics in results["seed_variance"].items():
-            mse = metrics.get("mse_prop", "N/A")
-            jsd = metrics.get("jsd", "N/A")
-            lines.append(f"| {seed} | {mse} | {jsd} |")
+        for metric, stats in results["seed_variance"].items():
+            if isinstance(stats, dict):
+                mean = stats.get("mean", "N/A")
+                std = stats.get("std", "N/A")
+                cv = stats.get("cv", "N/A")
+            else:
+                mean, std, cv = stats, "N/A", "N/A"
+            lines.append(f"| {metric} | {mean} | {std} | {cv} |")
         lines.append("")
 
     # Section 8: Invariant Checks

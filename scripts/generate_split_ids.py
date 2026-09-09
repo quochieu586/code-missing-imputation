@@ -108,6 +108,77 @@ def country_holdout_split(
     }
 
 
+def baseline_pool_split(
+    df: pd.DataFrame,
+    variant_cols: list[str],
+    total_sequence_col: str,
+    seed: int,
+    location_col: str,
+    date_col: str,
+    n_folds: int = 5,
+) -> dict:
+    """Shared split IDs for the Tsagris baseline benchmark (plan S4.5).
+
+    The baseline benchmark works on the complete-row pool, so its split IDs must
+    be expressed in that index space. The four OOF recipe files index the full
+    11,671-row frame; filtering complete-pool positions against those was
+    comparing two different index spaces and matched only by coincidence.
+
+    Every entry here is a position inside the complete-row pool (0..n_complete-1)
+    so all three methods mask exactly the same cells in exactly the same folds.
+    """
+    from missing_imputation.data.closure import build_full_composition
+    from missing_imputation.data.masks import extract_patterns
+
+    _, observed, _, _ = build_full_composition(df, variant_cols, total_sequence_col)
+    complete_mask = observed.all(axis=1)
+    complete_df_idx = np.where(complete_mask)[0]
+    incomplete_obs = observed[~complete_mask]
+    n_complete = len(complete_df_idx)
+
+    # Missingness patterns actually present in the data, over the full
+    # (variants + other) composition.
+    patterns = extract_patterns(incomplete_obs)
+    patterns = [p for p in patterns if p.n_observed >= 1]
+    weights = np.array([p.n_rows for p in patterns], dtype=np.float64)
+    weights /= weights.sum()
+
+    rng = np.random.default_rng(seed)
+    fold_of_row = (rng.permutation(n_complete) % n_folds).tolist()
+    pattern_index_of_row = rng.choice(len(patterns), size=n_complete, p=weights).tolist()
+
+    # Contiguous time blocks per location, expressed as complete-pool positions.
+    df_pos_to_local = {int(d): i for i, d in enumerate(complete_df_idx)}
+    locations = df[location_col].to_numpy()
+    dates = df[date_col].to_numpy()
+    time_block_local: list[int] = []
+    for loc in pd.unique(locations):
+        loc_rows = np.where(locations == loc)[0]
+        loc_rows = loc_rows[np.argsort(dates[loc_rows], kind="stable")]
+        loc_complete = [int(r) for r in loc_rows if int(r) in df_pos_to_local]
+        if len(loc_complete) < 3:
+            continue
+        block = max(1, len(loc_complete) // 3)
+        start = len(loc_complete) // 3
+        time_block_local.extend(
+            df_pos_to_local[r] for r in loc_complete[start : start + block]
+        )
+
+    return {
+        "recipe": "baseline-complete-pool",
+        "seed": seed,
+        "n_folds": n_folds,
+        "n_complete_rows": int(n_complete),
+        "n_composition_parts": int(observed.shape[1]),
+        "complete_row_df_indices": [int(i) for i in complete_df_idx],
+        "fold_of_row": [int(f) for f in fold_of_row],
+        "pattern_index_of_row": [int(p) for p in pattern_index_of_row],
+        "pattern_table": [[bool(b) for b in p.pattern] for p in patterns],
+        "pattern_n_rows": [int(p.n_rows) for p in patterns],
+        "time_block_test_rows": sorted(set(int(i) for i in time_block_local)),
+    }
+
+
 def main() -> int:
     config = load_config(PROJECT_ROOT / "configs" / "data.yaml")
     df = load_covariants(config.path, config)
@@ -122,6 +193,10 @@ def main() -> int:
             df, observed_mask, SEED, config.location_col, config.date_col
         ),
         "country_holdout.json": country_holdout_split(df, SEED, config.location_col),
+        "baseline_pool.json": baseline_pool_split(
+            df, variant_cols, config.total_sequence_col, SEED,
+            config.location_col, config.date_col,
+        ),
     }
     for name, payload in splits.items():
         path = OUTPUT_DIR / name

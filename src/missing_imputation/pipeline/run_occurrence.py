@@ -34,8 +34,6 @@ from ..occurrence.model import (
     run_oof,
     tune_C,
 )
-from ..data.lineage import compute_sha256
-from ..data.loader import load_config, load_covariants
 
 
 def load_split_ids(splits_dir: str | Path) -> dict:
@@ -48,6 +46,37 @@ def load_split_ids(splits_dir: str | Path) -> dict:
     return splits
 
 
+def _grouped_folds(
+    in_holdout: np.ndarray,
+    unit_of_cell: np.ndarray,
+    n_folds: int,
+    rng: np.random.Generator,
+) -> list[tuple[np.ndarray, np.ndarray]]:
+    """K-fold over held-out UNITS (rows or locations), not over cells.
+
+    The held-out units are partitioned into n_folds groups; for each group the
+    test set is that group's cells and the training set excludes every cell of
+    those units. Splitting by unit is what keeps the recipe meaningful: a
+    time-block or a country must never be half in train and half in test.
+    """
+    units = np.unique(unit_of_cell[in_holdout])
+    if len(units) == 0:
+        return []
+    units = units.copy()
+    rng.shuffle(units)
+
+    folds: list[tuple[np.ndarray, np.ndarray]] = []
+    for chunk in np.array_split(units, min(n_folds, len(units))):
+        if len(chunk) == 0:
+            continue
+        in_chunk = np.isin(unit_of_cell, chunk)
+        test = np.where(in_chunk & in_holdout)[0]
+        train = np.where(~in_chunk)[0]
+        if len(test) > 0 and len(train) > 0:
+            folds.append((train, test))
+    return folds
+
+
 def _build_fold_splits(
     split_ids: dict,
     observed_mask: np.ndarray,
@@ -56,6 +85,7 @@ def _build_fold_splits(
     variant_idx: np.ndarray,
     n_folds: int,
     seed: int,
+    locations: np.ndarray | None = None,
 ) -> tuple[list[list[tuple[np.ndarray, np.ndarray]]], list[str]]:
     recipe_names = ["random-cell", "empirical-pattern", "time-block", "country-holdout"]
     all_folds: list[list[tuple[np.ndarray, np.ndarray]]] = []
@@ -72,23 +102,31 @@ def _build_fold_splits(
         random_folds.append((train, test))
     all_folds.append(random_folds)
 
-    ep_rows = set(split_ids["empirical_pattern"].get("test_row_indices", []))
-    ep_mask = np.isin(row_idx, list(ep_rows))
-    ep_test = np.where(ep_mask)[0]
-    ep_train = np.where(~ep_mask)[0]
-    all_folds.append([(ep_train, ep_test)] if len(ep_test) > 0 else [])
+    ep_rows = np.array(split_ids["empirical_pattern"].get("test_row_indices", []))
+    all_folds.append(
+        _grouped_folds(np.isin(row_idx, ep_rows), row_idx, n_folds, rng)
+    )
 
-    tb_rows = set(split_ids["time_block"].get("test_row_indices", []))
-    tb_mask = np.isin(row_idx, list(tb_rows))
-    tb_test = np.where(tb_mask)[0]
-    tb_train = np.where(~tb_mask)[0]
-    all_folds.append([(tb_train, tb_test)] if len(tb_test) > 0 else [])
+    tb_rows = np.array(split_ids["time_block"].get("test_row_indices", []))
+    all_folds.append(
+        _grouped_folds(np.isin(row_idx, tb_rows), row_idx, n_folds, rng)
+    )
 
-    held_out_locs = set(split_ids["country_holdout"].get("held_out_locations", []))
-    ch_mask = np.zeros(n_cells, dtype=bool)
-    ch_test = np.where(ch_mask)[0]
-    ch_train = np.where(~ch_mask)[0]
-    all_folds.append([(ch_train, ch_test)] if len(ch_test) > 0 else [])
+    # country-holdout used to build an all-False mask and never fill it, so the
+    # recipe produced zero predictions and silently dropped out of the release
+    # gate that plan S5.4 requires it to participate in.
+    held_out_locs = np.array(
+        split_ids["country_holdout"].get("held_out_locations", []), dtype=object
+    )
+    if locations is None or len(held_out_locs) == 0:
+        all_folds.append([])
+    else:
+        cell_locations = np.asarray(locations)[row_idx]
+        all_folds.append(
+            _grouped_folds(
+                np.isin(cell_locations, held_out_locs), cell_locations, n_folds, rng
+            )
+        )
 
     return all_folds, recipe_names
 
@@ -100,7 +138,6 @@ def run_occurrence_gate(
     output_dir: str | Path,
     tsagris_path: str | Path | None = None,
 ) -> OccurrenceGateResult:
-    project_root = Path(__file__).resolve().parents[3]
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -137,13 +174,28 @@ def run_occurrence_gate(
     )
     X, y = feats.X, feats.y
 
+    def fold_features(test_idx: np.ndarray) -> np.ndarray:
+        """Design matrix with this fold's held-out cells hidden from lag/lead."""
+        availability = observed_mask.copy()
+        availability[feats.row_idx[test_idx], feats.variant_idx[test_idx]] = False
+        return build_occurrence_features(
+            df, variant_cols, observed_mask,
+            availability_mask=availability,
+            location_col=data_config.location_col,
+            date_col=data_config.date_col,
+            total_seq_col=data_config.total_sequence_col,
+        ).X
+
     split_ids = load_split_ids(splits_dir)
     fold_splits, recipe_names = _build_fold_splits(
         split_ids, observed_mask, len(y), feats.row_idx, feats.variant_idx,
         occ_config.n_folds, occ_config.seed,
+        locations=df[data_config.location_col].to_numpy(),
     )
 
-    oof_results = run_oof(X, y, fold_splits, recipe_names, occ_config)
+    oof_results = run_oof(
+        X, y, fold_splits, recipe_names, occ_config, feature_fn=fold_features
+    )
 
     metrics_rows = []
     for recipe, oof in oof_results.items():
@@ -162,20 +214,43 @@ def run_occurrence_gate(
             "n_folds_valid": oof.n_folds_valid,
         })
 
+    # Plan S5.4 release conditions, evaluated on the two structural recipes.
+    # A recipe that produced nothing is a failure, not something to skip over:
+    # silently continuing is how country-holdout dropped out of the gate entirely.
     release_ok = True
-    release_reason = ""
+    release_failures: list[str] = []
+    max_excess = occ_cfg.get("release_gate", {}).get("max_log_loss_excess_vs_baseline", 0.1)
+    max_ece = occ_cfg.get("release_gate", {}).get("max_ece", 0.15)
+    min_cov = occ_cfg.get("release_gate", {}).get("min_fold_coverage", occ_config.min_fold_coverage)
+
     for recipe in ["time-block", "country-holdout"]:
         oof = oof_results.get(recipe)
         if oof is None or oof.n_predictions == 0:
+            release_failures.append(f"{recipe}: no predictions")
             continue
-        model_ll = compute_occurrence_metrics(oof.y_true, oof.p_calibrated)["log_loss"]
-        base_ll = prevalence_baseline_metrics(oof.y_true)["log_loss"]
-        if model_ll > base_ll + 0.1:
-            release_ok = False
-            release_reason = f"{recipe}: log-loss {model_ll:.4f} worse than baseline {base_ll:.4f}"
-        if compute_occurrence_metrics(oof.y_true, oof.p_calibrated)["p_std"] < occ_config.collapse_std_min:
-            release_ok = False
-            release_reason = f"{recipe}: probability collapse (std < {occ_config.collapse_std_min})"
+        m = compute_occurrence_metrics(oof.y_true, oof.p_calibrated)
+        base = prevalence_baseline_metrics(oof.y_true)
+        if m["log_loss"] > base["log_loss"] + max_excess:
+            release_failures.append(
+                f"{recipe}: log-loss {m['log_loss']:.4f} vs baseline {base['log_loss']:.4f}"
+            )
+        if m["p_std"] < occ_config.collapse_std_min:
+            release_failures.append(
+                f"{recipe}: probability collapse (std {m['p_std']:.4f})"
+            )
+        if m["ece"] > max_ece:
+            release_failures.append(f"{recipe}: ECE {m['ece']:.4f} > {max_ece}")
+        if oof.n_folds_valid < occ_config.min_valid_folds:
+            release_failures.append(
+                f"{recipe}: {oof.n_folds_valid} valid folds < {occ_config.min_valid_folds}"
+            )
+        if oof.coverage < min_cov:
+            release_failures.append(
+                f"{recipe}: coverage {oof.coverage:.2f} < {min_cov}"
+            )
+
+    release_ok = not release_failures
+    release_reason = "; ".join(release_failures)
 
     rng = np.random.default_rng(occ_config.seed)
     n_val = max(1, len(y) // 5)
@@ -184,16 +259,16 @@ def run_occurrence_gate(
     val_mask[val_pick] = True
     train_mask = ~val_mask
 
-    best_C = tune_C(X[train_mask], y[train_mask], occ_config.C_grid, val_mask, occ_config.max_iter, occ_config.seed)
+    # tune_C indexes its argument with validation_mask, so both must be in the
+    # same space: pass the FULL matrix plus the full-length mask, not a
+    # pre-sliced training matrix with a full-length mask.
+    best_C = tune_C(X, y, occ_config.C_grid, val_mask, occ_config.max_iter, occ_config.seed)
     final_model = PooledLogisticGate(C=best_C, max_iter=occ_config.max_iter, seed=occ_config.seed)
     final_model.fit(X[train_mask], y[train_mask])
     p_val = final_model.predict_proba(X[val_mask])
     cal_map = fit_calibration_map(y[val_mask], p_val)
 
     from ..occurrence.gating import (
-        fit_temperature_and_crc,
-        temperature_scale,
-        conformal_zero_bias,
         expit,
         logit,
     )
@@ -237,21 +312,10 @@ def run_occurrence_gate(
     )
 
     T = crc_result["temperature"]
-    bias_per_variant = crc_result["bias_per_variant"]
 
-    # Recalibrate target probabilities with temperature
-    p_targets_raw = final_model.predict_proba(X_targets) if len(X_targets) > 0 else np.array([])
-    p_targets_cal = apply_calibration_map(cal_map, p_targets_raw)
-
-    # Apply temperature scaling to target probabilities
-    if len(p_targets_cal) > 0:
-        p_cal = p_targets_cal.clip(1e-12, 1 - 1e-12)
-        logits = logit(p_cal)
-        logits_cal = logits / T
-        p_targets_recal = expit(logits_cal)
-    else:
-        p_targets_cal = np.array([])
-
+    # Temperature recalibration of the TARGET posterior is applied downstream by
+    # the fusion stage, which owns the ZPGF gate. This stage publishes the
+    # calibrated posterior and the per-variant CRC bias; it does not consume them.
     tau_per_variant: dict[str, float | None] = {}
     bias_per_variant: dict[str, float] = {}
     w_gan_per_variant: dict[str, float] = {}
@@ -322,12 +386,24 @@ def run_occurrence_gate(
         else:
             threshold_rows.append({"variant": variant, "status": "ABSTAIN_TO_GAN", "reason": "no_threshold_meets_gate"})
 
+    # Plan S5.4: a model that fails the release gate must not lock anything.
+    # release_ok used to be a label only -- the masks were emitted either way.
+    if not release_ok:
+        tau_per_variant = {v: None for v in variant_cols}
+        threshold_rows = [
+            {"variant": v, "status": "ABSTAIN_TO_GAN", "reason": f"release_gate_failed: {release_reason}"}
+            for v in variant_cols
+        ]
+
     # Apply gate with CRC bias and soft fusion weights
     M_target_zero, M_gan, w_gan = apply_gate_to_targets(
         p_targets_cal, M_target, variant_cols, tau_per_variant,
         w_gan_per_variant=w_gan_per_variant,
         tau_hard_per_variant={v: 0.0 for v in variant_cols},  # no hard-lock at occurrence stage
     )
+
+    if not release_ok and M_target_zero.sum() != 0:
+        raise AssertionError("release gate failed but cells were still locked to zero")
 
     gate_result = OccurrenceGateResult(
         M_target_zero=M_target_zero,

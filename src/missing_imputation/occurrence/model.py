@@ -75,7 +75,19 @@ def tune_C(
     max_iter: int = 2000,
     seed: int = 42,
 ) -> float:
+    validation_mask = np.asarray(validation_mask, dtype=bool)
+    if validation_mask.shape[0] != X.shape[0]:
+        # Previously this mismatch raised inside the loop and was swallowed by
+        # `except Exception: continue`, so every candidate failed and tune_C
+        # silently returned C_grid[0] without tuning anything.
+        raise ValueError(
+            f"validation_mask has {validation_mask.shape[0]} entries but X has "
+            f"{X.shape[0]} rows; the mask must be indexed in the same space as X"
+        )
     train_mask = ~validation_mask
+    if not train_mask.any() or not validation_mask.any():
+        return C_grid[0]
+
     best_C = C_grid[0]
     best_loss = np.inf
     for C in C_grid:
@@ -146,8 +158,15 @@ def run_oof(
     fold_splits: list[list[tuple[np.ndarray, np.ndarray]]],
     recipe_names: list[str],
     config: OccurrenceConfig,
+    feature_fn=None,
 ) -> dict[str, OOFResult]:
-    """Run OOF refit for each recipe. Each fold fits model from scratch."""
+    """Run OOF refit for each recipe. Each fold fits model from scratch.
+
+    feature_fn(test_idx) -> X rebuilds the design matrix with the fold's held-out
+    cells hidden from the lag/lead context (plan S5.3 step 2). Without it the
+    matrix is shared across folds and a training row's temporal features encode
+    the true value of cells held out in the same fold. X is used as the fallback.
+    """
     results: dict[str, OOFResult] = {}
 
     for recipe, folds in zip(recipe_names, fold_splits):
@@ -173,6 +192,9 @@ def run_oof(
                 continue
 
             try:
+                # Hide this fold's held-out cells from the lag/lead context.
+                X_fold = feature_fn(test_idx) if feature_fn is not None else X
+
                 n_val = max(1, len(train_idx) // 5)
                 rng = np.random.default_rng(config.seed + fold_i)
                 val_pick = rng.choice(len(train_idx), size=n_val, replace=False)
@@ -180,16 +202,16 @@ def run_oof(
                 val_mask_local[val_pick] = True
 
                 best_C = tune_C(
-                    X[train_idx], y[train_idx], config.C_grid, val_mask_local,
+                    X_fold[train_idx], y[train_idx], config.C_grid, val_mask_local,
                     config.max_iter, config.seed,
                 )
 
                 gate = PooledLogisticGate(C=best_C, max_iter=config.max_iter, seed=config.seed)
-                gate.fit(X[train_idx], y[train_idx])
+                gate.fit(X_fold[train_idx], y[train_idx])
 
-                p_test = gate.predict_proba(X[test_idx])
+                p_test = gate.predict_proba(X_fold[test_idx])
 
-                p_val = gate.predict_proba(X[train_idx[val_mask_local]])
+                p_val = gate.predict_proba(X_fold[train_idx[val_mask_local]])
                 y_val = y[train_idx[val_mask_local]]
                 cal_map = _fit_simple_calibration(y_val, p_val)
                 p_test_cal = cal_map(p_test)

@@ -26,12 +26,12 @@ def clr_transform(
     if total_sequence is not None:
         total_sequence = np.asarray(total_sequence, dtype=np.float64)
         total_sequence = np.where(total_sequence == 0, 1.0, total_sequence)
-        proportions = counts / total_sequence[:, np.newaxis]
+        proportions = counts / total_sequence[..., np.newaxis]
     else:
         # Assume input is already proportions
         proportions = counts
 
-    n_features = proportions.shape[1]
+    n_features = proportions.shape[-1]
 
     if pseudo_count is None:
         positive = proportions[proportions > 0]
@@ -39,11 +39,11 @@ def clr_transform(
 
     # Add pseudo-count and renormalize to sum=1
     shifted = proportions + pseudo_count
-    row_sums = shifted.sum(axis=1, keepdims=True)
+    row_sums = shifted.sum(axis=-1, keepdims=True)
     shifted = shifted / row_sums
 
     log_shifted = np.log(shifted)
-    geo_mean = log_shifted.mean(axis=1, keepdims=True)
+    geo_mean = log_shifted.mean(axis=-1, keepdims=True)
     clr_values = log_shifted - geo_mean
 
     # Return pseudo_count used; store n_features for inverse if needed
@@ -71,12 +71,13 @@ def inverse_clr_transform(
     """
     clr_values = np.asarray(clr_values, dtype=np.float64)
     if n_features is None:
-        n_features = clr_values.shape[1]
+        n_features = clr_values.shape[-1]
 
-    # Softmax with numerical stability using logsumexp
-    # softmax(x) = exp(x - logsumexp(x))
-    # logsumexp is numerically stable
-    log_exp_sum = logsumexp(clr_values, axis=1, keepdims=True)
+    # The composition lives on the LAST axis. Callers pass either a 2-D
+    # (row, feature) matrix or a 3-D (location, time, feature) panel; using a
+    # fixed axis=1 silently normalised the panel across time instead of across
+    # features, which is not a composition at all.
+    log_exp_sum = logsumexp(clr_values, axis=-1, keepdims=True)
     shifted_props = np.exp(clr_values - log_exp_sum)
 
     # Remove pseudo-count and renormalize
@@ -87,7 +88,7 @@ def inverse_clr_transform(
     original_props = np.maximum(original_props, 0.0)
 
     # Renormalize to handle numerical errors
-    row_sums = original_props.sum(axis=1, keepdims=True)
+    row_sums = original_props.sum(axis=-1, keepdims=True)
     row_sums = np.where(row_sums == 0, 1.0, row_sums)
     return original_props / row_sums
 

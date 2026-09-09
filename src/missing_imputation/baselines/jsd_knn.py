@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .jsd import _jsd_single, partial_jsd
+from .jsd import partial_jsd
 
 
 @dataclass

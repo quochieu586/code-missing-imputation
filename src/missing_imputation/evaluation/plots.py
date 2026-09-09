@@ -154,7 +154,7 @@ def plot_jsd_by_variant(
     values = list(per_variant_jsd.values())
 
     fig, ax = plt.subplots(figsize=(10, max(6, len(variants) * 0.35)))
-    bars = ax.barh(range(len(variants)), values, color="tab:blue", alpha=0.7)
+    ax.barh(range(len(variants)), values, color="tab:blue", alpha=0.7)
     
     # Highlight zero-prevalence variants
     if zero_prevalence:
@@ -202,7 +202,7 @@ def plot_wasserstein_by_variant(
     values = list(per_variant_ws.values())
 
     fig, ax = plt.subplots(figsize=(10, max(6, len(variants) * 0.35)))
-    bars = ax.barh(range(len(variants)), values, color="tab:orange", alpha=0.7)
+    ax.barh(range(len(variants)), values, color="tab:orange", alpha=0.7)
     
     # Highlight zero-prevalence variants
     if zero_prevalence:
@@ -343,7 +343,6 @@ def plot_distribution_comparison(
     for i, variant in enumerate(variant_names):
         ax = axes[i]
         raw_data = raw_props[:, i]
-        imp_data = imputed_props[:, i]
 
         # Filter out zeros for better visualization
         raw_nonzero = raw_data[raw_data > 0]

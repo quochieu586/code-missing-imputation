@@ -14,18 +14,18 @@ from __future__ import annotations
 
 import json
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import yaml
 
+from ..baselines.adaptive_jsd_alpha_knn import AdaptiveJSDAlphaKNN
 from ..baselines.frechet import frechet_mean
 from ..baselines.jsd import jsd_one_vs_many, partial_jsd_one_vs_many
 from ..data.closure import (
-    compute_other,
-    counts_to_proportions,
+    build_full_composition,
     proportions_to_counts_largest_remainder,
     validate_closure,
 )
@@ -43,6 +43,33 @@ def load_split_ids(splits_dir: str | Path) -> dict:
         with path.open(encoding="utf-8") as f:
             splits[name] = json.load(f)
     return splits
+
+
+def load_baseline_pool_split(splits_dir: str | Path, n_complete: int, n_parts: int) -> dict:
+    """Load the shared complete-pool split used by all three Tsagris baselines.
+
+    Regenerate with `python scripts/generate_split_ids.py` if this is missing or
+    stale. Indices are positions inside the complete-row pool, which is the index
+    space the benchmark actually evaluates in.
+    """
+    path = Path(splits_dir) / "baseline_pool.json"
+    if not path.exists():
+        raise FileNotFoundError(
+            f"{path} missing. Run: python scripts/generate_split_ids.py"
+        )
+    with path.open(encoding="utf-8") as f:
+        split = json.load(f)
+    if split["n_complete_rows"] != n_complete:
+        raise ValueError(
+            f"baseline_pool.json has {split['n_complete_rows']} complete rows, "
+            f"data has {n_complete}; regenerate the split IDs"
+        )
+    if split.get("n_composition_parts") != n_parts:
+        raise ValueError(
+            f"baseline_pool.json is for {split.get('n_composition_parts')} composition "
+            f"parts, data has {n_parts}; regenerate the split IDs"
+        )
+    return split
 
 
 def _mse_proportions(
@@ -83,13 +110,16 @@ class MethodScore:
 
 
 def _load_arrays(config_path: str | Path):
+    """Load the data as a closed (variants + other) composition.
+
+    The residual is part of the composition so the neighbour pool sums to 1 and
+    kNN imputes `other` instead of it being forced to zero.
+    """
     config = load_config(config_path)
     df = load_covariants(config.path, config)
-    variant_cols = config.variant_components
-    observed_mask = df[variant_cols].notna().to_numpy()
-    counts = df[variant_cols].fillna(0).to_numpy().astype(np.int64)
-    total_seq = df[config.total_sequence_col].to_numpy(dtype=np.float64)
-    proportions = counts_to_proportions(counts, total_seq)
+    counts, observed_mask, proportions, total_seq = build_full_composition(
+        df, config.variant_components, config.total_sequence_col
+    )
     return config, df, observed_mask, counts, total_seq, proportions
 
 
@@ -128,150 +158,70 @@ def _impute_rows(
     return result
 
 
+def _fixed_imputer(k: int, alpha: float):
+    """Imputer closure with constant (k, alpha)."""
+
+    def fn(pool: np.ndarray, query: np.ndarray, obs: np.ndarray) -> np.ndarray:
+        return _impute_rows(pool, query[np.newaxis, :], obs[np.newaxis, :], k, alpha)[0]
+
+    return fn
+
+
+def _adaptive_imputer(pattern_params: dict, global_k: int, global_alpha: float):
+    """Imputer closure that looks (k, alpha) up by missingness pattern."""
+
+    def fn(pool: np.ndarray, query: np.ndarray, obs: np.ndarray) -> np.ndarray:
+        alpha, k = pattern_params.get(tuple((~obs).tolist()), (global_alpha, global_k))
+        return _impute_rows(pool, query[np.newaxis, :], obs[np.newaxis, :], k, alpha)[0]
+
+    return fn
+
+
+def _pattern_masks_from_split(split: dict) -> list[np.ndarray]:
+    """Per complete-pool row, the observed mask of its assigned missingness pattern."""
+    table = [np.array(p, dtype=bool) for p in split["pattern_table"]]
+    return [~table[i] for i in split["pattern_index_of_row"]]
+
+
 def _empirical_pattern_eval(
     complete_props: np.ndarray,
-    patterns: list,
-    pattern_weights: np.ndarray,
-    k: int,
-    alpha: float,
-    n_folds: int,
-    rng: np.random.Generator,
-    split_ids: dict | None = None,
+    split: dict,
+    impute_fn,
 ) -> tuple[float, float]:
-    """Masked CV on complete rows using sampled real missingness patterns.
+    """K-fold masked CV on the complete pool using the shared split IDs.
 
-    If split_ids is provided with 'empirical_pattern' test_row_indices, use those.
-    Otherwise, sample randomly (backward compatibility).
+    Every method sees the identical folds and the identical per-row missingness
+    pattern, which is what plan S4.5 asks for. Scoring covers ALL artificially
+    masked cells, including the ones whose true proportion is 0: 78% of cells in
+    the pool are exact zeros, and excluding them made the metric blind to
+    precisely the behaviour the zero-preservation work is about.
 
     Returns:
-        (mean_jsd, mean_mse) on artificial masked observed cells.
+        (mean_jsd, mean_mse) over held-out rows.
     """
-    n = complete_props.shape[0]
-    jsd_values = []
-    mse_values = []
+    obs_masks = _pattern_masks_from_split(split)
+    fold_of_row = np.array(split["fold_of_row"])
+    n_folds = int(split["n_folds"])
 
-    valid_patterns = [p for p in patterns if p.n_observed >= 1]
-    if not valid_patterns:
-        return float(np.log(2)), float(np.log(2))
-    valid_weights = np.array([p.n_rows for p in valid_patterns], dtype=np.float64)
-    valid_weights /= valid_weights.sum()
+    jsd_values: list[float] = []
+    mse_values: list[float] = []
 
-    # Use split IDs if available, otherwise random permutation
-    if split_ids and "empirical_pattern" in split_ids:
-        test_row_indices = set(split_ids["empirical_pattern"].get("test_row_indices", []))
-        val_indices = [i for i in range(n) if i in test_row_indices]
-        train_indices = [i for i in range(n) if i not in test_row_indices]
-    else:
-        indices = rng.permutation(n)
-        fold_size = n // n_folds
-        # For simplicity, use all folds combined
-        val_indices = list(range(n))
-        train_indices = list(range(n))
-
-    if not val_indices:
-        return float(np.log(2)), float(np.log(2))
-
-    pool = complete_props[train_indices]
-
-    for vi in val_indices:
-        p = valid_patterns[rng.choice(len(valid_patterns), p=valid_weights)]
-        obs_mask = np.array([not m for m in p.pattern])
-        query = complete_props[vi].copy()
-        query[~obs_mask] = 0.0
-
-        imputed = _impute_rows(
-            pool, query[np.newaxis, :], obs_mask[np.newaxis, :], k, alpha
-        )[0]
-
-        # Compute both JSD and MSE on the ARTIFICIALLY masked observed cells
-        mask = ~obs_mask & (complete_props[vi] > 0)  # only masked cells that were truly observed
-        if mask.any():
-            jsd_values.append(float(jsd_one_vs_many(complete_props[vi], imputed[np.newaxis, :])[0]))
-            mse_values.append(_mse_proportions(complete_props[vi], imputed, mask))
-
-    return (
-        float(np.mean(jsd_values)) if jsd_values else float(np.log(2)),
-        float(np.mean(mse_values)) if mse_values else float(np.log(2)),
-    )
-
-
-def _time_block_eval(
-    df: pd.DataFrame,
-    complete_positions: np.ndarray,
-    complete_props: np.ndarray,
-    location_col: str,
-    k: int,
-    alpha: float,
-    split_ids: dict | None = None,
-) -> tuple[float, float]:
-    """Hold out contiguous blocks of complete rows per location, impute from rest.
-    
-    Following Section 6.1: "che một đoạn liên tiếp trong chuỗi của từng location"
-    Masks observed cells within the held-out time blocks (not entire rows).
-    If split_ids with 'time_block' test_row_indices provided, use those.
-    
-    Returns:
-        (mean_jsd, mean_mse) on artificial masked observed cells.
-    """
-    jsd_values = []
-    mse_values = []
-    locations = df[location_col].to_numpy()
-
-    # Use split IDs if available
-    if split_ids and "time_block" in split_ids:
-        test_row_indices = set(split_ids["time_block"].get("test_row_indices", []))
-    else:
-        test_row_indices = None
-
-    for loc in pd.unique(locations):
-        loc_rows = np.where(locations == loc)[0]
-        comp_pos = [pos for pos in loc_rows if pos in set(complete_positions.tolist())]
-        if len(comp_pos) < 3:
+    for fold in range(n_folds):
+        test_rows = np.where(fold_of_row == fold)[0]
+        pool = complete_props[fold_of_row != fold]
+        if len(test_rows) == 0 or len(pool) == 0:
             continue
-
-        pos_arr = np.array(comp_pos)
-        block_size = max(1, len(pos_arr) // 3)
-        start = len(pos_arr) // 3
-        held_out_pos = pos_arr[start : start + block_size]
-
-        held_out_local = [
-            int(np.searchsorted(complete_positions, hp))
-            for hp in held_out_pos
-        ]
-        
-        # Filter by split IDs if provided
-        if test_row_indices is not None:
-            held_out_local = [h for h in held_out_local if h in test_row_indices]
-            if not held_out_local:
+        for vi in test_rows:
+            obs_mask = obs_masks[vi]
+            if not obs_mask.any():
                 continue
-
-        pool_mask = np.ones(complete_props.shape[0], dtype=bool)
-        pool_mask[held_out_local] = False
-        pool = complete_props[pool_mask]
-
-        queries = complete_props[held_out_local]
-        # Mask individual observed cells within held-out blocks (not entire rows)
-        for qi in range(queries.shape[0]):
-            true_row = complete_props[held_out_local[qi]]
-            observed_cells = true_row > 0  # cells that were truly observed (non-zero)
-            if not observed_cells.any():
-                continue
-            # Randomly mask a fraction of observed cells
-            rng = np.random.default_rng(42)
-            mask_frac = 0.3
-            mask = observed_cells & (rng.random(len(observed_cells)) < mask_frac)
-            if not mask.any():
-                continue
-            
-            obs_mask = ~mask  # observed = not masked
+            true_row = complete_props[vi]
             query = true_row.copy()
-            query[mask] = 0.0  # artificially mask some observed cells
-            
-            imputed = _impute_rows(
-                pool, query[np.newaxis, :], obs_mask[np.newaxis, :], k, alpha
-            )[0]
-            
-            # Evaluate on the artificially masked cells
+            query[~obs_mask] = 0.0
+
+            imputed = impute_fn(pool, query, obs_mask)
+
+            mask = ~obs_mask
             jsd_values.append(float(jsd_one_vs_many(true_row, imputed[np.newaxis, :])[0]))
             mse_values.append(_mse_proportions(true_row, imputed, mask))
 
@@ -281,32 +231,82 @@ def _time_block_eval(
     )
 
 
+def _time_block_eval(
+    complete_props: np.ndarray,
+    split: dict,
+    impute_fn,
+    mask_fraction: float = 0.3,
+) -> tuple[float, float]:
+    """Contiguous time blocks per location held out, cells masked inside them.
+
+    The held-out positions come from the shared split file and are already in
+    complete-pool index space. The masking RNG is seeded once from the split seed
+    instead of being re-created per row, which previously handed every row the
+    identical mask and ignored the seed list entirely.
+
+    Returns:
+        (mean_jsd, mean_mse) over the artificially masked cells.
+    """
+    held_out = np.array(split["time_block_test_rows"], dtype=np.int64)
+    if len(held_out) == 0:
+        return float(np.log(2)), float(np.log(2))
+
+    pool_mask = np.ones(complete_props.shape[0], dtype=bool)
+    pool_mask[held_out] = False
+    pool = complete_props[pool_mask]
+    if len(pool) == 0:
+        return float(np.log(2)), float(np.log(2))
+
+    rng = np.random.default_rng(int(split["seed"]))
+    n_parts = complete_props.shape[1]
+
+    jsd_values: list[float] = []
+    mse_values: list[float] = []
+
+    for local in held_out:
+        true_row = complete_props[local]
+        mask = rng.random(n_parts) < mask_fraction
+        if not mask.any() or mask.all():
+            continue
+        obs_mask = ~mask
+        query = true_row.copy()
+        query[mask] = 0.0
+
+        imputed = impute_fn(pool, query, obs_mask)
+
+        jsd_values.append(float(jsd_one_vs_many(true_row, imputed[np.newaxis, :])[0]))
+        mse_values.append(_mse_proportions(true_row, imputed, mask))
+
+    return (
+        float(np.mean(jsd_values)) if jsd_values else float(np.log(2)),
+        float(np.mean(mse_values)) if mse_values else float(np.log(2)),
+    )
+
+
 def _tune_grid(
     complete_props: np.ndarray,
-    patterns: list,
+    split: dict,
     k_grid: list[int],
     alpha_grid: list[float],
-    n_folds: int,
-    seed: int,
-    split_ids: dict | None = None,
-) -> tuple[float, int, dict]:
-    rng = np.random.default_rng(seed)
-    pattern_weights = None
-    best_jsd = np.inf
-    best_k = k_grid[0]
-    best_alpha = alpha_grid[0]
+) -> tuple[float, dict]:
+    """Grid search (k, alpha) on the empirical-pattern recipe.
+
+    Selection is by MSE, the primary metric of plan S4.6/S9.1. It previously
+    ranked by JSD while the champion rule compared MSE.
+    """
+    best_mse = np.inf
+    best = {"k": k_grid[0], "alpha": alpha_grid[0]}
 
     for k in k_grid:
         for alpha in alpha_grid:
-            jsd, _ = _empirical_pattern_eval(
-                complete_props, patterns, pattern_weights, k, alpha, n_folds, rng, split_ids
+            _, mse = _empirical_pattern_eval(
+                complete_props, split, _fixed_imputer(k, alpha)
             )
-            if jsd < best_jsd:
-                best_jsd = jsd
-                best_k = k
-                best_alpha = alpha
+            if mse < best_mse:
+                best_mse = mse
+                best = {"k": k, "alpha": float(alpha)}
 
-    return best_jsd, best_k, {"k": best_k, "alpha": best_alpha}
+    return best_mse, best
 
 
 def run_baselines(
@@ -322,9 +322,6 @@ def run_baselines(
     output_dir = Path(output_dir) if output_dir else project_root / "artifacts"
     seeds = seeds or SEEDS_DEFAULT
     splits_dir = splits_dir or project_root / "configs" / "splits"
-    
-    # Load split IDs for reproducible evaluation
-    split_ids = load_split_ids(splits_dir)
 
     config, df, observed_mask, counts, total_seq, proportions = _load_arrays(
         project_root / "configs" / "data.yaml"
@@ -338,7 +335,18 @@ def run_baselines(
     incomplete_props = proportions[incomplete_idx]
     incomplete_obs = observed_mask[incomplete_idx]
 
-    patterns = extract_patterns(incomplete_obs)
+    patterns = [p for p in extract_patterns(incomplete_obs) if p.n_observed >= 1]
+
+    # Shared complete-pool folds and per-row patterns; all three methods use the
+    # same ones so the comparison is like-for-like (plan S4.5).
+    pool_split = load_baseline_pool_split(
+        splits_dir, n_complete=len(complete_idx), n_parts=proportions.shape[1]
+    )
+    if list(pool_split["complete_row_df_indices"]) != [int(i) for i in complete_idx]:
+        raise ValueError(
+            "baseline_pool.json complete-row indices do not match the data; "
+            "regenerate with python scripts/generate_split_ids.py"
+        )
 
     k_grid = K_GRID_DEFAULT
     alpha_grid = ALPHA_GRID_DEFAULT
@@ -357,137 +365,89 @@ def run_baselines(
 
     scores: list[MethodScore] = []
 
-    # JSD-kNN: tune k grid (alpha fixed at 1.0)
+    # --- 1. JSD-kNN: tune k only (alpha fixed at 1.0) --------------------------
     start = time.time()
-    jsd_knn_k_scores = []
+    best_k = k_grid[0]
+    best_k_mse = np.inf
     for k in k_grid:
-        seed_scores = []
-        for seed in seeds:
-            rng = np.random.default_rng(seed)
-            jsd, _ = _empirical_pattern_eval(complete_props, patterns, None, k, 1.0, 5, rng, split_ids)
-            seed_scores.append(jsd)
-        jsd_knn_k_scores.append((k, float(np.mean(seed_scores))))
+        _, mse = _empirical_pattern_eval(complete_props, pool_split, _fixed_imputer(k, 1.0))
+        if mse < best_k_mse:
+            best_k_mse = mse
+            best_k = k
 
-    best_k = min(jsd_knn_k_scores, key=lambda x: x[1])[0]
-
-    jsd_knn_emp_scores = []
-    jsd_knn_emp_mse = []
-    for seed in seeds:
-        rng = np.random.default_rng(seed)
-        jsd, mse = _empirical_pattern_eval(complete_props, patterns, None, best_k, 1.0, 5, rng, split_ids)
-        jsd_knn_emp_scores.append(jsd)
-        jsd_knn_emp_mse.append(mse)
-    jsd_knn_tb_jsd, jsd_knn_tb_mse = _time_block_eval(df, complete_idx, complete_props, config.location_col, best_k, 1.0, split_ids)
+    knn_fn = _fixed_imputer(best_k, 1.0)
+    knn_emp_jsd, knn_emp_mse = _empirical_pattern_eval(complete_props, pool_split, knn_fn)
+    knn_tb_jsd, knn_tb_mse = _time_block_eval(complete_props, pool_split, knn_fn)
     scores.append(
         MethodScore(
             method="jsd_knn",
             params={"k": best_k, "alpha": 1.0},
-            mse_empirical=float(np.mean(jsd_knn_emp_mse)) if jsd_knn_emp_mse else float(np.log(2)),
-            mse_timeblock=float(jsd_knn_tb_mse),
-            jsd_empirical=float(np.mean(jsd_knn_emp_scores)) if jsd_knn_emp_scores else float(np.log(2)),
-            jsd_timeblock=float(jsd_knn_tb_jsd),
+            mse_empirical=knn_emp_mse,
+            mse_timeblock=knn_tb_mse,
+            jsd_empirical=knn_emp_jsd,
+            jsd_timeblock=knn_tb_jsd,
             runtime_seconds=time.time() - start,
         )
     )
 
+    # --- 2. JSD-alpha-kNN: tune (k, alpha) ------------------------------------
     start = time.time()
-    emp_scores_by_seed = []
-    tb_scores_by_seed = []
-    tb_mse_by_seed = []
-    tuned_params_by_seed = []
-    for seed in seeds:
-        _, best_k, params = _tune_grid(complete_props, patterns, k_grid, alpha_grid, 5, seed, split_ids)
-        tuned_params_by_seed.append(params)
-        rng = np.random.default_rng(seed)
-        emp_jsd, emp_mse = _empirical_pattern_eval(
-            complete_props, patterns, None, params["k"], params["alpha"], 5, rng, split_ids
-        )
-        emp_scores_by_seed.append(emp_jsd)
-        tb_jsd, tb_mse = _time_block_eval(
-            df, complete_idx, complete_props, config.location_col, params["k"], params["alpha"], split_ids
-        )
-        tb_scores_by_seed.append(tb_jsd)
-        tb_mse_by_seed.append(tb_mse)
+    _, chosen_params = _tune_grid(complete_props, pool_split, k_grid, alpha_grid)
+    global_k = int(chosen_params["k"])
+    global_alpha = float(chosen_params["alpha"])
 
-    best_seed_idx = int(np.argmin(emp_scores_by_seed))
-    chosen_params = tuned_params_by_seed[best_seed_idx]
+    alpha_fn = _fixed_imputer(global_k, global_alpha)
+    alpha_emp_jsd, alpha_emp_mse = _empirical_pattern_eval(complete_props, pool_split, alpha_fn)
+    alpha_tb_jsd, alpha_tb_mse = _time_block_eval(complete_props, pool_split, alpha_fn)
     scores.append(
         MethodScore(
             method="jsd_alpha_knn",
             params=chosen_params,
-            mse_empirical=float(np.mean(emp_scores_by_seed)),
-            mse_timeblock=float(np.mean(tb_mse_by_seed)),
-            jsd_empirical=float(np.mean(emp_scores_by_seed)),
-            jsd_timeblock=float(np.mean(tb_scores_by_seed)),
+            mse_empirical=alpha_emp_mse,
+            mse_timeblock=alpha_tb_mse,
+            jsd_empirical=alpha_emp_jsd,
+            jsd_timeblock=alpha_tb_jsd,
             runtime_seconds=time.time() - start,
-            notes=f"per-seed tuned params: {tuned_params_by_seed}",
         )
     )
 
-    global_k = chosen_params["k"]
-    global_alpha = chosen_params["alpha"]
-
+    # --- 3. Adaptive: per-pattern (k, alpha) ----------------------------------
+    # Uses the same AdaptiveJSDAlphaKNN class that generate-dataset0 runs, so the
+    # benchmark measures the method the pipeline actually ships. The previous
+    # inline re-implementation scored a different procedure than the one used to
+    # build dataset_00_tsagris.
     start = time.time()
-    pattern_params: dict[tuple, tuple[float, int]] = {}
-    fallback_patterns = []
-    for p in patterns:
-        if p.n_rows >= min_support and p.n_observed >= 1:
-            pattern_only = [p]
-            _, pk, pparams = _tune_grid(complete_props, pattern_only, k_grid, alpha_grid, 3, seeds[0])
-            pattern_params[p.pattern] = (pparams["alpha"], pparams["k"])
-        else:
-            pattern_params[p.pattern] = (global_alpha, global_k)
-            fallback_patterns.append(p.pattern)
-
-    adaptive_emp_jsd = []
-    adaptive_emp_mse = []
-    for seed in seeds:
-        rng = np.random.default_rng(seed)
-        n = complete_props.shape[0]
-        indices = rng.permutation(n)
-        fold_size = n // 5
-        jsd_vals = []
-        mse_vals = []
-        valid_patterns = [p for p in patterns if p.n_observed >= 1]
-        w = np.array([p.n_rows for p in valid_patterns], dtype=np.float64)
-        w /= w.sum()
-        for fold in range(5):
-            s = fold * fold_size
-            e = s + fold_size if fold < 4 else n
-            val_idx = indices[s:e]
-            pool_idx = np.concatenate([indices[:s], indices[e:]])
-            pool = complete_props[pool_idx]
-            for vi in val_idx:
-                p = valid_patterns[rng.choice(len(valid_patterns), p=w)]
-                a, kk = pattern_params.get(p.pattern, (global_alpha, global_k))
-                obs_mask = np.array([not m for m in p.pattern])
-                query = complete_props[vi].copy()
-                query[~obs_mask] = 0.0
-                imputed = _impute_rows(pool, query[np.newaxis, :], obs_mask[np.newaxis, :], kk, a)[0]
-                
-                # Evaluate on artificially masked observed cells
-                mask = ~obs_mask & (complete_props[vi] > 0)
-                if mask.any():
-                    jsd_vals.append(
-                        float(jsd_one_vs_many(complete_props[vi], imputed[np.newaxis, :])[0])
-                    )
-                    mse_vals.append(_mse_proportions(complete_props[vi], imputed, mask))
-        adaptive_emp_jsd.append(float(np.mean(jsd_vals)) if jsd_vals else float(np.log(2)))
-        adaptive_emp_mse.append(float(np.mean(mse_vals)) if mse_vals else float(np.log(2)))
-
-    adaptive_tb_jsd, adaptive_tb_mse = _time_block_eval(
-        df, complete_idx, complete_props, config.location_col, global_k, global_alpha, split_ids
+    adaptive = AdaptiveJSDAlphaKNN(
+        k_grid=k_grid,
+        alpha_grid=alpha_grid,
+        min_pattern_support=min_support,
+        global_k=global_k,
+        global_alpha=global_alpha,
     )
+    adaptive.fit(complete_props)
+    pattern_params = adaptive.tune_patterns(complete_props, patterns, seed=seeds[0])
+    n_tuned = sum(1 for p in patterns if p.n_rows >= min_support)
+
+    adaptive_fn = _adaptive_imputer(pattern_params, global_k, global_alpha)
+    ad_emp_jsd, ad_emp_mse = _empirical_pattern_eval(complete_props, pool_split, adaptive_fn)
+    ad_tb_jsd, ad_tb_mse = _time_block_eval(complete_props, pool_split, adaptive_fn)
     scores.append(
         MethodScore(
             method="adaptive_jsd_alpha_knn",
-            params={"global_k": global_k, "global_alpha": global_alpha, "min_pattern_support": min_support},
-            mse_empirical=float(np.mean(adaptive_emp_mse)) if adaptive_emp_mse else float(np.log(2)),
-            mse_timeblock=float(adaptive_tb_mse),
-            jsd_empirical=float(np.mean(adaptive_emp_jsd)) if adaptive_emp_jsd else float(np.log(2)),
-            jsd_timeblock=adaptive_tb_jsd,
+            params={
+                "global_k": global_k,
+                "global_alpha": global_alpha,
+                "min_pattern_support": min_support,
+            },
+            mse_empirical=ad_emp_mse,
+            mse_timeblock=ad_tb_mse,
+            jsd_empirical=ad_emp_jsd,
+            jsd_timeblock=ad_tb_jsd,
             runtime_seconds=time.time() - start,
-            notes=f"{len(fallback_patterns)} patterns fell back to global params",
+            notes=(
+                f"{n_tuned}/{len(patterns)} patterns tuned per-pattern, "
+                f"{len(patterns) - n_tuned} fell back to global"
+            ),
         )
     )
 
@@ -599,20 +559,25 @@ def _write_outputs(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    n_vars = len(variant_cols)
+
     full_props = proportions.copy()
     full_props[incomplete_idx] = imputed_props
 
-    new_counts = proportions_to_counts_largest_remainder(
+    # Composition includes the residual, so integerisation closes over all parts
+    # and `other` is the last allocated column rather than a leftover.
+    allocated = proportions_to_counts_largest_remainder(
         full_props, total_seq, observed_mask, counts
     )
-    other = compute_other(new_counts, total_seq)
+    new_counts = allocated[:, :n_vars]
+    other = allocated[:, n_vars]
     closure_ok, n_viol = validate_closure(new_counts, total_seq, other)
 
     observed_unchanged = bool(
-        np.array_equal(new_counts[observed_mask], counts[observed_mask])
+        np.array_equal(allocated[observed_mask], counts[observed_mask])
     )
-    no_nan = bool(not np.any(np.isnan(new_counts)))
-    non_negative = bool(np.all(new_counts >= 0))
+    no_nan = bool(not np.any(np.isnan(allocated)))
+    non_negative = bool(np.all(allocated >= 0))
     invariants_ok = closure_ok and observed_unchanged and no_nan and non_negative
 
     df_out = df.copy()
@@ -624,24 +589,23 @@ def _write_outputs(
     dataset00_path = output_dir / "dataset_00_tsagris.csv"
     df_out.to_csv(dataset00_path, index=False)
 
-    # Per plan: save M_observed.npz and M_target.npz separately with checksums
+    # Masks are over the 17 variants only: downstream stages (occurrence, fusion)
+    # index the variant grid, not the composition with the residual appended.
+    variant_observed = observed_mask[:, :n_vars]
     m_observed_path = output_dir / "M_observed.npz"
     m_target_path = output_dir / "M_target.npz"
-    np.savez_compressed(
-        m_observed_path,
-        M_observed=observed_mask,
-    )
+    np.savez_compressed(m_observed_path, M_observed=variant_observed.astype(np.uint8))
     np.savez_compressed(
         m_target_path,
-        M_target=(observed_mask == 0).astype(np.uint8),
+        M_target=(~variant_observed).astype(np.uint8),
     )
 
     # Also save the combined original_mask.npz for backward compatibility
     mask_path = output_dir / "original_mask.npz"
     np.savez_compressed(
         mask_path,
-        observed_mask=observed_mask,
-        original_counts=counts,
+        observed_mask=variant_observed,
+        original_counts=counts[:, :n_vars],
         total_sequence=total_seq,
         locations=df[config.location_col].to_numpy(),
         dates=df[config.date_col].astype(str).to_numpy(),

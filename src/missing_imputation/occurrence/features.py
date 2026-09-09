@@ -81,6 +81,7 @@ def build_occurrence_features(
     df: pd.DataFrame,
     variant_cols: list[str],
     observed_mask: np.ndarray | None = None,
+    availability_mask: np.ndarray | None = None,
     location_col: str = "location",
     date_col: str = "date",
     total_seq_col: str = "total_sequence",
@@ -88,12 +89,27 @@ def build_occurrence_features(
     spline_n_knots: int = 5,
     spline_degree: int = 3,
 ) -> OccurrenceFeatures:
+    """Build the pooled long-table design matrix over cells.
+
+    Two masks with different jobs:
+      observed_mask     - which cells become rows of X (the cell set and its order)
+      availability_mask - which cells may be READ as lag/lead context
+
+    They are separate because of plan S5.3 step 2: inside an OOF fold the
+    held-out cells must be invisible to the feature builder, while still being
+    scored. Passing a single mask meant lag/lead read the true value of cells
+    that were held out in the same fold, which is the "Lag/lead leakage" risk
+    the plan flags as High. Default: availability = observed.
+    """
     if observed_mask is None:
         observed_mask = df[variant_cols].notna().to_numpy()
     observed_mask = observed_mask.astype(bool)
+    if availability_mask is None:
+        availability_mask = observed_mask
+    availability_mask = availability_mask.astype(bool)
 
     lag_avail, lag_positive, lead_avail, lead_positive, backward_gap = _lag_lead_arrays(
-        df, variant_cols, observed_mask, location_col, date_col
+        df, variant_cols, availability_mask, location_col, date_col
     )
 
     min_date = pd.Timestamp(df[date_col].min())

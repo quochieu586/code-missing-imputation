@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
-import hashlib
 from pathlib import Path
-from typing import Literal
 
 import numpy as np
 import pandas as pd
 import yaml
 
-from .schema import AuditReport, CovariantsRow, DataConfig, compute_checksum, validate_dataframe
+from .schema import (
+    AuditReport,
+    DataConfig,
+    compute_checksum,
+    validate_dataframe,
+)
 
 
 VARIANT_COMPONENTS = [
@@ -35,20 +38,34 @@ VARIANT_COMPONENTS = [
 
 
 def load_config(config_path: str | Path) -> DataConfig:
-    """Load data configuration from YAML."""
+    """Load data configuration from YAML.
+
+    variant_components, derived, validation and time_grid are top-level sections
+    in configs/data.yaml, not children of `data:`. Reading them off `data:` made
+    every one of them silently fall back to a hardcoded default, so edits to the
+    YAML had no effect. Both placements are accepted, top level winning.
+    """
     with Path(config_path).open() as f:
-        cfg = yaml.safe_load(f)
+        cfg = yaml.safe_load(f) or {}
     data_cfg = cfg.get("data", {})
+
+    def section(name: str) -> dict:
+        value = cfg.get(name, data_cfg.get(name, {}))
+        return value if isinstance(value, dict) else {}
+
+    variant_components = cfg.get(
+        "variant_components", data_cfg.get("variant_components", VARIANT_COMPONENTS)
+    )
     return DataConfig(
         path=Path(data_cfg.get("path", "data/covariants.csv")),
         index_cols=data_cfg.get("index_cols", ["location", "date"]),
         total_sequence_col=data_cfg.get("total_sequence_col", "total_sequence"),
         date_col=data_cfg.get("date_col", "date"),
         location_col=data_cfg.get("location_col", "location"),
-        variant_components=data_cfg.get("variant_components", VARIANT_COMPONENTS),
-        other_col=data_cfg.get("derived", {}).get("other_col", "other"),
-        freq_days=data_cfg.get("time_grid", {}).get("freq_days", 14),
-        validation=data_cfg.get("validation", {}),
+        variant_components=list(variant_components),
+        other_col=section("derived").get("other_col", "other"),
+        freq_days=section("time_grid").get("freq_days", 14),
+        validation=section("validation"),
     )
 
 
@@ -104,7 +121,7 @@ def load_covariants(
     # Validate
     is_valid, errors = validate_dataframe(df, config)
     if not is_valid:
-        raise ValueError(f"Data validation failed:\n" + "\n".join(f"  - {e}" for e in errors))
+        raise ValueError("Data validation failed:\n" + "\n".join(f"  - {e}" for e in errors))
 
     return df
 
@@ -155,8 +172,14 @@ def split_complete_incomplete(df: pd.DataFrame, variant_cols: list[str]) -> tupl
 
 
 def audit_data(df: pd.DataFrame, config: DataConfig, checksum: str | None = None) -> AuditReport:
-    """Generate comprehensive data audit report."""
+    """Generate comprehensive data audit report.
+
+    The schema checks are run here and recorded on the report. Leaving
+    validation_errors empty made AuditReport.is_valid unconditionally True, so
+    the audit always claimed "All validation checks passed" whatever the data.
+    """
     variant_cols = config.variant_components
+    _, validation_errors = validate_dataframe(df, config)
 
     # Basic stats
     n_rows, n_cols = df.shape
@@ -206,6 +229,7 @@ def audit_data(df: pd.DataFrame, config: DataConfig, checksum: str | None = None
         max_time_gap_days=max_time_gap,
         zero_prevalence_per_variant=zero_prevalence,
         checksum=checksum or "",
+        validation_errors=validation_errors,
     )
 
 

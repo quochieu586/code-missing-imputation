@@ -102,7 +102,6 @@ def fit_temperature_and_crc(
             - 'diagnostics': per-variant CRC diagnostics
     """
     # Recover logits from calibrated probabilities (clip to avoid inf)
-    eps = 1e-12
     p_cal = oof_df[p_calibrated_col].clip(1e-12, 1 - 1e-12).to_numpy()
     logits = logit(oof_df[p_calibrated_col].clip(1e-12, 1 - 1e-12).to_numpy())
     y = oof_df[y_true_col].to_numpy().astype(int)
@@ -127,7 +126,6 @@ def fit_temperature_and_crc(
             continue
 
         y_var = y[mask]
-        p_var = p_cal[mask]  # already calibrated probs
 
         if y_var.sum() < 10:  # fallback if too few positives
             bias_per_variant[variant] = 0.0
@@ -250,7 +248,6 @@ def apply_gate_to_targets(
     for j, variant in enumerate(variant_names):
         tau = tau_per_variant.get(variant)
         w_gan_var = w_gan_per_variant.get(variant, 1.0) if w_gan_per_variant else 1.0
-        tau_hard = tau_hard_per_variant.get(variant, 0.0) if tau_hard_per_variant else 0.0
 
         variant_sel = target_cols == j
         rows_j = target_rows[variant_sel]
@@ -274,49 +271,86 @@ def apply_gate_to_targets(
     return M_target_zero, M_gan, w_gan
 
 
-def apply_soft_fusion(
-    p_nonzero_targets: np.ndarray,
+def compute_soft_fusion(
+    p_nonzero: np.ndarray,
     target_mask: np.ndarray,
     variant_names: list[str],
-    w_gan_per_variant: dict[str, float],
-    tau_hard_per_variant: dict[str, float] | None = None,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Compute soft fusion weights and hard-lock masks from calibrated probabilities.
+    bias_per_variant: dict[str, float],
+    zero_lock_cap_fraction: dict[str, float],
+    tau_hard_abs: float = 0.05,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict]:
+    """Zero-Preserving Gated Fusion weights and hard-lock masks (plan S18.3 / S19.2).
+
+    Per target cell the soft weight is the spike-and-slab posterior gate
+
+        w = sigmoid(logit(p) - b_variant)
+
+    with b_variant the Conformal-Risk-Control bias. A cell is hard-locked to zero
+    only when BOTH conditions of S18.3 hold: w is below the absolute floor
+    tau_hard_abs, and the cell is among the lowest-w cells within the variant's
+    zero-lock cap. The cap is a fraction of that variant's target cells, so a
+    variant can never be locked in its entirety.
+
+    Args:
+        p_nonzero: (n_rows, n_vars) calibrated P(Y > 0); read only on target cells.
+        target_mask: (n_rows, n_vars) raw-NaN target cells.
+        variant_names: column order of p_nonzero / target_mask.
+        bias_per_variant: CRC bias b per variant.
+        zero_lock_cap_fraction: max fraction of a variant's target cells to lock.
+        tau_hard_abs: absolute weight floor below which locking is permitted.
 
     Returns:
-        w_gan: soft fusion weights for all cells (n_rows, n_vars)
-        M_hard_lock: hard-locked zeros (uint8)
-        M_soft_fusion: cells with soft fusion (uint8)
+        w_gan: (n_rows, n_vars) float32, soft weight on target cells, 0 elsewhere
+               and 0 on hard-locked cells.
+        M_hard_lock: (n_rows, n_vars) uint8, target cells locked to zero.
+        M_soft_fusion: (n_rows, n_vars) uint8, target cells handed to the GAN.
+        diagnostics: per-variant tau/cap/counts.
     """
     target_bool = target_mask.astype(bool)
-    n_rows, n_vars = target_mask.shape
 
     w_gan = np.zeros(target_mask.shape, dtype=np.float32)
     M_hard_lock = np.zeros(target_mask.shape, dtype=np.uint8)
     M_soft_fusion = np.zeros(target_mask.shape, dtype=np.uint8)
+    diagnostics: dict[str, dict] = {}
 
     for j, variant in enumerate(variant_names):
-        w_gan_var = w_gan_per_variant.get(variant, 1.0)
-        tau_hard = tau_hard_per_variant.get(variant, 0.0) if tau_hard_per_variant else 0.0
-
-        target_mask_var = target_bool[:, j]
-        if not target_mask_var.any():
+        target_var = target_bool[:, j]
+        n_target = int(target_var.sum())
+        if n_target == 0:
+            diagnostics[variant] = {"n_target": 0, "status": "no_target_cells"}
             continue
 
-        p_j = p_nonzero_targets[:, j]
-        w_j = np.full_like(p_j, w_gan_var, dtype=np.float32)
+        b = float(bias_per_variant.get(variant, 0.0))
+        p_j = np.clip(p_nonzero[target_var, j], 1e-12, 1 - 1e-12)
+        w_j = expit(logit(p_j) - b).astype(np.float32)
 
-        # Hard lock if w < tau_hard
-        tau_hard = tau_hard_per_variant.get(variant, 0.0) if tau_hard_per_variant else 0.0
-        hard_lock_sel = w_j < tau_hard
-        soft_sel = ~hard_lock_sel
+        cap = float(np.clip(zero_lock_cap_fraction.get(variant, 0.0), 0.0, 1.0))
+        # Quantile of w below which locking stays inside the cap. cap == 0 leaves
+        # tau at the minimum, so `w < tau` selects nothing.
+        tau_cap = float(np.quantile(w_j, cap)) if cap > 0.0 else float(w_j.min())
+        tau_eff = min(tau_hard_abs, tau_cap)
 
-        # w_gan = 0 for hard-locked, w_gan_var for soft
-        w_gan[:, j] = 0.0
-        w_gan[:, j][soft_sel] = w_gan_var
+        hard_sel = w_j < tau_eff
+        soft_sel = ~hard_sel
 
-        M_hard_lock[:, j][hard_lock_sel] = 1
-        M_soft_fusion[:, j][soft_sel] = 1
+        rows_j = np.where(target_var)[0]
+        w_col = np.zeros(len(rows_j), dtype=np.float32)
+        w_col[soft_sel] = w_j[soft_sel]
+        w_gan[rows_j, j] = w_col
+        M_hard_lock[rows_j[hard_sel], j] = 1
+        M_soft_fusion[rows_j[soft_sel], j] = 1
 
-    return w_gan, M_hard_lock, M_soft_fusion
+        diagnostics[variant] = {
+            "n_target": n_target,
+            "b_crc": b,
+            "cap_fraction": cap,
+            "tau_cap": tau_cap,
+            "tau_hard_abs": tau_hard_abs,
+            "tau_effective": tau_eff,
+            "n_hard_locked": int(hard_sel.sum()),
+            "n_soft_fusion": int(soft_sel.sum()),
+            "hard_lock_fraction": float(hard_sel.sum() / n_target),
+            "w_mean_soft": float(w_j[soft_sel].mean()) if soft_sel.any() else 0.0,
+        }
+
+    return w_gan, M_hard_lock, M_soft_fusion, diagnostics

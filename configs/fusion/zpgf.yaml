@@ -1,0 +1,22 @@
+# Zero-Preserving Gated Fusion (plan S18-S19).
+#
+# The fusion stage decides only the MASK: which target cells are hard-locked to
+# zero and which are handed to the GAN. The soft weight w_gan is carried forward
+# and multiplied into the GAN magnitude in gan/postprocess.py, not here.
+zpgf:
+  calibration:
+    # Temperature scaling on OOF logits (Guo et al. 2017).
+    temperature_scaling: true
+    # Conformal Risk Control target false-zero rate and search bound.
+    crc_alpha: 0.05
+    crc_b_max: 5.0
+    # Variants with fewer OOF positives than this fall back to b = 0.
+    crc_min_positive: 10
+
+  hard_lock:
+    # A cell may be locked only when w_gan < tau_hard_abs ...
+    tau_hard_abs: 0.05
+    # ... and only while the locked fraction of that variant's target cells stays
+    # within cap_fraction x observed zero prevalence. Keeps a variant from being
+    # locked in its entirety (plan S18.3).
+    cap_fraction: 0.9

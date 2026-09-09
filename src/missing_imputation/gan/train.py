@@ -25,6 +25,23 @@ class TrainConfig:
     consistency_weight: float = 1.0  # weight for consistency loss
     time_class_weight: float = 1.0  # weight for time classification loss
     grad_clip: float = 1.0  # gradient clipping threshold
+    cnn_hidden1: int = 16
+    cnn_hidden2: int = 8
+    rnn_hidden: int = 10
+    lstm_hidden: int = 10
+
+
+def variant_nonzero_prior(dataset: GANDataset) -> np.ndarray:
+    """Per-feature P(count > 0) over cells locked by M_fixed, used as a neutral prior."""
+    observed = dataset.M_observed == 1
+    n_obs = observed.sum(axis=(0, 1))
+    n_pos = ((dataset.counts_raw > 0) & observed).sum(axis=(0, 1))
+    return np.divide(
+        n_pos.astype(np.float64),
+        n_obs.astype(np.float64),
+        out=np.full(n_obs.shape, 0.5, dtype=np.float64),
+        where=n_obs > 0,
+    )
 
 
 def create_artificial_mag_mask(
@@ -46,12 +63,18 @@ def train_gan(
     config: TrainConfig,
 ) -> tuple[np.ndarray, dict]:
     torch.manual_seed(config.seed)
-    np_rng = np.random.default_rng(config.seed)
 
     n_locs, n_times, n_feats = dataset.counts_raw.shape
     device = torch.device(config.device)
 
-    model = DeepMicroGenGAN(n_feats, n_times).to(device)
+    model = DeepMicroGenGAN(
+        n_feats,
+        n_times,
+        cnn_hidden1=config.cnn_hidden1,
+        cnn_hidden2=config.cnn_hidden2,
+        rnn_hidden=config.rnn_hidden,
+        lstm_hidden=config.lstm_hidden,
+    ).to(device)
     opt_d = torch.optim.Adam(model.discriminator.parameters(), lr=config.lr)
     opt_g = torch.optim.Adam(model.generator.parameters(), lr=config.lr)
     bce = nn.BCELoss()
@@ -59,16 +82,22 @@ def train_gan(
 
     M_art = create_artificial_mag_mask(dataset, config.artificial_mask_fraction, config.seed)
 
-    # Prepare p_nonzero conditioning for generator
-    p_nonzero = dataset.p_nonzero.astype(np.float32) if dataset.p_nonzero is not None else None
-
-    effective_obs = ((dataset.M_observed == 1) & (M_art == 0)).astype(np.float32)
+    # Prepare p_nonzero conditioning for generator. On artificially masked cells the
+    # panel channel holds the observed indicator (always 1 there, since only positive
+    # observed cells are masked), which would leak the reconstruction target and would
+    # not match the calibrated probabilities the generator sees on M_gan at inference.
+    # Replace those with the per-feature observed prevalence.
+    p_nonzero = None
+    if dataset.p_nonzero is not None:
+        p_nonzero = dataset.p_nonzero.astype(np.float32)
+        prior = variant_nonzero_prior(dataset).astype(np.float32)
+        p_nonzero = np.where(
+            M_art.astype(bool), np.broadcast_to(prior, p_nonzero.shape), p_nonzero
+        ).astype(np.float32)
 
     x_np = dataset.X_clr.astype(np.float32)
-    mask_np = effective_obs[None] if effective_obs.ndim == 3 else effective_obs
     decay_f_np = dataset.time_decay_f.astype(np.float32)
     decay_b_np = dataset.time_decay_b.astype(np.float32)
-    valid_rows = dataset.M_padding == 0
 
     best_recon = np.inf
     patience_counter = 0

@@ -17,6 +17,9 @@ gan:
     g_steps: 1
     patience: 50
     artificial_mask_fraction: 0.2
+    consistency_weight: 1.0
+    time_class_weight: 1.0
+    grad_clip: 1.0
 
   representation:
     pseudo_count: null  # auto: min positive / 2

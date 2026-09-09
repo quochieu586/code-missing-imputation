@@ -1,0 +1,33 @@
+{
+  "run_id": "baseline_1788948404",
+  "timestamp": "2026-09-09T10:06:44.499866+00:00",
+  "method": "adaptive_jsd_alpha_knn",
+  "params": {
+    "global_k": 5,
+    "global_alpha": 10.0,
+    "min_pattern_support": 30
+  },
+  "metrics": {
+    "mse_empirical": 0.027062287651540597,
+    "mse_timeblock": 0.04278177036541675,
+    "mse_mean": 0.03492202900847867,
+    "jsd_empirical": 0.06036726461040991,
+    "jsd_timeblock": 0.023364386375266003
+  },
+  "data_checksum": "bbb1aacdf46ebef345ca818f086d5586f4aded45475b00b6ee9bd89fc94a90ab",
+  "config_checksums": {
+    "configs\\data.yaml": "74d062441618a00eff38b2fdf389854ee2704e73856525a19bfaee05ee9c78ba"
+  },
+  "git_commit": "14997f01476129dfd13a7d10bf8abbc33cfb7f67",
+  "seeds": [
+    42,
+    123,
+    456,
+    789,
+    999
+  ],
+  "invariants_ok": true,
+  "python_version": "3.14.6 | packaged by Anaconda, Inc. | (main, Jul  9 2026, 14:29:05) [MSC v.1942 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26100-SP0",
+  "numpy_version": "2.4.6"
+}

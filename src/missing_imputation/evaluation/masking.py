@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 
 from .splits import (
-    SplitResult,
     country_holdout_split,
     empirical_pattern_split,
     random_cell_split,
@@ -135,12 +134,6 @@ def create_evaluation_masks(
     
     This is the fallback function that generates splits on-the-fly (not using pre-computed IDs).
     """
-    from .splits import (
-        country_holdout_split,
-        empirical_pattern_split,
-        random_cell_split,
-        time_block_split,
-    )
     
     if recipe == "random-cell":
         split = random_cell_split(observed_mask, test_fraction=test_fraction, seed=seed)
@@ -202,7 +195,6 @@ def create_all_evaluation_masks(
     Returns:
         Dict mapping recipe name to EvaluationMask.
     """
-    recipes = ["random-cell", "empirical-pattern", "time-block", "country-holdout"]
     masks = {}
     
     split_ids = None
