@@ -11,8 +11,21 @@ occurrence:
     variant_coding: "treatment"
     reference_variant: "recombinant"
     time_feature: "linear_global_day"
+
+    # Compositional row context: residual_share, n_missing_other, circulation.
+    # These are the features that actually exist on target cells.
+    use_compositional: true
+
+    # Lag/lead block of plan S5.2. OFF because on this dataset missingness is
+    # all-or-nothing per (location, variant): lag/lead context exists for 98.9%
+    # of observed cells and for 0 of the 86,050 target cells, so a model that
+    # leans on it cannot transfer to the cells we actually have to predict.
+    # Turning it on reproduces the old behaviour (country-holdout ROC-AUC 0.55,
+    # p_nonzero collapsed into [0.001, 0.135]).
+    use_temporal: false
+
     challenger:
-      enabled: true
+      enabled: false
       type: "spline_transformer"
       n_knots: 5
       degree: 3

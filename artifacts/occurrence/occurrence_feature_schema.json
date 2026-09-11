@@ -2,11 +2,10 @@
   "feature_names": [
     "scaled_global_day",
     "log1p_total_seq",
-    "lag_positive",
-    "lead_positive",
-    "lag_avail",
-    "lead_avail",
     "scaled_backward_gap",
+    "residual_share",
+    "n_missing_other",
+    "circulation",
     "variant_effect_20A",
     "variant_effect_20B",
     "variant_effect_20C",
@@ -44,6 +43,6 @@
     "S:677"
   ],
   "min_date": "2020-04-27 00:00:00",
-  "n_features": 23,
+  "n_features": 22,
   "reference_variant": "recombinant"
 }

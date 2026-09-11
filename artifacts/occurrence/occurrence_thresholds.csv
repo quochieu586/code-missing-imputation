@@ -1,18 +1,18 @@
-variant,status,reason
-recombinant,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
-20A,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
-20B,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
-20C,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
-20E,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
-Beta,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
-Alpha,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
-Gamma,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
-Delta,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
-Kappa,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
-Epsilon,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
-Eta,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
-Iota,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
-Lambda,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
-Mu,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
-Omicron,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
-S:677,ABSTAIN_TO_GAN,release_gate_failed: country-holdout: log-loss 0.6098 vs baseline 0.4615
+variant,status,tau_zero,tau,n,fzr,ucb,reason
+recombinant,GATED,0.05,0.05,114.0,0.0,0.03259853415884162,
+20A,GATED,0.05,0.05,227.0,0.022026431718061675,0.05051667987515208,
+20B,GATED,0.05,0.05,129.0,0.0,0.028917619956878256,
+20C,GATED,0.05,0.05,73.0,0.0,0.0499920079557311,
+20E,GATED,0.05,0.05,232.0,0.004310344827586207,0.024007295954777994,
+Beta,GATED,0.05,0.05,260.0,0.026923076923076925,0.054520404785491056,
+Alpha,GATED,0.05,0.05,354.0,0.00847457627118644,0.024616064288171247,
+Gamma,GATED,0.05,0.05,195.0,0.005128205128205128,0.02847164069896937,
+Delta,ABSTAIN_TO_GAN,,,,,,insufficient_support
+Kappa,GATED,0.05,0.05,157.0,0.0,0.023883511433308864,
+Epsilon,GATED,0.05,0.05,119.0,0.0,0.031271680241939506,
+Eta,GATED,0.05,0.05,216.0,0.009259259259259259,0.0331257926573052,
+Iota,GATED,0.05,0.05,124.0,0.0,0.030048615340677695,
+Lambda,GATED,0.05,0.05,114.0,0.008771929824561403,0.0480203467601362,
+Mu,GATED,0.05,0.05,150.0,0.02,0.057146683270386085,
+Omicron,ABSTAIN_TO_GAN,,,,,,insufficient_support
+S:677,GATED,0.05,0.05,80.0,0.0,0.0458181295355271,

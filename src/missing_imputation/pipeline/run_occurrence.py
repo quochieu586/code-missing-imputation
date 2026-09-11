@@ -166,24 +166,26 @@ def run_occurrence_gate(
         ),
     )
 
-    feats = build_occurrence_features(
-        df, variant_cols, observed_mask,
-        location_col=data_config.location_col,
-        date_col=data_config.date_col,
-        total_seq_col=data_config.total_sequence_col,
-    )
+    feat_cfg = occ_cfg.get("features", {})
+    feature_kwargs = {
+        "use_temporal": bool(feat_cfg.get("use_temporal", False)),
+        "use_compositional": bool(feat_cfg.get("use_compositional", True)),
+        "location_col": data_config.location_col,
+        "date_col": data_config.date_col,
+        "total_seq_col": data_config.total_sequence_col,
+    }
+
+    feats = build_occurrence_features(df, variant_cols, observed_mask, **feature_kwargs)
     X, y = feats.X, feats.y
 
     def fold_features(test_idx: np.ndarray) -> np.ndarray:
-        """Design matrix with this fold's held-out cells hidden from lag/lead."""
+        """Design matrix with this fold's held-out cells hidden from the context."""
         availability = observed_mask.copy()
         availability[feats.row_idx[test_idx], feats.variant_idx[test_idx]] = False
         return build_occurrence_features(
             df, variant_cols, observed_mask,
             availability_mask=availability,
-            location_col=data_config.location_col,
-            date_col=data_config.date_col,
-            total_seq_col=data_config.total_sequence_col,
+            **feature_kwargs,
         ).X
 
     split_ids = load_split_ids(splits_dir)
@@ -274,11 +276,13 @@ def run_occurrence_gate(
     )
 
     X_targets, target_rows, target_vars = build_target_prediction_features(
-        df, variant_cols, M_target, feats.min_date,
-        location_col=data_config.location_col,
-        date_col=data_config.date_col,
-        total_seq_col=data_config.total_sequence_col,
+        df, variant_cols, M_target, feats.min_date, **feature_kwargs
     )
+    if X_targets.shape[1] != X.shape[1]:
+        raise ValueError(
+            f"target design matrix has {X_targets.shape[1]} columns but the model "
+            f"was fitted on {X.shape[1]}; train/inference features have drifted"
+        )
     p_targets_raw = final_model.predict_proba(X_targets) if len(X_targets) > 0 else np.array([])
     p_targets_cal = apply_calibration_map(cal_map, p_targets_raw)
 
