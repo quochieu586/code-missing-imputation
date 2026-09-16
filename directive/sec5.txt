@@ -1,0 +1,513 @@
+5. Simulation study
+For simulating compositional data we will use the so-called normal distribution on the simplex. A random
+composition x follows this distribution if, and only if, the vector of ilr transformed variables z = ilr(x)
+follows a multivariate normal distribution on RD−1 with mean vector µ and covariance matrix Σ (see, e.g.,
+Pawlowsky-Glahn et al., 2007; Mateu-Figueras and Pawlowsky-Glahn, 2008). Thus, x ∼ NSD (µ, Σ) denotes
+that a D-part composition x is multivariate normally distributed on the simplex. Note that normality on
+the simplex is independent from the chosen balances for the ilr transformation.
+In a first simulation study we generate n = 100 realizations from the random variable x ∼ NS3 (µ, Σ)
+with
+µ ¶
+µ
+¶
+0
+1.05 0.95
+µ=
+and
+Σ=
+.
+2
+0.95 1.05
+Using the spectral decomposition, the matrix Σ can be re-written as
+µ
+¶
+µ
+¶
+1
+1
+Σ=
+(1, 1) + 0.05
+(1, −1).
+1
+−1
+Thus, the main variability of the generated data is along one direction, and the variability along the orthogonal direction is small. The resulting covariance matrix thus is poorly conditioned. Although this choice
+seems quite artificial, situations where only one out of many directions contains an essential portion of variability are realistic in compositional data sets (Kovács et al., 2006). Typical examples are the Arctic lake
+sediment and Aphyric Skye lavas data sets (Aitchison, 1986, p. 359, 360). Each observation is then multiplied by a factor generated from the uniform distribution U (0, 1) on the interval (0, 1). This multiplication
+does not change the equivalence class of the compositional data.
+In order to see the influence of outliers on the different imputation methods, n1 + n2 out of the n
+observations will be replaced by the following types of outliers:
+Outlier group 1: n1 observations are simulated from NS3 (µ1 , Σ), with µ1 = (6, 0)t , and they are multiplied
+by a factor generated from U (0, 10).
+Outlier group 2: n2 observations are taken from the distribution NS3 (µ, Σ), and they are multiplied by a
+factor coming from U (0, 10).
+Within the simulation scheme the numbers of outliers in both groups will be the same, and they will be
+increased from 0 to 40, i.e. n1 = n2 = 0, 1, . . . , 40.
+The role of the outlier groups is similar to the two types of outliers in the numerical study of Section
+4. Outlier group 1 consists of observations that are potential outliers in the Euclidean space as well as in
+the Aitchison space, whereas outlier group 2 will not have any effect in the Aitchison geometry due to the
+properties of equivalence classes for compositions (see Section 2).
+The amount of missing values is fixed but different for each variable. 20% of the values in the first
+variable, and 10% in the second variable are set to be missing completely at random. Missing values are
+only generated in the non-outlying data group (also in the subsequent simulations), because here a fair
+comparison of different (classical and robust) methods is possible.
+The advantage of this design in low dimension is that it is possible to visualize the generated threepart compositions in a ternary diagram. A ternary diagram is an equilateral triangle X1 X2 X3 such that a
+composition x = (x1 , x2 , x3 )t is plotted at a distance x1 from the opposite side of vertex X1 , at a distance
+x2 from the opposite side of vertex X2 , and at a distance x3 from the opposite side of vertex X3 (see, e.g.,
+Aitchison, 1986). Figure 3 (left) shows a simulated data set where each of the outlier groups represents
+5% of the observations. The 5 observations from outlier group 1 are shown with symbol +, the 5 points
+from outlier group 2 have symbol 4, and the remaining regular points are plotted with small dots. The
+points + from outlier group 1 are close to the boundary of the ternary diagram, and the points 4 from
+10
+
+outlier group 2 are spread over the main data cloud. Note that the points 4 do not appear as outliers in
+the ternary diagram because the different sums of the parts cannot be visualized. Figure 3 (right) shows
+the two dimensions of the ilr transformed data. Here the shifted center of the points + from outlier group
+1 is clearly visible, whereas the points 4 are not acting as outliers in this space.
+
+−1
+
+0
+
+1
+
+z2
+
+2
+
+3
+
+4
+
+x3
+
+x1
+
+x2
+
+−2
+
+0
+
+2
+
+4
+
+6
+
+z1
+Figure 3: Simulated data set with 5 points from outlier group 1 (symbol +) and 5 points from outlier group 2 (symbol 4).
+Left plot: 3-part compositions plotted in the ternary diagram; right plot: data after ilr transformation.
+
+The choice of the parameters µ and Σ in the simulation study determines the shape of the raw (compositional) data on the simplex. The further away µ is from the null vector (indicates equilibrium on the
+simplex), the closer the compositions are to the border of the simplex. The choice of the covariance matrix
+Σ determines how elongated the data points appear in the ternary diagram.
+The original and the imputed data values are compared by two different criteria:
+Compositional error variance: Let M ⊂ {1, . . . , n} denote the index set referring to observations including
+at least one missing cell, and nM = |M | be the number of such observations. The compositional error
+variance is defined as
+1 X 2
+dA (xi , x̂i )
+(14)
+nM
+i∈M
+
+where xi denotes the original composition (before setting cells to missing), and x̂i denotes the composition where only the missing cells are imputed (see also Martı́n-Fernández et al., 2003).
+Difference in covariance structure: We denote S = [sij ] as the sample covariance matrix of the non-outlying
+original ilr transformed observations zij , using for example the transformation from Equation (8)
+(another ilr basis would not change our criterion introduced in the following). Further, S̃ = [s̃ij ]
+denotes the sample covariance matrix computed with the same ilr transformed observations where all
+missing cells have been imputed. The difference in covariance structure is based on the Euclidean
+distance between both covariance estimations, namely as
+v
+uD−1 D−1
+X X
+1
+1 u
+2
+t
+(sij − s̃ij ) =
+kS − S̃k.
+(15)
+D − 1 i=1 j=1
+D−1
+11
+
+Thus the compositional error variance measures closeness of the imputed values in the Aitchison geometry,
+whereas the influence of the imputation to the multivariate data structure is expressed by the difference in
+covariance structure.
+For each considered percentage of outliers (0% to 40% per outlier group, in steps of 1%) we simulated
+1000 data sets according to the above scheme, and estimated the missing values with different techniques.
+Then the average for the above quality criteria is computed. The results are displayed in Figure 4, and they
+confirm the findings of the numerical study in Section 4. The left column of the pictures in Figure 4 shows
+the results for the non-transformed data (the imputation is done in the Euclidean space), the right column
+is for the transformed data (the imputation is done in the Aitchison geometry). The top row of the pictures
+shows the average of the compositional error variance, the bottom row presents the average difference in
+covariance structure. Since we use the same scale, it is easy to compare the pictures of one row. If the
+compositional nature of the data is ignored (left column), the results generally get worse. An exception are
+the knn results for the difference in covariance structure, which are similar when using the Euclidean or the
+Aitchison distance. For kNN the best results were achieved for k = 8, but other choices have a rather small
+effect on the outcome.
+When working in the proper geometry (right column of the pictures in Figure 4), the initial kNN
+imputation can be improved considerably with the iterative model-based imputation. If no outliers are
+present, the use of LS-regressions or LTS-regressions within the model-based procedure leads to comparable
+results. However, in presence of outliers the robust imputation algorithm shows clear advantages over LS.
+The iterative LTS procedure remains very stable up to about 35% outliers.
+Both quality measures, the compositional error variance and the difference in covariance structure, are
+adequate in the context of compositional data. Using corresponding measures based on the Euclidean
+geometry is inappropriate in this case, which was a reason why we outlined the difference between the
+Euclidean and the Aitchison geometry in detail. The methods applied in the left column of Figure 4 are
+based on the Euclidean distance, but still the data are compositional data. Thus, for reasons of comparability
+with methods for the Aitchison geometry, we kept the same vertical axes as for the pictures in the right
+column of Figure 4.
+Since the previous simulation study is limited to low dimensionality and to a special choice of the
+covariance matrix, we want to provide deeper insight with more general situations. Thus, in a second and
+third simulation setup n = 100 realizations from the random variable x ∼ NS10 (µ, Σ) are generated (higher
+dimension). µ is chosen as the null vector (equilibrium on the simplex), and all diagonal elements of Σ are
+equal to 1. The off-diagonal elements of Σ are chosen as 0.9 for the second setup, and 0.1 for the third setup.
+We thus can expect that the second setup will be advantageous for the model-based procedures, but that the
+third setup is particularly difficult because of the low correlations. Only outliers of type 1 are considered,
+and they are sampled from NS10 (µ1 , Σ), with µ1 = (6, 0, . . . , 0)t . The missing values are generated with
+MCAR. For the second setup, the percentages of missing values in variables 1 to 10 were chosen as 20%,
+10%, 5%, 2%, . . . , 2%, 0%, respectively. In the third setup they are taken as 5%, only the last variable is
+without missings (which is important for the alr-EM algorithm).
+Figure 5 shows the results from 1000 simulated data sets corresponding to the second (left column) and
+the third (right column) simulation configuration. The results of only those imputation methods are shown
+which take the compositional nature of the data into account; results of the other methods are generally
+worse, although no outlier group 2 is considered. For the second setup (Figure 5, (a) and (c)), the iterative
+LS method yields the best results in the uncontaminated case. In presence of up to 30% outliers, the iterative
+LTS method shows the best performance. Outliers have a large effect on all other methods to both, the
+compositional error variance and the difference in covariance structure. The most difficult situation, the
+third simulation setup, leads to a similar behavior of all considered imputation methods (Figure 5, right
+column). In presence of outliers the iterative LTS method performs slightly better.
+Finally, in our simulation the missings were generated according to an MCAR situation. We also tested
+the MAR situation, leading to analogous conclusions. The reason is that multivariate imputation methods
+such as kNN and the proposed model-based approach can deal with MAR, but univariate mean imputation
+techniques which have shown very poor performance already for MCAR cannot deal with the MAR situation
+12
+
+30
+
+35
+
+3
+
+10
+
+15
+
+20
+
+25
+
+30
+
+35
+
+40
+
+30
+
+35
+
+40
+
+outlier group 1 [%]
+outlier group 2 [%]
+
+Difference in covariance structure
+
+3.0
+2.5
+2.0
+
+iterative LS (ilr)
+iterative LTS (ilr)
+knn (Aitchison), k=8
+alr−EM
+
+0.0
+
+0.5
+
+1.0
+
+1.5
+
+5
+
+(b)
+
+iterative LS (no transf.)
+iterative LTS (no transf.)
+knn (Euclidean), k=8
+EM
+
+0
+
+(c)
+
+2
+0
+
+0.0
+
+Difference in covariance structure
+
+(a)
+
+0
+
+40
+
+3.0
+
+25
+
+2.5
+
+20
+
+2.0
+
+15
+
+outlier group 1 [%]
+outlier group 2 [%]
+
+1.5
+
+10
+
+1.0
+
+5
+
+0.5
+
+0
+
+1
+
+Compositional Error Variance
+
+3
+2
+1
+
+iterative LS (no transf.)
+iterative LTS (no transf.)
+knn (Euclidean), k=8
+EM
+
+0
+
+Compositional Error Variance
+
+iterative LS (ilr)
+iterative LTS (ilr)
+knn (Aitchison), k=8
+alr−EM
+
+5
+
+10
+
+15
+
+20
+
+25
+
+30
+
+35
+
+40
+
+0
+
+outlier group 1 [%]
+outlier group 2 [%]
+
+(d)
+
+5
+
+10
+
+15
+
+20
+
+25
+
+outlier group 1 [%]
+outlier group 2 [%]
+
+Figure 4: Simulation results (average of the compositional error variance and the difference in variation) for kNN imputation,
+model-based imputation using iterative LS and LTS regressions and EM/alr-EM algorithm. For (a) and (c) the imputation is
+done in the Euclidean space (no transformation), for (b) and (d) the imputation methods are applied in the Aitchison geometry.
+
+13
+
+15
+
+20
+
+25
+
+30
+
+35
+
+10
+
+15
+
+20
+
+25
+
+30
+
+35
+
+40
+
+30
+
+35
+
+40
+
+outlier group 1 [%]
+
+Difference in covariance structure
+
+iterative LS (ilr)
+iterative LTS (ilr)
+knn (Aitchison), k=8
+alr−EM
+
+0.00
+
+0.05
+
+0.10
+
+0.15
+
+5
+
+(b)
+
+iterative LS (ilr)
+iterative LTS (ilr)
+knn (Aitchison), k=8
+alr−EM
+
+0
+
+(c)
+
+1.5
+0
+
+0.00
+
+Difference in covariance structure
+
+(a)
+
+1.0
+
+40
+
+outlier group 1 [%]
+
+0.15
+
+10
+
+0.10
+
+5
+
+0.05
+
+0
+
+0.5
+
+1.0
+
+1.5
+
+Compositional Error Variance
+
+iterative LS (ilr)
+iterative LTS (ilr)
+knn (Aitchison), k=8
+alr−EM
+
+0.5
+
+Compositional Error Variance
+
+iterative LS (ilr)
+iterative LTS (ilr)
+knn (Aitchison), k=8
+alr−EM
+
+5
+
+10
+
+15
+
+20
+
+25
+
+30
+
+35
+
+40
+
+0
+
+outlier group 1 [%]
+
+(d)
+
+5
+
+10
+
+15
+
+20
+
+25
+
+outlier group 1 [%]
+
+Figure 5: Simulation results (average of the compositional error variance and the difference in variation) for kNN imputation,
+model-based imputation using iterative LS and LTS regressions and alr-EM. (a) and (c) shows the results from the second
+setup, (b) and (d) presents those from the third setup.
+
+14
+
+either.
+We also investigated other imputation methods in the Euclidean and in the Aitchison geometry, such as
+univariate approaches based on arithmetic and geometric mean, the EM algorithm (Dempster et al., 1977),
+iterative procedures based on principal component analysis (PCA) (Serneels and Verdonck, 2008) and their
+robust counterparts (Fritz and Filzmoser, 2008), Bayesian PCA (Oba et al., 2001), and probabilistic PCA
+(Bishop, 1999). Also various other well-known imputation methods for which an implementation in R (R
+development core team, 2008) is available were tested (Troyanskaya et al., 2001; Kim et al., 2005; Scholz
+et al., 2005) (additional methods would be available in R, but sometimes the code is erroneous). All these
+methods give worse results, and in order to avoid confusion on the plots they are not shown in Figure 4 and
+5 . In addition, we tested several variants for kNN imputation (as listed in Section 3.1), in combination with
+different measures of location (arithmetic mean, median) for the aggregation of the k-nearest neighbors,
+leading to poorer performance.

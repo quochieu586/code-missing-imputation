@@ -1,2 +1,0 @@
-[console_scripts]
-missing-imputation = missing_imputation.cli:main

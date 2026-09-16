@@ -1,0 +1,254 @@
+3. Imputation methods for compositional data
+In Martı́n-Fernández et al. (2003) the estimation of missing values in compositional data was done in
+the sense of the Aitchison geometry, but with the constraint of constant sum of the parts. We follow
+4
+
+1
+Second compositional part
+
+● ● ●●●●
+
+−2.2
+
+−1.2
+
+−0.2
+
+●●
+● ●
+
+0.8
+
+1.8
+
+2.8
+
+ilr transformed original data
+●
+●
+
+●
+
+● ● ●●●●
+
+●
+●
+● ●
+●
+●
+
+●
+●
+
+●●
+● ●
+
+●
+● ●
+●
+
+−2.2
+
+●
+●
+●
+●
+
+−1.2
+
+−0.2
+
+0.8
+
+1.8
+
+2.8
+
+●
+
+ilr transformed scaled data
+
+0
+0
+
+1
+First compositional part
+
+Figure 2: Left plot: Two-part compositional data consisting of three groups, and their projection on the line indicating constant
+sum 1. While the relative information of the groups with symbols ◦ and 4 is similar, the data points of the group with symbol
++ contain very different information. Right plot: In the upper part the ilr transformed original data are shown. The lower
+plot shows the ilr transformed data with constant sum constraint. This demonstrates that the constant sum constraint does
+not change the ilr transformed data.
+
+directly the definition of compositions by considering only ratios between the parts. This is realistic because
+compositional data include the information in the ratios, and in many practical cases the sum of the parts
+is not constant (see the example in Section 4). If the constant sum constraint is required, one can divide
+all data values (the observed and the imputed values) by their sum and multiply by the desired constant.
+Alternatively, Martı́n-Fernández et al. (2003) suggested to modify only the nonmissing values.
+The easiest way to impute missing values in compositional data is to replace the missing value of a part
+by the geometric mean of all available data in this part. Here, one has to correct the geometric mean by the
+ratio of the sum of the parts of the incomplete observation and the sum of the elements of the geometric
+mean vector (center of compositional data set, see Pawlowsky-Glahn and Egozcue, 2002). This approach,
+however, does not account for the multivariate data structure, although it is often used for imputation of
+missing values for compositional data sets. Another approach was introduced by Palarea-Albaladejo and
+Martı́n-Fernández (2008). Here the EM-algorithm (Dempster et al., 1977) for alr-transformed compositional
+data was used for the imputation. Although this algorithm was originally introduced for replacing rounded
+zeros, it can be adapted for estimating missing values. In the following, this algorithm will be denoted by
+alr-EM.
+In the following we present two new approaches that use the multivariate data information for imputation.
+3.1. k-nearest neighbor (knn) imputation
+knn imputation turned out to be successful for standard multivariate data (Troyanskaya et al., 2001).
+The idea is to use a distance measure for finding the k most similar observations to a composition containing
+missings, and to replace the missings by using the available variable information of the neighbors. In the
+context of compositional data we have to use an appropriate distance measure, like the Aitchison distance
+(Section 2).
+Suppose that a composition contains missing values in several cells. Then the imputation can be done
+5
+
+(1) simultaneously for all cells, by
+(a) searching the k-nearest neighbors among all complete observations,
+(b) searching the k-nearest neighbors among observations which may be incomplete, but where the
+information in the variables to be imputed plus some additional information is available;
+(2) sequentially (one cell after the other), by
+(a) searching the k-nearest neighbors among observations where all information corresponding to the
+non-missing cells plus the information in the variable to be imputed is available,
+(b) searching the k-nearest neighbors among observations where in addition to the variable to be
+imputed any further cells are non-missing.
+For estimating the missing parts of a composition, the approaches in (1) use the information of the same
+k observations, whereas for the approaches in (2) the k observations can change during the sequential
+imputation. In the following we will use the approach (2a) because in general more neighbors will be
+considered for imputation, and requesting more information per observation will lead to a more reliable
+imputation result.
+For imputing a missing part of a composition we use the median of the corresponding cells of the knearest neighbors. However, we first have to adjust the cells according to the overall size of the parts. This
+was not necessary for finding the k-nearest neighbors, because the Aitchison distance is the same for any
+compositions x and y belonging to equivalence classes x and y (see Section 2).
+More formally, let us consider a composition xi = (xi1 , . . . , xiD )t , i = 1, . . . , n, with n the number of
+observations, and let Mi ⊂ {1, . . . , D} denote the set of indexes referring to the missing cells of xi . Then
+Oi = {1, . . . , D}\Mi refers to the observed parts of xi . For imputing a missing cell xij , for any j ∈ Mi , we
+consider among all remaining compositions those which have non-missing parts at positions j and Oi , and
+compute the k-nearest neighbors xi1 , . . . , xik to the composition xi using the Aitchison distance. The j-th
+cell of all k-nearest neighbors is of interest for imputation. First we have to adjust these cells by factors
+comparing the size of the parts in Oi . The adjustment factors can be taken as
+P
+xio
+o∈Oi
+fiil = P
+for l = 1, . . . , k.
+(5)
+xil o
+o∈Oi
+
+Using these factors as weights for the observations will make the k-nearest neighbors comparable. The
+imputed value replacing the missing cell xij is
+x∗ij = median{fii1 xi1 j , . . . , fiik xik j } .
+
+(6)
+
+By taking the median we obtain robustness to outliers in the j-th parts of the k-nearest neighbors.
+Although the choice of the adjustments in (5) is coherent with the definition (1) of compositional data,
+a more robust version could be preferable. In the example and in the simulations below we will thus use the
+adjustment factors
+median xio
+o∈Oi
+fii∗ l =
+for l = 1, . . . , k,
+(7)
+median xil o
+o∈Oi
+
+which will lead to more stable results for contaminated data.
+knn imputation is numerically stable (no iterative scheme is required), but it has some limitations. First
+of all, the optimal number k of nearest neighbors has to be determined. Ideally, this number can be found
+within a simulation, by randomly setting observed cells to missing, estimating these missings based on
+different choices for the number k, and measuring the error between the imputed and the originally observed
+values. The k producing the smallest error can be considered as optimal. A further limitation concerns small
+sample sizes. It can happen that when searching for the nearest neighbors using the available information (in
+fact using subcompositions), the Aitchison distance can lead to nearest neighbors that contain much worse
+information for estimating the missing values than data points being further away. This, however, could
+6
+
+also happen when using the Euclidean distance for standard multivariate data (Troyanskaya et al., 2001)
+for searching the nearest neighbors. Therefore, whenenver small sample sizes occur, one has to be aware of
+this problem with the knn approach. Fortunately, most practical data sets nowadays are of reasonable size.
+Finally, knn imputation does not fully account for the multivariate relations between the compositional
+parts. This is only considered indirectly when searching for the k-nearest neighbors.
+From this point of view, the quality of the imputation may be improved by a model-based imputation
+procedure, as introduced in the following section.
+3.2. Iterative model-based imputation
+Our focus is on an iterative regression-based procedure. In each step of the iteration, one variable is
+used as a response variable and the remaining variables serve as the regressors. Thus the multivariate
+information will be used for imputation in the response variable. Since we deal with compositional data we
+cannot directly use the original data in regression, but we have to work in a transformed space. For this
+purpose we choose the ilr transformation with the concept based on balances, because of its advantageous
+properties. However, already for constructing the balances a data matrix with complete information is
+needed, see Equation (4). This can be overcome by initializing the missing values with knn imputation, as
+described above. A further difficulty is that several (or even all) variables have to be used for constructing
+a balance. Thus, if the initialization of the missings was poor, one can expect a kind of error propagation
+effect. In order to avoid this, we have to choose the balances carefully. The choice of the balances by
+Equation (4) is an attempt in achieving the highest possible stability with respect to missing values. For
+example, the missing values that are replaced in the first variable x1 will only affect the first balance z1 , but
+they have no influence on the remaining balances. Thus, using such a sequential binary partition will cause
+that as few as possible balances are affected by the missing values.
+Considering a data matrix with n observations and D parts, Equation (4) can be rewritten for the i-th
+composition xi = (xi1 , . . . , xiD )t , i = 1, . . . , n, as ilr(xi ) = z i = (zi1 , . . . , zi(D−1) )t , where
+s
+zij =
+
+D−j
+ln
+D−j+1
+
+qQ
+
+D−j
+
+D
+l=j+1 xil
+
+xij
+
+,
+
+for j = 1, . . . , D − 1 .
+
+The corresponding inverse transformation is ilr−1 (z i ) = xi = (xi1 , . . . , xiD )t , with
+Ã r
+!
+D−1
+xi1 = exp −
+zi1 ,
+D
+s
+Ãj−1
+!
+X
+1
+D−j
+p
+xij = exp
+zij , for j = 2, . . . , D − 1,
+zil −
+D−j+1
+(D − l + 1)(D − l)
+l=1
+ÃD−1
+!
+X
+1
+p
+xiD = exp
+zil
+(D − l + 1)(D − l)
+l=1
+
+(8)
+
+(9)
+
+(10)
+
+(11)
+
+(with possible normalization of the compositional parts to a chosen constant sum).
+An iterative algorithm based on regression can be summarized as follows:
+Step 1: Initialize the missing values using the 

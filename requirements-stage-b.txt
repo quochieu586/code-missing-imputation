@@ -1,0 +1,6 @@
+# Tested runtime (CPU); CUDA builds may be installed separately.
+numpy>=2.2,<3
+pandas>=2.3,<3
+scipy>=1.15,<2
+torch>=2.6,<3
+pytest>=8,<10

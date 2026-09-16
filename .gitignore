@@ -1,11 +1,47 @@
-# files in .vscode/
-.vscode/
-
-# files and directories in data/ (only in the root directory)
-data/*
-
-# __pycache__
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
 
-# .DS_Store (macOS)
+# Virtual environment
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Pytest
+.pytest_cache/
+.hypothesis/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Data (keep structure, ignore large files)
+data/raw/*.csv
+data/raw/*.tsv
+data/raw/*.h5
+data/processed/*
+!data/processed/.gitkeep
+data/splits/*.json
+
+# Artifacts & Reports
+artifacts/*
+!artifacts/.gitkeep
+reports/*
+!reports/.gitkeep
+
+# Notebooks checkpoints
+.ipynb_checkpoints/
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Logs
+*.log
+_pipeline_log.txt
