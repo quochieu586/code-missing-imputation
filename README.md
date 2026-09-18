@@ -4,11 +4,32 @@
 
 > **Trạng thái:** Đã có Tầng A, cầu nối CLR, CSDI thích ứng chạy **một lượt** và runner đánh giá pilot theo địa điểm. Các cổng tái lập bài báo, ablation E1 và đánh giá đầy đủ vẫn chưa hoàn tất.
 
+## Môi trường (Windows): phải dùng venv pip, không dùng conda
+
+numpy/scipy của conda liên kết Intel MKL, MKL mang theo `libiomp5md.dll` riêng.
+PyTorch nạp một OpenMP runtime khác trong cùng tiến trình, và import cả hai làm
+tiến trình abort ngay:
+
+```
+OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll already initialized.
+```
+
+`KMP_DUPLICATE_LIB_OK=TRUE` chỉ tắt thông báo, không gỡ được việc nạp trùng.
+Cách chạy đúng là cài wheel pip (liên kết scipy-openblas) vào một venv sạch:
+
+```powershell
+py -m venv .venv-clean
+.venv-clean\Scripts\python.exe -m pip install -r requirements-stage-b.txt
+.venv-clean\Scripts\python.exe -c "import numpy.__config__ as c; print(c.show_config('dicts')['Build Dependencies']['blas']['name'])"
+# phải in ra: scipy-openblas  (KHÔNG phải mkl)
+```
+
 ## Chạy CLR + diffusion một lượt
 
 ```powershell
-& 'C:/Users/admin/miniconda3/python.exe' -m pytest tests/unit/core tests/unit/stage_b -q
-& 'C:/Users/admin/miniconda3/python.exe' scripts/run_stage_b.py --epochs 100 --samples 5
+.venv-clean\Scripts\python.exe -m pytest tests/unit -q
+.venv-clean\Scripts\python.exe scripts/run_stage_a.py
+.venv-clean\Scripts\python.exe scripts/run_stage_b.py --epochs 100 --samples 5
 ```
 
 Runner dùng `data/covariants.csv` và tiếp nối `data/processed/X1_knn_imputed.csv` cho đầu ra đầy đủ. Nhánh đánh giá dựng lại KNN sau khi che validation/test, chỉ dùng láng giềng và fallback thuộc train. Không dùng artifact toàn bộ dữ liệu để tính metric held-out.

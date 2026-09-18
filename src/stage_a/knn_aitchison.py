@@ -65,9 +65,20 @@ def _find_neighbors_2a(
 
     distances = np.linalg.norm(clr_c - clr_x, axis=1)  # (m,)
 
+    # Principled tie-break. Rows that are pure pseudo-counts sit at exactly the
+    # same Aitchison distance from a target, and np.argpartition runs
+    # introselect, which returns an arbitrary subset of tied keys: for a pool of
+    # 400 equidistant candidates it picks indices 392..399 rather than 0..7, and
+    # which subset it lands on depends on array layout, not on the data. Making
+    # distance primary and the pool index the tie-break fixes that choice.
+    #
+    # This is NOT what T7 tests: rescaling the target row leaves the candidate
+    # distance vector unchanged, so argpartition saw identical input and T7 held
+    # both before and after this change. The defect it fixes is that the
+    # neighbour set was chosen by an implementation detail.
     k_actual = min(k, len(valid_indices))
-    nearest_local = np.argpartition(distances, k_actual - 1)[:k_actual]
-    return valid_indices[nearest_local]
+    order = np.lexsort((valid_indices, distances))
+    return valid_indices[order[:k_actual]]
 
 
 def _scaling_factor_median(x_i: NDArray, x_nb: NDArray, O_i: NDArray) -> float:
