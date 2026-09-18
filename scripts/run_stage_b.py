@@ -39,11 +39,12 @@ def batches(parts, size):
             yield np.stack(group[start:start+size])
 
 
-def predict(model, x, mask, times, parts, beta, samples, batch_size):
+def predict(model, x, mask, times, parts, beta, samples, batch_size, medians, clip):
     out = np.zeros_like(x)
     for idx in batches(parts, batch_size):
         z = sample(model, torch.tensor(x[idx], dtype=torch.float32),
-                   torch.tensor(mask[idx]), torch.tensor(times[idx], dtype=torch.float32), beta, samples)
+                   torch.tensor(mask[idx]), torch.tensor(times[idx], dtype=torch.float32),
+                   beta, samples, medians, clip)
         out[idx.reshape(-1)] = z.numpy().reshape(-1, x.shape[1])
     return out
 
@@ -60,6 +61,8 @@ def main():
     parser.add_argument('--fold', type=int, default=0, choices=range(5))
     parser.add_argument('--checkpoint', help='Reuse a trained checkpoint; sampling/audit only, no retraining')
     parser.add_argument('--evaluation-cache', help='Reuse matching audited KNN arrays (source hash/config are verified)')
+    parser.add_argument('--max-scale-ratio', type=float, default=10.,
+                        help='Reject a pass that changes any row total by more than this factor')
     parser.add_argument('--output', default='artifacts/stage_b_single_pass_final')
     args = parser.parse_args()
     if min(args.epochs,args.samples,args.steps,args.window,args.batch_size) < 1:
@@ -122,6 +125,11 @@ def main():
         n_fallback = knn.n_fallback
     medians = torch.tensor(np.nanmedian(observed[train_idx],axis=0),dtype=torch.float32)
     assert torch.isfinite(medians).all()
+    # Data range for x0_hat during ancestral sampling, from training rows only.
+    # This is the same coordinate as `truth` in training_loss: centered log X1.
+    train_clr = clr(x1[train_idx])
+    clip = (float(train_clr.min()), float(train_clr.max()))
+    print(f'CLR clip range from train rows: [{clip[0]:.3f}, {clip[1]:.3f}]',flush=True)
     times = (df.date-df.loc[train_rows,'date'].min()).dt.days.to_numpy(float)/14
     parts = windows(df, args.window)
     train_parts = [p for p in parts if train_rows[p[0]]]
@@ -161,12 +169,12 @@ def main():
     print('Sampling evaluation once',flush=True)
     torch.manual_seed(args.seed+1)
     eval_parts = [p for p in parts if test_mask[p].any() or val_mask[p].any()]
-    z = predict(model,x1,available,times,eval_parts,beta,args.samples,args.batch_size)
+    z = predict(model,x1,available,times,eval_parts,beta,args.samples,args.batch_size,medians,clip)
     # Rows outside sampled windows retain their initializer.
     covered = np.unique(np.concatenate(eval_parts))
     z_full = clr(x1)
     z_full[covered] = z[covered]
-    result = single_pass(x1,available,z_full)
+    result = single_pass(x1,available,z_full,total_sequence=total[:,0],max_ratio=args.max_scale_ratio)
     test_complete = test_rows & complete
     val_complete = train_rows & complete & val_mask.any(1)
     metrics = {}
@@ -201,8 +209,9 @@ def main():
     bridge_frame.to_csv(output/'Z1_clr.csv',index=False)
     print('Sampling original missing cells from the existing Stage A artifact',flush=True)
     torch.manual_seed(args.seed+2)
-    production_z = predict(model,production_x1,m0,times,parts,beta,args.samples,args.batch_size)
-    production = single_pass(production_x1,m0,production_z,validation_mae=validation['mae_clr_all'])
+    production_z = predict(model,production_x1,m0,times,parts,beta,args.samples,args.batch_size,medians,clip)
+    production = single_pass(production_x1,m0,production_z,validation_mae=validation['mae_clr_all'],
+                             total_sequence=total[:,0],max_ratio=args.max_scale_ratio)
     completed = df.copy()
     completed[cols] = production.X_hat
     completed.to_csv(output/'X2_diffusion_imputed.csv',index=False)
@@ -218,7 +227,7 @@ def main():
                 'pseudo_count':pseudo},output/'model.pt')
     record = dict(config=vars(args),max_iter=1,n_iter=1,converged=False,
                   data_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
-                  pseudo_count=pseudo,train_subjects=int(len(subjects)-len(test_subjects)),
+                  pseudo_count=pseudo,clr_clip=list(clip),train_subjects=int(len(subjects)-len(test_subjects)),
                   test_subjects=test_subjects.tolist(),test_complete_rows=int(test_complete.sum()),
                   evaluated_subjects=df.loc[test_complete,'location'].unique().tolist(),
                   train_complete_rows=int((complete & train_rows).sum()),knn_fallback=n_fallback,
