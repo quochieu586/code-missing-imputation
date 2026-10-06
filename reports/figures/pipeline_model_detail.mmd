@@ -1,0 +1,10 @@
+flowchart TD
+    A["Full CLR Target\n17-part composition (rank 16, sum-zero)\nNormalized: (z0 - mean) / scale"]
+    B["Masked Raw Condition\nQuery: visible observed counts only\n17 parts x (value, mask, init, provenance)\n85-dim condition encoder"]
+    C["CSDICoreRework\n1-head attention, 2 layers\nDDPM reverse: 20 steps, quad beta 1e-4 to 0.5\nFull-coordinate epsilon loss (all 17 latent dims)"]
+    D["Sampling\n8 Gaussian reverse chains (MC=8)\nPer-chain: denormalize, final projection\nMean latents -> CLR inverse/softmax"]
+    E["Observed Restoration\nVisible-anchor scale estimate\nExact overwrite of observed raw counts\nScale=1 fallback if no positive anchor"]
+    F["Output Contract\nFinite, non-negative, observed-locked\nStatus=OK, 0 violations"]
+    A --> C
+    B -. "condition" .-> C
+    C --> D --> E --> F
