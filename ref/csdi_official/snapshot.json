@@ -1,0 +1,21 @@
+{
+  "commit": "7f24a436f08d98853a6b43d4f7f04e5a65ecdf27",
+  "repository": "https://github.com/ermongroup/CSDI",
+  "files": [
+    {
+      "Algorithm": "SHA256",
+      "Hash": "C3702366BE9B439F3ABFF74C304D08EFD5488C4A8E0B85A1AA7D7072CF1DB0D8",
+      "Path": "C:\\Users\\admin\\Tai_lieu\\detaikhoahoc\\COVID19\\missing_impute\\code-missing-imputation\\ref\\csdi_official\\main_model.py"
+    },
+    {
+      "Algorithm": "SHA256",
+      "Hash": "1271C5BA574EB7271174E8817DDD102ADCFEB540236EA135A197B5F49A56D24F",
+      "Path": "C:\\Users\\admin\\Tai_lieu\\detaikhoahoc\\COVID19\\missing_impute\\code-missing-imputation\\ref\\csdi_official\\diff_models.py"
+    },
+    {
+      "Algorithm": "SHA256",
+      "Hash": "76F5D72ACD2D179C72F9C8D7212CC2E6904C1A15908951D0959B9EA13D528BA9",
+      "Path": "C:\\Users\\admin\\Tai_lieu\\detaikhoahoc\\COVID19\\missing_impute\\code-missing-imputation\\ref\\csdi_official\\LICENSE"
+    }
+  ]
+}
