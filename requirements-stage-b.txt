@@ -4,3 +4,20 @@ pandas>=2.3,<3
 scipy>=1.15,<2
 torch>=2.6,<3
 pytest>=8,<10
+
+# Windows: install these into a plain venv (pip wheels), NOT into a conda env.
+# Conda's numpy/scipy link Intel MKL, which ships its own libiomp5md.dll. PyTorch
+# ships another OpenMP runtime in the same process, and importing both aborts:
+#
+#   OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll
+#   already initialized.
+#
+# The pip wheels used here link scipy-openblas instead, so only one OpenMP
+# runtime is loaded and the pipeline runs without KMP_DUPLICATE_LIB_OK, which
+# only suppresses the message and leaves the double initialisation in place.
+#
+#   py -m venv .venv-clean
+#   .venv-clean\Scripts\python.exe -m pip install -r requirements-stage-b.txt
+#
+# Verify:  python -c "import numpy.__config__ as c; print(c.show_config('dicts')['Build Dependencies']['blas']['name'])"
+# Expect:  scipy-openblas   (NOT mkl)

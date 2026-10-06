@@ -84,7 +84,12 @@ def main():
         orig_imp = knn_orig.X_imputed[test_row]
         scaled_imp = knn_scaled.X_imputed[test_row]
         d = aitchison_distance(orig_imp, scaled_imp)
-        print(f"  T7 d_A(orig, scaled_row100) = {d:.6e} (should be ~0 if scale-invariant)")
+        print(f"  T7 d_A(orig, scaled_row100) = {d:.6e} (tolerance 1e-10)")
+        assert d < 1e-10, (
+            f"T7 FAILED: kNN-Aitchison is not scale-invariant on row {test_row} "
+            f"(d_A = {d:.6e}, tolerance 1e-10). Printing this value without "
+            f"asserting it lets a silent regression reach X1.")
+        print("  T7 assertion: PASS")
 
     # --- Save output ---
     print(f"\n[4/4] Saving results...")

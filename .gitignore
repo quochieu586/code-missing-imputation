@@ -9,6 +9,7 @@ build/
 
 # Virtual environment
 .venv/
+.venv-e3-revised/
 
 # IDE
 .vscode/
