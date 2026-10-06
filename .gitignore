@@ -35,6 +35,11 @@ artifacts/*
 !artifacts/.gitkeep
 reports/*
 !reports/.gitkeep
+# Keep the figures embedded in the tracked pipeline architecture report.
+!reports/figures/
+reports/figures/*
+!reports/figures/pipeline_experiment_overview.*
+!reports/figures/pipeline_model_detail.*
 
 # Notebooks checkpoints
 .ipynb_checkpoints/

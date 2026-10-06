@@ -1,51 +1,37 @@
-#!/usr/bin/env node
-/**
- * Render pipeline architecture figures from Mermaid/DOT sources.
- * Usage: node scripts/render_pipeline_architecture_report.mjs [node_modules_path]
- *
- * This script generates PNG and SVG figures for the pipeline architecture report
- * from the companion .mmd (Mermaid) and .dot (Graphviz) source files.
- *
- * Requires: @mermaid-js/cli and viz.js packages in node_modules_path
- *   npm install @mermaid-js/cli viz.js
+/** Render the reviewed pipeline figures without running any research code.
+ * Usage: node scripts/render_pipeline_architecture_report.mjs [node_modules]
+ * Dependencies: @viz-js/viz and sharp (available in the bundled runtime).
  */
-import { execFileSync } from 'child_process';
-import { writeFileSync, readFileSync, mkdirSync } from 'fs';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+import { createRequire } from 'node:module';
+import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, '..');
-const FIG_DIR = join(ROOT, 'reports', 'figures');
-
-const nodeModules = process.argv[2] || join(ROOT, 'node_modules');
-
-const figures = [
-  { name: 'pipeline_experiment_overview', format: 'png' },
-  { name: 'pipeline_experiment_overview', format: 'svg' },
-  { name: 'pipeline_model_detail', format: 'png' },
-  { name: 'pipeline_model_detail', format: 'svg' },
-];
-
-console.log('Rendering pipeline figures...');
-for (const fig of figures) {
-  const mmdPath = join(FIG_DIR, fig.name + '.mmd');
-  const outPath = join(FIG_DIR, fig.name + '.' + fig.format);
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const dependencyRoot = process.argv[2];
+const require = dependencyRoot
+  ? createRequire(path.resolve(dependencyRoot, '_pipeline_renderer.cjs'))
+  : createRequire(import.meta.url);
+const { instance } = require('@viz-js/viz');
+const sharp = require('sharp');
+const viz = await instance();
+for (const name of ['pipeline_experiment_overview', 'pipeline_model_detail']) {
+  const base = path.join(root, 'reports', 'figures', name);
+  const dot = await readFile(`${base}.dot`, 'utf8');
+  let result;
   try {
-    execFileSync('npx', [
-      '--prefer-offline',
-      '--prefix', nodeModules,
-      '@mermaid-js/cli',
-      '-i', mmdPath,
-      '-o', outPath,
-      '-w', fig.format === 'png' ? '620' : '600',
-      '-H', fig.format === 'png' ? '1050' : '770',
-      '-b', 'transparent',
-    ], { stdio: 'pipe' });
-    console.log(`  rendered ${fig.name}.${fig.format}`);
-  } catch (e) {
-    console.error(`  FAILED ${fig.name}.${fig.format}: ${e.message}`);
-    console.error('  Ensure @mermaid-js/cli is installed: npm install -g @mermaid-js/cli');
+    result = viz.render(dot, { format: 'svg', engine: 'dot' });
+  } catch (error) {
+    console.error(`${name}: ${error.message}`);
+    process.exit(1);
   }
+  if (result.status !== 'success') throw new Error(JSON.stringify(result.errors));
+  const warnings = result.errors.filter(e => e.level === 'warning');
+  if (warnings.length) throw new Error(JSON.stringify(warnings));
+  await writeFile(`${base}.svg`, result.output);
+  await sharp(Buffer.from(result.output), { density: 180 })
+    .resize({ width: 2600 }).flatten({ background: '#ffffff' })
+    .png().toFile(`${base}.png`);
+  const meta = await sharp(`${base}.png`).metadata();
+  console.log(`${name}: ${meta.width} x ${meta.height}; SVG and PNG rendered`);
 }
-console.log('Done.');

@@ -1,13 +1,27 @@
-flowchart TD
-    A["Data: covariants.csv\nSHA256: bbb1aacdf..."]
-    B["E0 CV Split\nFold 0: Train=NL/UK/US/DK\nVal=Denmark 103 eligible\nTest=Canada 112 (SEALED)"]
-    C["E2 Transforms\nCLR Rank-16 (K17 to 16)\nPositivity delta=0.5\nExact observed restoration"]
-    D["Stage A Initializers\nHron 2A / Aitchison Complete\n+ Linear/LOCF fallbacks"]
-    E["Stage B: CSDICoreRework\nCLR16, C16, L8\nheads=1, layers=2\nDDPM 20 steps\nAdam LR=1e-3, MC=8"]
-    F["Training Loop\n2 Policies x 4 Modes x 3 Seeds\n= 24 trajectories\n7 updates/epoch, 160 epochs"]
-    G["Mask Policies\nControl: 18 random-cell banks\nIntervention: 9 paired + 9 whole-variant\nn_hidden=1,2,3 x rare/middle/common"]
-    H["Checkpoint Select\nFixed DK fixture:\n103 rows x 13 windows x 20 steps\nx 3 primary n2 masks\nBudget280: ep 1-40\nBudget1120: ep 1-160\nEarliest argmin"]
-    I["Evaluate\n48 entries x 4 scenarios = 192 records\n+ 16 shared controls"]
-    J["Validation Gates\nConditioning: FAIL\nEfficacy: FAIL\nNumerical: PASS"]
-    K["E5 Status\nBLOCKED finalists=[]\nCanada SEALED"]
-    A --> B --> C --> D --> E --> F --> G --> H --> I --> J --> K
+digraph Pipeline {
+
+  graph [rankdir=TB, bgcolor="white", pad=0.16, nodesep=0.38, ranksep=0.42,
+    splines=ortho, fontname="Arial", fontsize=14];
+  node [shape=box, style="rounded,filled", fillcolor="white", color="#333333",
+    fontname="Arial", fontsize=14, fontcolor="#202020", penwidth=0.9,
+    width=2.15, height=0.65, margin="0.12,0.10"];
+  edge [color="#454545", penwidth=0.9, arrowsize=0.65];
+
+  train [label="Inner train\n285 labeled rows"];
+  masks [label="Training masks\nControl / mixed policy"];
+  model [label="Train CSDI\n24 trajectories", fillcolor="#edf3f8", color="#496d8b"];
+  fixture [label="Denmark fixture\n103 rows; fixed noise"];
+  select [label="Select checkpoints\n280 / 1,120 updates"];
+  score [label="Validation scoring\nMC8 + shared controls"];
+  gates [label="Validation gates\nConditioning / efficacy / numerical"];
+  result [label="E5 blocked\nCanada remains sealed"];
+  {rank=same; train; masks; model;}
+  {rank=same; fixture; select; score;}
+  {rank=same; gates; result;}
+  train -> masks -> model;
+  model -> select;
+  fixture -> select [style=dashed];
+  select -> score;
+  score -> gates -> result;
+
+}

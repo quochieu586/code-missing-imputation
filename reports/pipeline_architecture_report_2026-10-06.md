@@ -9,6 +9,8 @@
 
 The figures summarize the completed **CLR-only mask-policy × optimization-budget diagnostic**. They use a compact paper-style layout: short labels, white background, thin lines and one muted model highlight. Details and parameter values are provided in the captions and text. The dashed arrow in Figure 1 denotes the validation signal used for checkpoint selection.
 
+**Preview after cloning:** open this file in Markdown Preview. Both PNG images are included in the repository and use relative `./figures/` paths; no Mermaid extension or figure-generation dependencies are needed to view them.
+
 ### 1.1 Experiment flow
 
 ![E3/E4 experiment pipeline: frozen inputs, paired training, validation selection, sampling, controls, gates and sealed Canada](./figures/pipeline_experiment_overview.png)
@@ -71,7 +73,7 @@ The PNG figures are the default report content, so reading this section does not
 | **Stage B Core** | `src/stage_b/research_csdi_rework.py` | `CSDICoreRework`: 1-head attention, configurable channels | K=17, C=16, 19,713 params; layers=2, steps=20, heads=1, FFN=64 |
 | **Stage B Ops** | `src/stage_b/research_csdi.py` | `condition_features`, `forward_noise`, `epsilon_loss`, `sample_latents`, `schedule`, `project_final` | DDPM quad β, MC=8, final-only projection |
 | **Gates** | `src/evaluation/rework_gates.py` | Conditioning, Efficacy, Numerical/Restoration gates | Thresholds: cond ∀, eff >10%, num exact |
-| **Runner** | `scripts/run_e5_mask_conditioning.py` | CLI: prepare|train|evaluate; cache resume; frozen masks/hashes | 24 traj, 2 budgets, 48 entries |
+| **Runner** | `scripts/run_e5_mask_conditioning.py` | CLI: prepare / train / evaluate; cache resume; frozen masks/hashes | 24 traj, 2 budgets, 48 entries |
 
 ---
 
@@ -246,12 +248,10 @@ The revised figures and tables were checked in separate read-only code-review an
 
 **Verification for this report edit:** both Graphviz sources rendered successfully to SVG and PNG and were visually inspected for readable labels and unobstructed flow. The figures replace the Mermaid-dependent main view. Mermaid sources use quoted labels to avoid the original punctuation parse error; execution of those sources in the user's Mermaid renderer has not been independently verified. Research training, inference and gates were not rerun or changed. The plan records a prior 123-test PASS result; that is historical run evidence, not a newly executed test result for this document edit.
 
-To rebuild the figures with the bundled runtime:
+Optional figure regeneration requires Node.js with `@viz-js/viz` and `sharp` available in `node_modules`. These dependencies are not needed for Markdown Preview. From the repository root:
 
-```powershell
-& 'C:/Users/admin/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe' `
-  'scripts/render_pipeline_architecture_report.mjs' `
-  'C:/Users/admin/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules'
+```sh
+node scripts/render_pipeline_architecture_report.mjs
 ```
 
 The `.dot` sources generate the PNG/SVG figures; the `.mmd` sources are compact editable equivalents. Rebuild figures after changing `.dot` labels, and update the corresponding Mermaid source when the pipeline changes. Figure paths are relative to this Markdown file for editor-preview compatibility; keep the figures directory alongside the report when moving or sharing it.

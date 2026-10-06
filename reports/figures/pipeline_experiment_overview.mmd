@@ -1,13 +1,8 @@
 flowchart TD
-    A["Data: covariants.csv\nSHA256: bbb1aacdf..."]
-    B["E0 CV Split\nFold 0: Train=NL/UK/US/DK\nVal=Denmark 103 eligible\nTest=Canada 112 (SEALED)"]
-    C["E2 Transforms\nCLR Rank-16 (K17 to 16)\nPositivity delta=0.5\nExact observed restoration"]
-    D["Stage A Initializers\nHron 2A / Aitchison Complete\n+ Linear/LOCF fallbacks"]
-    E["Stage B: CSDICoreRework\nCLR16, C16, L8\nheads=1, layers=2\nDDPM 20 steps\nAdam LR=1e-3, MC=8"]
-    F["Training Loop\n2 Policies x 4 Modes x 3 Seeds\n= 24 trajectories\n7 updates/epoch, 160 epochs"]
-    G["Mask Policies\nControl: 18 random-cell banks\nIntervention: 9 paired + 9 whole-variant\nn_hidden=1,2,3 x rare/middle/common"]
-    H["Checkpoint Select\nFixed DK fixture:\n103 rows x 13 windows x 20 steps\nx 3 primary n2 masks\nBudget280: ep 1-40\nBudget1120: ep 1-160\nEarliest argmin"]
-    I["Evaluate\n48 entries x 4 scenarios = 192 records\n+ 16 shared controls"]
-    J["Validation Gates\nConditioning: FAIL\nEfficacy: FAIL\nNumerical: PASS"]
-    K["E5 Status\nBLOCKED finalists=[]\nCanada SEALED"]
-    A --> B --> C --> D --> E --> F --> G --> H --> I --> J --> K
+    T["Inner train: 285 labeled rows"] --> M["Training masks: control or mixed policy"]
+    M --> C["Train CSDI: 24 trajectories"]
+    C --> S["Select checkpoints: 280 or 1120 updates"]
+    V["Denmark fixture: 103 rows, fixed noise"] -.-> S
+    S --> E["Validation scoring: MC8 and shared controls"]
+    E --> G["Conditioning, efficacy and numerical gates"]
+    G --> B["E5 blocked; Canada remains sealed"]
