@@ -1,6 +1,6 @@
 """Preprocessing for compositional missing data imputation.
 
-Follows §2 of pipeline_knn_diffusion_handover.md:
+Follows §2 of directive/handoffs/pipeline_knn_diffusion_handover.md:
   P1: Filter low abundance (< 0.01%) -> 0
   P2: Record observation mask M0
   P3: Add pseudo-count to zeros

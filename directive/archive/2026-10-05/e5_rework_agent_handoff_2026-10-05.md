@@ -29,9 +29,9 @@ Git HEAD lúc audit: `9ba4e53fcf715f2659d547f28418163092727f9a`. Working tree c�
 
 ## 2. Tài liệu phải đọc
 
-1. `directive/e3_e4_review_revised_2026-09-30.md`.
-2. `directive/implementation_checklist_2026-09-30.md`, đặc biệt Execution status.
-3. `directive/research_plan_revised_2026-09-30.md` §3/4/5/7/11, original LR/CSDI plan §7–8/10, `directive/revision_summary_2026-09-30.md`.
+1. `directive/archive/2026-09-30/e3_e4_review_revised_2026-09-30.md`.
+2. `directive/archive/2026-09-30/implementation_checklist_2026-09-30.md`, đặc biệt Execution status.
+3. `directive/archive/2026-09-30/research_plan_revised_2026-09-30.md` §3/4/5/7/11, archived original LR/CSDI plan §7–8/10, `directive/archive/2026-09-30/revision_summary_2026-09-30.md`.
 4. `src/stage_b/research_csdi.py`, `src/evaluation/research_pilot.py`, `src/stage_a/initializers_e1.py`, `scripts/run_e3_revised.py`, `scripts/run_e4_revised.py`, tests revised E3/E4.
 5. **Pha A mới:** `artifacts/e3e4_rework_2026-10-05/diagnosis.md`, `phase_a.json`, `verification.json`, các CSV và `scripts/diagnose_e5_rework.py`.
 

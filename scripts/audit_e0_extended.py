@@ -1,4 +1,4 @@
-"""Run the blocking E0-extended audit from research_plan_revised_2026-09-30.
+"""Run the blocking E0-extended audit from the archived 2026-09-30 plan.
 
 This script is deliberately read-only with respect to data/.  It writes a new,
 versioned audit bundle under artifacts/e0_extended/: closure diagnostics,

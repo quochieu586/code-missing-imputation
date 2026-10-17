@@ -565,13 +565,13 @@ Bạn làm việc tại:
 C:\Users\admin\Tai_lieu\detaikhoahoc\COVID19\missing_impute\code-missing-imputation
 
 Mục tiêu: hiện thực và chạy R1–R5 trong §11 của
-directive/research_plan_revised_2026-09-30.md để kiểm tra hai giả thuyết:
+directive/archive/2026-09-30/research_plan_revised_2026-09-30.md để kiểm tra hai giả thuyết:
 (a) random-cell training không phù hợp whole-variant missingness;
 (b) 280 optimizer updates chưa đủ. Giữ nguyên các controls/gates đã đăng ký.
 Không hứa chữa được negative result; PASS hay FAIL đều phải audit và báo cáo.
 
 ĐỌC CONTEXT theo thứ tự, không chỉ đọc kết luận:
-1. directive/research_plan_revised_2026-09-30.md — §3–5, §7–8, §11.1–11.4.
+1. directive/archive/2026-09-30/research_plan_revised_2026-09-30.md — §3–5, §7–8, §11.1–11.4.
 2. reports/e5_model_capacity_review_2026-10-06.md
    reports/e5_undertraining_review_2026-10-06.md
    reports/e5_codebase_audit_2026-10-06.md
@@ -581,8 +581,8 @@ Không hứa chữa được negative result; PASS hay FAIL đều phải audit 
 4. artifacts/e3e4_rework_2026-10-05_b/config.json,
    report.md, addendum_2026-10-06.md, verification.json,
    validation_gates.json, validation_finalists.json, e5_status.json.
-5. directive/e5_rework_agent_handoff_2026-10-05.md và
-   directive/e3_e4_review_revised_2026-09-30.md — historical constraints.
+5. directive/archive/2026-10-05/e5_rework_agent_handoff_2026-10-05.md và
+   directive/archive/2026-09-30/e3_e4_review_revised_2026-09-30.md — historical constraints.
 6. scripts/run_e5_rework.py, scripts/rework_runtime.py,
    src/stage_b/research_csdi_rework.py, src/stage_b/research_csdi.py,
    scripts/run_e3_revised.py, src/stage_a/initializers_e1.py,

@@ -1,0 +1,60 @@
+{
+  "conversion_date": "2026-10-07",
+  "tools": [
+    "PyMuPDF4LLM 1.28.2 with layout recognition",
+    "pdfplumber",
+    "pypdf",
+    "manual visual transcription"
+  ],
+  "checks": [
+    "All 53 original pages rendered and visually inspected",
+    "All local image links resolve",
+    "All PNG files decode",
+    "All Markdown tables have consistent column counts",
+    "All source page markers and equation delimiters present",
+    "Source SHA256 checked before deletion"
+  ],
+  "documents": [
+    {
+      "source_file": "2023_Imputing time-series microbiome abundance profiles with diffusion model.pdf",
+      "source_sha256": "96f402bef753c54e9368a4be3d8be8b97e8f331b34bd1424ef91318225f15f12",
+      "markdown_file": "csdi_2023/2023_Imputing time-series microbiome abundance profiles with diffusion model.md",
+      "markdown_sha256": "ef92a8f9d54e543f18950b6543832abb544920430cc830675d7ad481d2547fef",
+      "pages": 6,
+      "asset_directory": "csdi_2023/_assets/paper2023"
+    },
+    {
+      "source_file": "Hron.pdf",
+      "source_sha256": "edfec8c6e11e98fad29af049e1dc0f0788fa7e1a90537702a2b821b67f8057c6",
+      "markdown_file": "hron/Hron.md",
+      "markdown_sha256": "282a1adb6285d139d8af5c8866a3af259eccd39f1a3f53a6fb5f7397758e4903",
+      "pages": 17,
+      "asset_directory": "hron/_assets/hron"
+    },
+    {
+      "source_file": "phylo.pdf",
+      "source_sha256": "d547889140287d03a42ac8692255ffbcd80b3cdb1b31451ddeb63f16fe65bd70",
+      "markdown_file": "phylogenetic_diffusion/phylo.md",
+      "markdown_sha256": "9ca9eba2f4bac12f6745e2e8a935b789d712b0e0d5b12ad19e0ae445d1278f55",
+      "pages": 9,
+      "asset_directory": "phylogenetic_diffusion/_assets/phylo"
+    },
+    {
+      "source_file": "Missing_imputation_Diffusion_idea_plot.pdf",
+      "source_sha256": "0b30023d311082a60356ce51a08601b2739264944256efc2029024466a972872",
+      "markdown_file": "diffusion_workflow_idea/Missing_imputation_Diffusion_idea_plot.md",
+      "markdown_sha256": "375493f43e41612a378b24ce1e14ee7955c21559789067cb4a30df96c516dd1d",
+      "pages": 1,
+      "asset_directory": "diffusion_workflow_idea/_assets/idea"
+    },
+    {
+      "source_file": "2025_Compositional data modeling of high-dimensional single cell RNA-seq (CoDA-hd) -- its advantages over commonly used normalization approaches.pdf",
+      "source_sha256": "de680be350c500cce3bb99fb04d25f773bdaa9b559f5db4c1c6f950c87a8285e",
+      "markdown_file": "coda_hd_2025/coda_hd_2025.md",
+      "markdown_sha256": "259864af95b403d6159250999ba1c4b9527b08ff2fb8a341a6686622535a523d",
+      "pages": 20,
+      "asset_directory": "coda_hd_2025/_assets/coda-hd"
+    }
+  ],
+  "source_pdfs_removed": true
+}

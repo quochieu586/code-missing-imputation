@@ -25,12 +25,12 @@ Số trang dưới đây là số trang trong PDF, không nhất thiết là s�
 
 | Mã | Tài liệu và vị trí | Nội dung dùng trong kế hoạch |
 |---|---|---|
-| H | [Hron, Templ & Filzmoser: Imputation of missing values for compositional data using classical and robust methods](C:/Users/admin/Tai_lieu/detaikhoahoc/COVID19/missing_impute/research/Hron.pdf), 17 trang; bản xuất bản 2010, DOI `10.1016/j.csda.2009.11.023` | §3.1, PDF tr. 5–7: KNN 2a, scale adjustment và median; §3.2: ILR và hồi quy lặp; §4, Table 1: fixture 152.1; metric compositional |
-| T | [Tsagris, Stewart & Alenazi, 2026: A Jensen-Shannon divergence based k–NN algorithm for missing value imputation in compositional data](C:/Users/admin/Tai_lieu/detaikhoahoc/COVID19/missing_impute/research/tsagris.pdf), 18 trang, arXiv v1 `2605.29702` | §2.2–2.5, PDF tr. 4–10: JSD, sáu bước KNN, α-Fréchet mean, tuning và adaptive patterns; §3–4: giới hạn và đối chứng |
-| C | [Huang et al., 2025: Compositional data modeling of high-dimensional single cell RNA-seq (CoDA-hd): its advantages over commonly used normalization approaches](<C:/Users/admin/Tai_lieu/detaikhoahoc/COVID19/missing_impute/directive/2025_Compositional data modeling of high-dimensional single cell RNA-seq (CoDA-hd) -- its advantages over commonly used normalization approaches.pdf>), 20 trang | PDF tr. 5–7: zero handling, CLR/ILR/HKGLR; tr. 12–13: HKGLR có kết quả kém trong các thí nghiệm của tác giả. Không suy diễn ưu thế sang SARS-CoV-2 |
-| D | [Tashiro et al., 2021: CSDI](https://arxiv.org/pdf/2107.03502), NeurIPS 2021 | §4–5; Appendix B, D, E: conditional diffusion, target strategies, mask, xử lý missing khi train và kiến trúc |
-| S23 | [Seki et al., 2023: Imputing time-series microbiome abundance profiles with diffusion model](C:/Users/admin/Tai_lieu/detaikhoahoc/COVID19/missing_impute/directive/csdi_2023.pdf), 6 trang | Tiền thân áp dụng CSDI cho microbiome, đặc biệt bài toán thiếu time point |
-| S25 | [Seki et al., 2025: Diffusion model for imputing time-series gut microbiome profiles using phylogenetic information and metadata integration](C:/Users/admin/Tai_lieu/detaikhoahoc/COVID19/missing_impute/research/csdi.pdf), 9 trang, DOI `10.1093/bioadv/vbaf181` | §2: CLR, preprocessing, conditional diffusion, phylum CNN, chia subject; §3: đánh giá và các trường hợp baseline tốt hơn |
+| H | [Hron, Templ & Filzmoser: Imputation of missing values for compositional data using classical and robust methods](../../literature/hron/Hron.md), 17 trang; bản xuất bản 2010, DOI `10.1016/j.csda.2009.11.023` | §3.1, PDF tr. 5–7: KNN 2a, scale adjustment và median; §3.2: ILR và hồi quy lặp; §4, Table 1: fixture 152.1; metric compositional |
+| T | [Tsagris, Stewart & Alenazi, 2026: A Jensen-Shannon divergence based k–NN algorithm for missing value imputation in compositional data](../../literature/tsagris/tsagris.md), 18 trang, arXiv v1 `2605.29702` | §2.2–2.5, PDF tr. 4–10: JSD, sáu bước KNN, α-Fréchet mean, tuning và adaptive patterns; §3–4: giới hạn và đối chứng |
+| C | [Huang et al., 2025: Compositional data modeling of high-dimensional single cell RNA-seq (CoDA-hd): its advantages over commonly used normalization approaches](../../literature/coda_hd_2025/coda_hd_2025.md), 20 trang | PDF tr. 5–7: zero handling, CLR/ILR/HKGLR; tr. 12–13: HKGLR có kết quả kém trong các thí nghiệm của tác giả. Không suy diễn ưu thế sang SARS-CoV-2 |
+| D | [Tashiro et al., 2021: CSDI](<../../literature/csdi_2021/2021_CSDI -- Conditional Score-based Diffusion Models for Probabilistic Time Series Imputation.pdf>), NeurIPS 2021 | §4–5; Appendix B, D, E: conditional diffusion, target strategies, mask, xử lý missing khi train và kiến trúc |
+| S23 | [Seki et al., 2023: Imputing time-series microbiome abundance profiles with diffusion model](<../../literature/csdi_2023/2023_Imputing time-series microbiome abundance profiles with diffusion model.md>), 6 trang | Tiền thân áp dụng CSDI cho microbiome, đặc biệt bài toán thiếu time point |
+| S25 | [Seki et al., 2025: Diffusion model for imputing time-series gut microbiome profiles using phylogenetic information and metadata integration](../../literature/phylogenetic_diffusion/phylo.md), 9 trang, DOI `10.1093/bioadv/vbaf181` | §2: CLR, preprocessing, conditional diffusion, phylum CNN, chia subject; §3: đánh giá và các trường hợp baseline tốt hơn |
 
 Nguồn triển khai để đối chiếu:
 
@@ -521,7 +521,7 @@ Giữ số epoch/steps/channels nhỏ cho smoke; checkpoint selection và early 
 
 ## 14. Quan hệ với handoff và việc cần làm tiếp
 
-Handoff `pipeline_knn_diffusion_handover.md` vẫn là nền cho pipeline hiện có: phân biệt missing với zero, tránh leakage, bảo toàn observed và đánh giá có ground truth. Yêu cầu mới của người dùng mở rộng nghiên cứu sang JSD, ILR và HKGLR; bản kế hoạch này ghi rõ các nhánh mở rộng thay vì giả định handoff cũ đã mô tả chúng. Ràng buộc **một outer pass, không lặp refinement** được giữ xuyên suốt.
+Handoff `../../handoffs/pipeline_knn_diffusion_handover.md` vẫn là nền cho pipeline hiện có: phân biệt missing với zero, tránh leakage, bảo toàn observed và đánh giá có ground truth. Yêu cầu mới của người dùng mở rộng nghiên cứu sang JSD, ILR và HKGLR; bản kế hoạch này ghi rõ các nhánh mở rộng thay vì giả định handoff cũ đã mô tả chúng. Ràng buộc **một outer pass, không lặp refinement** được giữ xuyên suốt.
 
 Các quyết định chưa thể kết luận chỉ từ papers:
 

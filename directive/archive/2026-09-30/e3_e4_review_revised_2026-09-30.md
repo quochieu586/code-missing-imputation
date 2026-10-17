@@ -26,7 +26,7 @@ Ngày: 2026-09-30. Phạm vi: fold 0 Canada, random-cell r=0.30, mask seed 42, m
 - `research_plan_revised_2026-09-30.md`: §3 capacity/projection/reference controls; §4 conditioning/restoration; §5 scenarios; §7 E3/E4 gates; §11 thiếu windows.
 - `research_plan_knn_jsd_clr_ilr_hkglr_csdi_2026-09-30.md`: §7.1–7.4 raw/LR masks, initialization sau masking và inverse; §8 numerical core; §10 metrics và T12–T20.
 - `revision_summary_2026-09-30.md` và review E4 người dùng cung cấp.
-- Handoff `pipeline_knn_diffusion_handover.md`: nguyên tắc observed locking và Aitchison geometry. Thiết lập phase mới của người dùng/revised plan được ưu tiên khi khác handoff cũ: single pass, raw initialization trước positivity, nhiều LR, không gán raw mask cho LR mask.
+- Handoff `../../handoffs/pipeline_knn_diffusion_handover.md`: nguyên tắc observed locking và Aitchison geometry. Thiết lập phase mới của người dùng/revised plan được ưu tiên khi khác handoff cũ: single pass, raw initialization trước positivity, nhiều LR, không gán raw mask cho LR mask.
 
 Protocol U giữ nguyên: closure 78.10% thấp hơn 95%; không triển khai JSD initialization, không dùng `total_sequence` làm true mass. Native JSD trên closed vectors chỉ là diagnostic phụ.
 

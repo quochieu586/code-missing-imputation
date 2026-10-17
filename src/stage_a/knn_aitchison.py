@@ -9,7 +9,7 @@ Implements [H] Direction 1, strategy 2a:
 
 References:
   [H] Hron, Templ, Filzmoser (2009), §3.1
-  pipeline_knn_diffusion_handover.md, §3
+  directive/handoffs/pipeline_knn_diffusion_handover.md, §3
 """
 import numpy as np
 from numpy.typing import NDArray
