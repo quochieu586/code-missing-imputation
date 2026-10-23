@@ -1,0 +1,31 @@
+fold,method,status,parameters,seconds,reason
+0,hron_ls,resource_limit,"{""k"": 10, ""max_iter"": 50}",180,Exceeded preregistered 180s wall budget per supplementary fold/method
+0,hron_lts,numerical_failure,"{""k"": 10, ""lts_starts"": 64, ""max_iter"": 50, ""seed"": 42}",45.1271213,CLR requires finite positive parts; use an explicit encoder zero policy
+0,micoda_v1,resource_limit,"{""W"": 1e-06, ""max_iter"": 50}",180,Exceeded preregistered 180s wall budget per supplementary fold/method
+0,tsagris_basic,ok,"{""k"": 10}",3.457390200000191,
+0,tsagris_global_cv,ok,"{""alphas"": [0.25, 0.5, 1.0], ""ks"": [3, 5, 10], ""leave_n"": 16, ""repetitions"": 3, ""seed"": 42}",6.137380900000153,
+0,tsagris_adaptive,ok,"{""alphas"": [0.25, 0.5, 1.0], ""ks"": [3, 5, 10], ""leave_n"": 16, ""repetitions"": 3, ""seed"": 42}",34.22325090000004,
+1,hron_ls,resource_limit,"{""k"": 10, ""max_iter"": 50}",180,Exceeded preregistered 180s wall budget per supplementary fold/method
+1,hron_lts,numerical_failure,"{""k"": 10, ""lts_starts"": 64, ""max_iter"": 50, ""seed"": 42}",45.60793850000027,CLR requires finite positive parts; use an explicit encoder zero policy
+1,micoda_v1,resource_limit,"{""W"": 1e-06, ""max_iter"": 50}",180,Exceeded preregistered 180s wall budget per supplementary fold/method
+1,tsagris_basic,ok,"{""k"": 10}",4.552076599999964,
+1,tsagris_global_cv,ok,"{""alphas"": [0.25, 0.5, 1.0], ""ks"": [3, 5, 10], ""leave_n"": 16, ""repetitions"": 3, ""seed"": 42}",6.773646399999961,
+1,tsagris_adaptive,ok,"{""alphas"": [0.25, 0.5, 1.0], ""ks"": [3, 5, 10], ""leave_n"": 16, ""repetitions"": 3, ""seed"": 42}",34.086228299999675,
+2,hron_ls,resource_limit,"{""k"": 10, ""max_iter"": 50}",180,Exceeded preregistered 180s wall budget per supplementary fold/method
+2,hron_lts,numerical_failure,"{""k"": 10, ""lts_starts"": 64, ""max_iter"": 50, ""seed"": 42}",24.25015489999987,CLR requires finite positive parts; use an explicit encoder zero policy
+2,micoda_v1,resource_limit,"{""W"": 1e-06, ""max_iter"": 50}",180,Exceeded preregistered 180s wall budget per supplementary fold/method
+2,tsagris_basic,ok,"{""k"": 10}",2.883620399999927,
+2,tsagris_global_cv,ok,"{""alphas"": [0.25, 0.5, 1.0], ""ks"": [3, 5, 10], ""leave_n"": 16, ""repetitions"": 3, ""seed"": 42}",4.750014700000065,
+2,tsagris_adaptive,ok,"{""alphas"": [0.25, 0.5, 1.0], ""ks"": [3, 5, 10], ""leave_n"": 16, ""repetitions"": 3, ""seed"": 42}",39.58298969999987,
+3,hron_ls,resource_limit,"{""k"": 10, ""max_iter"": 50}",180,Exceeded preregistered 180s wall budget per supplementary fold/method
+3,hron_lts,numerical_failure,"{""k"": 10, ""lts_starts"": 64, ""max_iter"": 50, ""seed"": 42}",17.27203959999997,CLR requires finite positive parts; use an explicit encoder zero policy
+3,micoda_v1,resource_limit,"{""W"": 1e-06, ""max_iter"": 50}",180,Exceeded preregistered 180s wall budget per supplementary fold/method
+3,tsagris_basic,ok,"{""k"": 10}",2.966104600000108,
+3,tsagris_global_cv,ok,"{""alphas"": [0.25, 0.5, 1.0], ""ks"": [3, 5, 10], ""leave_n"": 16, ""repetitions"": 3, ""seed"": 42}",6.575266999999712,
+3,tsagris_adaptive,ok,"{""alphas"": [0.25, 0.5, 1.0], ""ks"": [3, 5, 10], ""leave_n"": 16, ""repetitions"": 3, ""seed"": 42}",28.383091400000012,
+4,hron_ls,resource_limit,"{""k"": 10, ""max_iter"": 50}",180,Exceeded preregistered 180s wall budget per supplementary fold/method
+4,hron_lts,numerical_failure,"{""k"": 10, ""lts_starts"": 64, ""max_iter"": 50, ""seed"": 42}",15.8087416999997,CLR requires finite positive parts; use an explicit encoder zero policy
+4,micoda_v1,resource_limit,"{""W"": 1e-06, ""max_iter"": 50}",180,Exceeded preregistered 180s wall budget per supplementary fold/method
+4,tsagris_basic,ok,"{""k"": 10}",2.616685900000448,
+4,tsagris_global_cv,ok,"{""alphas"": [0.25, 0.5, 1.0], ""ks"": [3, 5, 10], ""leave_n"": 16, ""repetitions"": 3, ""seed"": 42}",6.234672900000078,
+4,tsagris_adaptive,ok,"{""alphas"": [0.25, 0.5, 1.0], ""ks"": [3, 5, 10], ""leave_n"": 16, ""repetitions"": 3, ""seed"": 42}",33.97376290000011,
