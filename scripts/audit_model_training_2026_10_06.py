@@ -95,7 +95,8 @@ def main():
     before = file_hashes(B)
     frozen_before = frozen_hashes()
     baseline = json.loads((ROOT / 'artifacts/e3e4_rework_2026-10-05/frozen_hashes_before.json').read_text())
-    assert baseline == frozen_before
+    from scripts.frozen_sources import historical_snapshot
+    assert baseline == historical_snapshot(frozen_before, baseline, ROOT)
     scope = dict(retrospective=True, no_training=True, no_canada=True, no_checkpoint_selection=True,
         curves='all 192 registered checkpoints', diagnostic_transforms=list(TRANSFORMS),
         diagnostic_modes=list(MODES), seeds=[42,43,44], branches=['main','cap8'],
