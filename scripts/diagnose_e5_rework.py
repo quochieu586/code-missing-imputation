@@ -1,13 +1,14 @@
 """Phase A: read-only legacy audit, held-out inference/oracles, no model fitting."""
 from __future__ import annotations
-import rework_runtime
-from rework_runtime import ROOT
+from scripts import rework_runtime
+from scripts.rework_runtime import ROOT
 import gzip
 import json
 import subprocess
 import sys
 import time
 from pathlib import Path
+from scripts.frozen_sources import source_hashes
 
 import numpy as np
 import pandas as pd
@@ -24,8 +25,8 @@ FROZEN = ('e0_extended','e1_pilot','e2_transforms','e3_csdi','e4_pilot','e3_csdi
 
 def frozen_hashes():
     files = [p for folder in FROZEN for p in (ROOT/'artifacts'/folder).rglob('*') if p.is_file()]
-    files += list((ROOT/'directive').glob('*.pdf')) + [ROOT/'data/covariants.csv']
-    return {str(p.relative_to(ROOT)): sha256(p) for p in files}
+    files += [ROOT/'data/covariants.csv']
+    return {**{str(p.relative_to(ROOT)): sha256(p) for p in files}, **source_hashes(ROOT)}
 
 
 def summary(x):
