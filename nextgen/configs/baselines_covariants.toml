@@ -1,0 +1,5 @@
+[dataset]
+entity = "location"
+time = "date"
+total = "total_sequence"
+targets = ["recombinant", "20A", "20B", "20C", "20E", "Beta", "Alpha", "Gamma", "Delta", "Kappa", "Epsilon", "Eta", "Iota", "Lambda", "Mu", "Omicron", "S:677"]

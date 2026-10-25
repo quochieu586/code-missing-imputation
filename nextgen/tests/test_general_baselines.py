@@ -1,8 +1,5 @@
 """Numerical/domain/information-boundary tests, not mirrors of boilerplate."""
-import copy
 import itertools
-import json
-from pathlib import Path
 import numpy as np
 import pytest
 from longitudinal_impute.baselines.common import BaselineError, clr, pivot_basis
@@ -10,27 +7,6 @@ from longitudinal_impute.baselines.hron import HronKNN, HronIterative
 from longitudinal_impute.baselines.micoda import MICoDa, allocate_missing
 from longitudinal_impute.baselines.tsagris import TsagrisKNN, TsagrisAdaptive, alpha_mean, jsd
 from longitudinal_impute.baselines.regression import lts
-from longitudinal_impute.baselines.panels import hide_targets, extended_proportions
-from longitudinal_impute.baselines.adapters import CountBaselineAdapter
-from longitudinal_impute.constraints import CountBudgetConstraint
-from longitudinal_impute.contracts import RawPanel, DatasetSchema, ConditioningPanel, FitScope
-from longitudinal_impute.metadata import MetadataEncoder
-
-
-def panel(values, totals=None, metadata=None):
-    x = np.asarray(values, float)
-    n, d = x.shape
-    mask = np.isfinite(x)
-    return ConditioningPanel(tuple(f'r{i}' for i in range(n)), x, mask,
-                             np.full(n, 100.) if totals is None else np.asarray(totals, float),
-                             np.array([f'location{i}' for i in range(n)]), np.arange(n),
-                             metadata or {}, {k: np.isfinite(v) if np.asarray(v).dtype.kind in 'fi' else
-                                              np.array([a is not None for a in v])
-                                              for k, v in (metadata or {}).items()}, 'mask1')
-
-
-def scope(p, ids=None):
-    return FitScope('inductive', p.row_ids if ids is None else ids, 'split1', p.mask_id)
 
 
 def positive_data(n=30, d=4):
@@ -204,89 +180,6 @@ def test_micoda_invalid_matrix_and_initial_complete_vs_pairwise_support():
     pairwise = MICoDa(reference=3, max_iter=2, fit_rows='pairwise').fit(train)
     assert complete.fit_result_.diagnostics['initial_regression_support'] == [18, 18, 18]
     assert pairwise.fit_result_.diagnostics['initial_regression_support'] == [19, 19, 20]
-
-
-@pytest.mark.parametrize('core', [HronKNN(2), MICoDa(W=.001), TsagrisKNN(2),
-                                 HronIterative(max_iter=3),
-                                 HronIterative(regression='lts', max_iter=2, lts_starts=8, lts_exact_limit=20),
-                                 MICoDa(version='v1', W=.001, max_iter=3),
-                                 TsagrisAdaptive(ks=(1, 2), repetitions=1, leave_n=2)])
-def test_count_adapters_general_D_preserve_zero_budget_and_hidden_poison(core):
-    train = panel(positive_data(n=20, d=5) * 60)
-    if isinstance(core, TsagrisAdaptive):
-        train.counts[0, 0] = np.nan
-        train.conditioning_mask[0, 0] = False
-    adapter = CountBaselineAdapter(core, fallback='train_mean', degenerate_policies=True).fit(train, scope(train))
-    query = panel([[0., 20., np.nan, 5., np.nan], [10., 0., 0., np.nan, 0.],
-                   [0., 0., np.nan, np.nan, 0.]], totals=[100, 10, 100])
-    a = adapter.predict_result(query)
-    poisoned = copy.deepcopy(query)
-    poisoned.counts[~query.conditioning_mask] = 987654321.
-    b = adapter.predict_result(poisoned)
-    np.testing.assert_array_equal(a.counts, b.counts)
-    np.testing.assert_array_equal(a.counts[query.conditioning_mask], query.counts[query.conditioning_mask])
-    assert np.isfinite(a.counts).all() and (a.counts >= 0).all()
-    assert (a.counts.sum(axis=1) <= query.totals + 1e-10).all()
-    np.testing.assert_allclose(a.counts.sum(axis=1) + a.diagnostics['other'], query.totals)
-    assert a.counts[1, 3] == 0.
-    assert 'proposal_counts' in a.diagnostics and 'repair_l1' in a.diagnostics
-    json.dumps(a.diagnostics, allow_nan=False)
-
-
-def test_Other_invalidated_before_transform_and_truth_store_separation():
-    x = np.array([[20., 30., 10.], [5., 10., 0.]])
-    raw = RawPanel(('a', 'b'), x, np.ones_like(x, bool), np.array([100., 50.]),
-                   np.array(['x', 'y']), np.array([1, 2]), {'derived_score': [1., 9.]},
-                   DatasetSchema('location', 'date', 'total', ('a', 'b', 'c'), ()))
-    hidden = np.zeros_like(x, bool); hidden[0, 2] = True
-    a, labels = hide_targets(raw, hidden, mask_id='H')
-    raw.counts[0, 2] = 80.
-    b, _ = hide_targets(raw, hidden, mask_id='H')
-    np.testing.assert_array_equal(a.counts, b.counts)
-    assert np.isnan(extended_proportions(a)[0, -1])
-    assert extended_proportions(a)[1, -1] == .7
-    assert not a.metadata and labels.values[0, 2] == 10.
-    assert not hasattr(a, 'values')  # no label-store field on conditioning
-
-
-def test_other_count_space_no_manufactured_epsilon_mass():
-    p = panel([[1., 1., 1., 3.]], totals=[6.])
-    assert extended_proportions(p)[0, -1] == 0.
-
-
-def test_scoped_donors_and_metadata_fit_do_not_use_excluded_rows():
-    p = panel([[20, 10, 5], [10, 20, 5], [1, 1, 95]], metadata={'age': np.array([20., 40., 999.])})
-    adapter = CountBaselineAdapter(HronKNN(1), metadata_encoder=MetadataEncoder(numeric=('age',))).fit(p, scope(p, ('r0', 'r1')))
-    assert adapter.fit_row_ids_ == ('r0', 'r1')
-    assert adapter.encoder.numeric_state_['age'][0] == 30.
-    assert len(adapter.core_.donors_) == 2
-    with pytest.raises(BaselineError): adapter.fit(p, FitScope('inductive', ('bad',), 's', p.mask_id))
-
-
-def test_metadata_missing_unknown_distinct_and_poisoned_missing_ignored():
-    p = panel([[1, 2], [2, 1], [1, 3]], metadata={'x': np.array([2., np.nan, 6.]),
-                                              'category': np.array(['a', None, 'b'], object)})
-    encoder = MetadataEncoder(numeric=('x',), categorical=('category',)).fit(p)
-    result = encoder.transform(p)
-    p.metadata['x'][1] = 1e9
-    np.testing.assert_array_equal(result, encoder.transform(p))
-    assert 'x:missing' in encoder.feature_names_ and 'category:missing' in encoder.feature_names_
-    q = panel([[1, 2]], metadata={'x': np.array([4.]), 'category': np.array(['new'], object)})
-    _, names = encoder._encode(q)
-    raw_encoded, _ = encoder._encode(q)
-    assert raw_encoded[0, names.index('category:unknown')] == 1.
-    assert raw_encoded[0, names.index('category:missing')] == 0.
-
-
-def test_constraint_no_missing_all_missing_R_negative_and_zero_mass():
-    p = panel([[20., 30.], [np.nan, np.nan], [0., np.nan]], totals=[80, 100, 10])
-    result = CountBudgetConstraint().apply([[1, 2, 3], [1, 2, 7], [0, 0, 1]], p)
-    np.testing.assert_array_equal(result.counts[0], [20, 30])
-    np.testing.assert_allclose(result.counts[1], [10, 20])
-    assert result.counts[2, 1] == 0
-    invalid = panel([[20, np.nan]], totals=[10])
-    with pytest.raises(BaselineError): CountBudgetConstraint().apply([[1, 1]], invalid)
-    with pytest.raises(BaselineError): CountBudgetConstraint().apply(np.zeros((3, 3)), p)
 
 
 def test_reference_degenerate_errors_and_explicit_fallbacks():

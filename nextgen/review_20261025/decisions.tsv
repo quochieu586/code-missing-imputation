@@ -1,0 +1,12 @@
+ts	phase	decision	why	evidence	result
+2026-10-25T09:06:36.336704+00:00	frame	Freeze the three model sources and their numerical dependencies	User requires baseline design approval before changes	protected_sources.json	VERIFIED
+2026-10-25T09:06:36.336704+00:00	cleanup	Delete synthetic source, data, configs, tests and experiment outputs	User explicitly requested removal rather than archiving	../src/longitudinal_impute; ../../datasets; ../../experiments	VERIFIED
+2026-10-25T09:06:36.336704+00:00	approval	Obtain approval to remove shared baseline infrastructure after automatic review rejection	User replied: ha tang cu dap di thiet ke lai di	REVIEW_VI.md	APPROVED
+2026-10-25T09:06:36.336704+00:00	reference	Capture outputs of the previous adapter before removing it	Compare actual numerical behavior after cleanup	adapter_reference.json	VERIFIED
+2026-10-25T09:06:36.336704+00:00	cleanup	Replace the adapter and fold benchmark with data.py and pipeline.py	Remove layers rather than spread the same control flow	../src/longitudinal_impute/data.py; ../src/longitudinal_impute/pipeline.py	VERIFIED
+2026-10-25T09:06:36.336704+00:00	baseline	Keep the existing default constructors and record failures	Do not silently choose zero policies or change model variants	covid_verified/summary.json	NOT VERIFIED for all three model completion
+2026-10-25T09:06:36.336704+00:00	mask	Retain an observed anchor when evaluation masking would hide a whole row	Initial real-data MSE run found two rows with no remaining observations	covid_full/summary.json; ../tests/test_covid_flow.py	VERIFIED after repair
+2026-10-25T09:06:36.336704+00:00	package	Refresh editable entrypoints and validate the dependency lock offline	Removed command modules must not remain installed as entrypoints	../pyproject.toml; ../uv.lock	VERIFIED
+2026-10-25T09:06:36.336704+00:00	verify	Check final CSV values, original text, count budgets and distribution metrics	Tests alone do not prove the real COVID output	verification.json; covid_verified/hron.csv	VERIFIED
+2026-10-25T09:09:42.043187+00:00	review	Independent gpt-5.6-sol review found missing direct export validation	An output boundary must reject invalid filled cells before creating a CSV	../src/longitudinal_impute/data.py; ../tests/test_covid_flow.py	FIXED
+2026-10-25T09:09:42.043187+00:00	verify	Run all 57 tests and re-export real COVID output through the final guard	Check the actual final code after the review fix	verification.json; covid_verified/hron.csv	VERIFIED

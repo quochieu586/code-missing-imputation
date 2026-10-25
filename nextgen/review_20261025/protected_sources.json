@@ -1,0 +1,30 @@
+{
+  "baselines/hron.py": {
+    "unchanged_from_HEAD": true,
+    "sha256": "b6563f503bb521339173f528b69891c4af4fa6d8bd3ed4ef7a1a89f4864fe1a4"
+  },
+  "baselines/micoda.py": {
+    "unchanged_from_HEAD": true,
+    "sha256": "e3990c78b7b4122809f85538388e98595b433732c85b2c08d77e4de721a4ff71"
+  },
+  "baselines/tsagris.py": {
+    "unchanged_from_HEAD": true,
+    "sha256": "089277d1a301244b3f20a460ce30c7222f37517b5e271e575e7c7c70d5d647ed"
+  },
+  "baselines/common.py": {
+    "unchanged_from_HEAD": true,
+    "sha256": "7b1d539048edd63d8952c266ed3524921abb9f0750daddb040849c2cec6885d8"
+  },
+  "baselines/regression.py": {
+    "unchanged_from_HEAD": true,
+    "sha256": "aae5ea2eb8e579f7f5fb155479ef03dfaa4f2b030e118466d5cdb27df410c2c6"
+  },
+  "baselines/diagnostics.py": {
+    "unchanged_from_HEAD": true,
+    "sha256": "e48dc7c7fd420d942435a061d15d128e1b25dc5f53de861f461cdc86e2da7540"
+  },
+  "errors.py": {
+    "unchanged_from_HEAD": true,
+    "sha256": "12128d66f734f9b9bea30a237c9654189f2d887e8640af02e00396f5fab5aa48"
+  }
+}

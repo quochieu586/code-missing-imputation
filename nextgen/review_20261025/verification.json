@@ -1,0 +1,46 @@
+{
+  "source_before": {
+    "files": 56,
+    "lines": 4229
+  },
+  "source_after": {
+    "files": 14,
+    "lines": 1263
+  },
+  "covid_rows": 11671,
+  "targets": 17,
+  "observed_cells": 112357,
+  "native_missing_cells": 86050,
+  "evaluation_cells": 5518,
+  "native_hron_csv_identical_to_pre_cleanup_run": true,
+  "observed_values_and_text_preserved": true,
+  "non_target_columns_preserved": true,
+  "all_native_missing_filled": true,
+  "count_budget_preserved": true,
+  "distribution_scores_recomputed": true,
+  "seven_protected_sources_unchanged": true,
+  "hron_mse": 23788.833053463888,
+  "pending_models": {
+    "micoda": {
+      "status": "failed",
+      "error": "BaselineError: MICoDa ALR needs positive parts: declare W > 0 for zeros"
+    },
+    "tsagris": {
+      "status": "failed",
+      "error": "PredictionUnavailableError: row 0: zero-total observed subcomposition"
+    }
+  },
+  "python": "3.14.0",
+  "numpy": "2.5.4",
+  "native_before_sha256": "8696b111fbdb042455d90d5210932ca7116bbc760f9773bbf70965355720b3d6",
+  "native_after_sha256": "8696b111fbdb042455d90d5210932ca7116bbc760f9773bbf70965355720b3d6",
+  "tests_passed": 57,
+  "final_export_guard_checked_on_real_covid_output": true,
+  "independent_review": {
+    "model": "gpt-5.6-sol",
+    "findings": 1,
+    "fixed": 1,
+    "remaining": 0,
+    "limit": "Evidence and implementation review; no full model rerun by reviewer"
+  }
+}

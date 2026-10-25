@@ -1,0 +1,121 @@
+{
+  "hron": {
+    "distribution_counts": {
+      "recombinant": {
+        "observed_cells": 9713,
+        "imputed_cells": 1958,
+        "wasserstein_before_after": 0.9953718361837985,
+        "wasserstein_observed_imputed": 5.933087180848331
+      },
+      "20A": {
+        "observed_cells": 7661,
+        "imputed_cells": 4010,
+        "wasserstein_before_after": 3.5863868422975442,
+        "wasserstein_observed_imputed": 10.438084996622152
+      },
+      "20B": {
+        "observed_cells": 4545,
+        "imputed_cells": 7126,
+        "wasserstein_before_after": 3.3151824938293335,
+        "wasserstein_observed_imputed": 5.429623194707018
+      },
+      "20C": {
+        "observed_cells": 2220,
+        "imputed_cells": 9451,
+        "wasserstein_before_after": 0.34000226782332443,
+        "wasserstein_observed_imputed": 0.41986736512179207
+      },
+      "20E": {
+        "observed_cells": 7598,
+        "imputed_cells": 4073,
+        "wasserstein_before_after": 7.810995109509961,
+        "wasserstein_observed_imputed": 22.382058414703124
+      },
+      "Beta": {
+        "observed_cells": 8605,
+        "imputed_cells": 3066,
+        "wasserstein_before_after": 1.1288742054029501,
+        "wasserstein_observed_imputed": 4.297159442680274
+      },
+      "Alpha": {
+        "observed_cells": 11325,
+        "imputed_cells": 346,
+        "wasserstein_before_after": 2.9836616070694983,
+        "wasserstein_observed_imputed": 100.6425277921961
+      },
+      "Gamma": {
+        "observed_cells": 6732,
+        "imputed_cells": 4939,
+        "wasserstein_before_after": 7.74174401449371,
+        "wasserstein_observed_imputed": 18.293965254739014
+      },
+      "Delta": {
+        "observed_cells": 11656,
+        "imputed_cells": 15,
+        "wasserstein_before_after": 0.474699982011501,
+        "wasserstein_observed_imputed": 369.34823266986956
+      },
+      "Kappa": {
+        "observed_cells": 4650,
+        "imputed_cells": 7021,
+        "wasserstein_before_after": 0.5519120816349935,
+        "wasserstein_observed_imputed": 0.9174428008491446
+      },
+      "Epsilon": {
+        "observed_cells": 4087,
+        "imputed_cells": 7584,
+        "wasserstein_before_after": 10.97406518439672,
+        "wasserstein_observed_imputed": 16.887963445028316
+      },
+      "Eta": {
+        "observed_cells": 6778,
+        "imputed_cells": 4893,
+        "wasserstein_before_after": 0.5095381307270335,
+        "wasserstein_observed_imputed": 1.2153728844707274
+      },
+      "Iota": {
+        "observed_cells": 4168,
+        "imputed_cells": 7503,
+        "wasserstein_before_after": 6.012117929438486,
+        "wasserstein_observed_imputed": 9.351916347391125
+      },
+      "Lambda": {
+        "observed_cells": 3915,
+        "imputed_cells": 7756,
+        "wasserstein_before_after": 1.6553769928545412,
+        "wasserstein_observed_imputed": 2.490962465652933
+      },
+      "Mu": {
+        "observed_cells": 4751,
+        "imputed_cells": 6920,
+        "wasserstein_before_after": 1.760408927386056,
+        "wasserstein_observed_imputed": 2.969036501665101
+      },
+      "Omicron": {
+        "observed_cells": 11658,
+        "imputed_cells": 13,
+        "wasserstein_before_after": 0.7719518890313607,
+        "wasserstein_observed_imputed": 693.0346536061552
+      },
+      "S:677": {
+        "observed_cells": 2295,
+        "imputed_cells": 9376,
+        "wasserstein_before_after": 4.1866160481944625,
+        "wasserstein_observed_imputed": 5.211390347533905
+      }
+    },
+    "status": "completed",
+    "evaluation_cells": 5518,
+    "mse": 23788.833053463888,
+    "evaluation_status": "completed",
+    "seconds": 68.5165778999999
+  },
+  "micoda": {
+    "status": "failed",
+    "error": "BaselineError: MICoDa ALR needs positive parts: declare W > 0 for zeros"
+  },
+  "tsagris": {
+    "status": "failed",
+    "error": "PredictionUnavailableError: row 0: zero-total observed subcomposition"
+  }
+}
