@@ -9,7 +9,6 @@ import pytest
 
 from longitudinal_impute.data import (Dataset, load_csv, make_mask, model_input,
                                       restore_counts, write_completed_csv)
-from longitudinal_impute.evaluation import distribution_scores, wasserstein
 from longitudinal_impute.pipeline import impute, run
 from longitudinal_impute.baselines.hron import HronKNN
 from longitudinal_impute.baselines.micoda import MICoDa
@@ -85,17 +84,6 @@ def test_restore_extreme_weights_preserves_representable_tiny_mass():
     assert np.isfinite(result).all()
     assert result[0, 0] == 1e-300
     assert result[0, 1] == 1e308
-
-
-def test_distribution_compares_native_missing_and_reports_no_support(reference_data):
-    data, expected = reference_data
-    scores = distribution_scores(data, np.array(expected['hron']))['distribution_counts']
-    assert scores['a']['imputed_cells'] == 1
-    assert scores['a']['wasserstein_observed_imputed'] is not None
-    assert scores['b']['imputed_cells'] == 0
-    assert scores['b']['wasserstein_observed_imputed'] is None
-    assert wasserstein([0., 2.], [1., 3.]) == 1.
-    assert wasserstein([0.], [0., 2.]) == 1.
 
 
 @pytest.mark.parametrize('invalid', [np.nan, np.inf, -1., 1000.])

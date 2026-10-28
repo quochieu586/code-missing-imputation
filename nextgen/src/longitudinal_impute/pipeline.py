@@ -4,7 +4,7 @@ from pathlib import Path
 import time
 import numpy as np
 from .data import load_csv, make_mask, model_input, restore_counts, write_completed_csv
-from .evaluation import distribution_scores
+from .evaluate import wasserstein_scores
 
 
 def impute(raw, model, hidden):
@@ -28,7 +28,7 @@ def run(data, schema_config, output, *, models, mask_rate=0., seed=0):
         try:
             completed = impute(raw, factory(), np.zeros_like(hidden))
             write_completed_csv(output / f'{name}.csv', raw, completed)
-            scores = distribution_scores(raw, completed)
+            scores = {"wasserstein": wasserstein_scores(raw, completed)}
             scores['status'] = 'completed'
         except (ValueError, RuntimeError) as exc:
             summary[name] = {'status': 'failed', 'error': f'{type(exc).__name__}: {exc}'}
