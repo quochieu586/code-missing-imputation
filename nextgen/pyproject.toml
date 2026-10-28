@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "longitudinal-impute"
 version = "0.0.1"
-description = "Full-table COVID-19 count imputation with three baseline models"
+description = "Full-table count imputation with Hron, MICoDa and Tsagris baselines"
 requires-python = ">=3.11"
 dependencies = ["numpy>=1.26,<3"]
 
@@ -13,8 +13,8 @@ dependencies = ["numpy>=1.26,<3"]
 test = ["pytest>=8,<10"]
 
 [project.scripts]
-longitudinal-impute = "longitudinal_impute.cli:main"
-general-impute = "longitudinal_impute.cli:main"
+longitudinal-impute = "longitudinal_impute.run:main"
+general-impute = "longitudinal_impute.run:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

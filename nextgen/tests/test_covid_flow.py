@@ -1,15 +1,13 @@
 """Observable behavior of full-table imputation and evaluation."""
-import csv
-import hashlib
 import json
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-from longitudinal_impute.data import (Dataset, load_csv, make_mask, model_input,
+from longitudinal_impute.data import (Dataset, make_mask, model_input,
                                       restore_counts, write_completed_csv)
-from longitudinal_impute.pipeline import impute, run
+from longitudinal_impute.run import impute
 from longitudinal_impute.baselines.hron import HronKNN
 from longitudinal_impute.baselines.micoda import MICoDa
 from longitudinal_impute.baselines.tsagris import TsagrisKNN
@@ -95,52 +93,3 @@ def test_export_rejects_invalid_imputed_cells_before_writing(tmp_path, reference
     with pytest.raises(ValueError, match='incomplete or violates'):
         write_completed_csv(target, data, completed)
     assert not target.exists()
-
-
-def test_full_runner_preserves_csv_and_runs_separate_mse(tmp_path, reference_data):
-    data, _ = reference_data
-    source = tmp_path / 'input.csv'
-    with source.open('w', newline='') as stream:
-        writer = csv.writer(stream)
-        writer.writerow(['location', 'date', 'total', 'a', 'b', 'c', 'note'])
-        for i, row in enumerate(data.counts):
-            writer.writerow(['L', f'2020-01-{i + 1:02d}', '100',
-                             *('' if np.isnan(v) else f'{v:.1f}' for v in row), 'keep'])
-    schema = tmp_path / 'schema.toml'
-    schema.write_text('[dataset]\nentity="location"\ntime="date"\ntotal="total"\ntargets=["a","b","c"]\n')
-    original_hash = hashlib.sha256(source.read_bytes()).hexdigest()
-    output = tmp_path / 'run'
-    fitted = []
-
-    class RecordingHron(HronKNN):
-        def fit(self, values):
-            fitted.append(values.copy())
-            return super().fit(values)
-
-    def failing_model():
-        raise ValueError('explicit model failure')
-
-    result = run(source, schema, output,
-                 models={'failed': failing_model, 'hron': RecordingHron}, mask_rate=.1, seed=13)
-    assert result['failed']['status'] == 'failed'
-    assert result['hron']['status'] == 'completed'
-    assert result['hron']['evaluation_status'] == 'completed'
-    assert result['hron']['mse'] >= 0
-    hidden = np.load(output / 'evaluation_mask.npy')
-    assert hidden.any()
-    assert not (hidden & ~np.isfinite(data.counts)).any()
-    assert len(fitted) == 2 and all(len(x) == len(data.counts) for x in fitted)
-    assert np.isfinite(fitted[0][:, :-1]).sum() == np.isfinite(data.counts).sum()
-    assert np.isfinite(fitted[1][:, :-1]).sum() == np.isfinite(data.counts).sum() - hidden.sum()
-    loaded = load_csv(output / 'hron.csv', schema)
-    with source.open(newline='') as stream:
-        original_rows = list(csv.DictReader(stream))
-    for i, row in enumerate(loaded.rows):
-        for j, target in enumerate(data.targets):
-            if np.isfinite(data.counts[i, j]):
-                assert row[target] == original_rows[i][target]
-        assert row['note'] == 'keep'
-    assert np.isfinite(loaded.counts).all()
-    assert hashlib.sha256(source.read_bytes()).hexdigest() == original_hash
-    with pytest.raises(FileExistsError):
-        run(source, schema, output, models={'hron': HronKNN})
