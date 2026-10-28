@@ -10,8 +10,7 @@ from .evaluation import distribution_scores
 def impute(raw, model, hidden):
     values = model_input(raw, hidden, positive=model.input_domain == 'positive')
     model.fit(values)
-    prediction = model.predict_result(values)
-    return restore_counts(raw, prediction.values * raw.totals[:, None], hidden)
+    return restore_counts(raw, model.predict(values) * raw.totals[:, None], hidden)
 
 
 def run(data, schema_config, output, *, models, mask_rate=0., seed=0):
