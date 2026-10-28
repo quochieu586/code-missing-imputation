@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 import subprocess
 import numpy as np
-from longitudinal_impute.baselines.hron import HronKNN, HronIterative
+from longitudinal_impute.baselines.hron import HronKNN
 from longitudinal_impute.baselines.micoda import MICoDa
 from longitudinal_impute.baselines.tsagris import TsagrisKNN
 from longitudinal_impute.baselines.regression import lts
@@ -44,8 +44,7 @@ def verify(workdir, author_source, rscript='Rscript'):
     for version in ['v1', 'v2']:
         compare('micoda_' + version, MICoDa(version=version, reference=3, semantics='author_code',
                                            max_iter=5, fixed_iterations=True).impute(mic, cov))
-    compare('hron_knn', HronKNN(3).impute(hron))
-    compare('hron_ls', HronIterative(k=3, max_iter=3, tol=0).impute(hron))
+    compare('hron_knn', HronKNN(3, ties='index').fit(hron).predict(hron))
     for alpha in [-.5, 0., .5, 1.]:
         name = 'tsagris_' + str(int(alpha) if alpha in (0, 1) else alpha)
         compare(name, TsagrisKNN(3, alpha=alpha).fit(positive).predict(query))

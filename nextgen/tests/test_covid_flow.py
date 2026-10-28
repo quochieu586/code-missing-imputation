@@ -26,7 +26,10 @@ def reference_data():
     return CovidData(counts, np.array(record['totals']), ('a', 'b', 'c'), [], []), record['expected']
 
 
-@pytest.mark.parametrize('name,model', [('hron', HronKNN), ('micoda', MICoDa), ('tsagris', TsagrisKNN)])
+# The fixture has no Hron distance ties, so ties='group' (default) and the
+# previous behaviour ties='index' must both reproduce the saved output.
+@pytest.mark.parametrize('name,model', [('hron', HronKNN), ('hron', lambda: HronKNN(ties='index')),
+                                        ('micoda', MICoDa), ('tsagris', TsagrisKNN)])
 def test_direct_flow_matches_saved_adapter_output(reference_data, name, model):
     data, expected = reference_data
     result = impute(data, model(), np.zeros_like(data.counts, dtype=bool))
@@ -117,9 +120,9 @@ def test_full_runner_preserves_csv_and_runs_separate_mse(tmp_path, reference_dat
     fitted = []
 
     class RecordingHron(HronKNN):
-        def fit(self, values, covariates=None):
+        def fit(self, values):
             fitted.append(values.copy())
-            return super().fit(values, covariates)
+            return super().fit(values)
 
     def failing_model():
         raise ValueError('explicit model failure')

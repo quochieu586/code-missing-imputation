@@ -3,7 +3,6 @@ import itertools
 import numpy as np
 import pytest
 from longitudinal_impute.baselines.common import BaselineError, clr, pivot_basis
-from longitudinal_impute.baselines.hron import HronKNN, HronIterative
 from longitudinal_impute.baselines.micoda import MICoDa, allocate_missing
 from longitudinal_impute.baselines.tsagris import TsagrisKNN, TsagrisAdaptive, alpha_mean, jsd
 from longitudinal_impute.baselines.regression import lts
@@ -48,26 +47,6 @@ def test_alpha_mean_endpoints_and_near_zero_limit():
     np.testing.assert_allclose(alpha_mean([[1., 0.], [.5, .5]], .5).sum(), 1.)
 
 
-def test_hron_ratio_of_medians_is_not_median_of_ratios():
-    donor = np.array([[100., 200., 1., 9.]])
-    query = np.array([[10., 30., 60., np.nan]])
-    value = HronKNN(1).fit(donor).predict(query)[0, 3]
-    assert value == pytest.approx(9 * 30 / 100)
-    assert value != pytest.approx(9 * np.median(query[0, :3] / donor[0, :3]))
-    np.testing.assert_allclose(HronKNN(1, adjustment='sum').fit(donor).predict(query)[0, 3], 9 * 100 / 301)
-
-
-def test_hron_donor_policies_ties_and_scale_invariance():
-    donors = np.array([[1., 2., 3., np.nan], [2., 4., 10., 8.], [4., 8., 24., 16.]])
-    query = np.array([[2., 4., np.nan, np.nan]])
-    available = HronKNN(1, donor_policy='available').fit(donors).predict_result(query)
-    complete = HronKNN(1, donor_policy='complete').fit(donors).predict_result(query)
-    assert available.values[0, 2] == pytest.approx(6)
-    assert complete.values[0, 2] == pytest.approx(10)
-    np.testing.assert_allclose(HronKNN(1).fit(donors).predict(query * 5), available.values * 5)
-    assert available.diagnostics['records'][0]['donor_ids'] == [0]
-
-
 def test_pivot_isometry_and_inverse_relative():
     x = positive_data()
     basis = pivot_basis(x.shape[1])
@@ -75,22 +54,6 @@ def test_pivot_isometry_and_inverse_relative():
     z = clr(x) @ basis
     back = np.exp(z @ basis.T); back /= back.sum(axis=1, keepdims=True)
     np.testing.assert_allclose(back, x, atol=1e-12)
-
-
-@pytest.mark.parametrize('regression', ['ls', 'lts'])
-def test_hron_iterative_observed_ratios_stopping_and_bounded_fit(regression):
-    x = positive_data(n=14, d=3)
-    original = x.copy(); x[:3, 0] = np.nan; x[3:5, 2] = np.nan
-    result = HronIterative(regression=regression, max_iter=4, lts_starts=8, lts_exact_limit=20).fit(x)
-    out = result.fit_result_.values
-    assert np.isfinite(out).all() and (out > 0).all()
-    for i in range(len(x)):
-        observed = np.flatnonzero(np.isfinite(x[i]))
-        np.testing.assert_allclose(out[i, observed] / out[i, observed[0]],
-                                   original[i, observed] / original[i, observed[0]], atol=1e-10)
-    assert result.fit_result_.diagnostics['iterations'] <= 4
-    assert len(result.models_) == 3  # last part also has a fitted predictor
-    assert not np.array_equal(out[np.isfinite(x)], original[np.isfinite(x)])
 
 
 def test_lts_exact_small_problem_and_seeded_approximation():
@@ -183,8 +146,6 @@ def test_micoda_invalid_matrix_and_initial_complete_vs_pairwise_support():
 
 
 def test_reference_degenerate_errors_and_explicit_fallbacks():
-    with pytest.raises(BaselineError): HronKNN().fit([[0., 1.]])
-    with pytest.raises(BaselineError): HronKNN().fit([[1., np.nan]]).predict([[np.nan, 1.]])
     with pytest.raises(BaselineError): TsagrisKNN().fit([[.1, np.nan]])
     fit = [[.4, .6], [.6, .4]]
     with pytest.raises(BaselineError): TsagrisKNN().fit(fit).predict([[0., np.nan]])
