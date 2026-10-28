@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import time
 import numpy as np
-from .data import load_csv, evaluation_mask, model_input, restore_counts, write_completed_csv
+from .data import load_csv, make_mask, model_input, restore_counts, write_completed_csv
 from .evaluation import distribution_scores
 
 
@@ -19,7 +19,7 @@ def run(data, schema_config, output, *, models, mask_rate=0., seed=0):
     if output.exists():
         raise FileExistsError(output)
     raw = load_csv(data, schema_config)
-    hidden = evaluation_mask(raw.counts, mask_rate, seed)
+    hidden = make_mask(raw, 'random_cell', mask_rate, seed)[0]
     output.mkdir(parents=True)
     np.save(output / 'evaluation_mask.npy', hidden)
     summary = {}

@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from longitudinal_impute.data import (CovidData, load_csv, evaluation_mask, model_input,
+from longitudinal_impute.data import (Dataset, load_csv, make_mask, model_input,
                                       restore_counts, write_completed_csv)
 from longitudinal_impute.evaluation import distribution_scores, wasserstein
 from longitudinal_impute.pipeline import impute, run
@@ -18,12 +18,17 @@ from longitudinal_impute.baselines.tsagris import TsagrisKNN
 NEXTGEN = Path(__file__).resolve().parents[1]
 
 
+def dataset(counts, totals, targets):
+    counts = np.array(counts, float)
+    return Dataset(counts, np.array(totals, float), tuple(targets), ('e',) * len(counts), [], [], [])
+
+
 @pytest.fixture
 def reference_data():
     record = json.loads((NEXTGEN / 'review_20261025/adapter_reference.json').read_text())
     counts = np.array(record['counts'])
     counts[counts == record['missing_sentinel']] = np.nan
-    return CovidData(counts, np.array(record['totals']), ('a', 'b', 'c'), [], []), record['expected']
+    return dataset(counts, record['totals'], 'abc'), record['expected']
 
 
 # The fixture has no Hron distance ties, so ties='group' (default) and the
@@ -49,15 +54,16 @@ def test_hidden_truth_never_enters_model_input(reference_data):
 
 def test_mask_is_reproducible_and_keeps_an_observed_anchor():
     counts = np.array([[np.nan, 1., np.nan], [1., 2., 3.], [np.nan, np.nan, np.nan]])
-    hidden = evaluation_mask(counts, .999, 7)
-    np.testing.assert_array_equal(hidden, evaluation_mask(counts, .999, 7))
+    data = dataset(counts, [5, 6, 5], 'abc')
+    hidden = make_mask(data, 'random_cell', .999, 7)[0]
+    np.testing.assert_array_equal(hidden, make_mask(data, 'random_cell', .999, 7)[0])
     assert not hidden[0].any() and not hidden[2].any()
     assert hidden[1].sum() == 2
     assert not (hidden & ~np.isfinite(counts)).any()
 
 
 def test_other_uses_count_space_and_zero_replacement_is_input_only():
-    data = CovidData(np.array([[1., 1., 1., 3., 0.]]), np.array([6.]), tuple('abcde'), [], [])
+    data = dataset([[1., 1., 1., 3., 0.]], [6.], 'abcde')
     hidden = np.zeros_like(data.counts, dtype=bool)
     assert model_input(data, hidden)[0, -1] == 0.
     assert (model_input(data, hidden, positive=True) > 0).all()
@@ -65,8 +71,7 @@ def test_other_uses_count_space_and_zero_replacement_is_input_only():
 
 
 def test_restore_observed_zero_residual_and_all_missing():
-    data = CovidData(np.array([[20., 30.], [np.nan, np.nan], [10., np.nan]]),
-                     np.array([80., 100., 10.]), ('a', 'b'), [], [])
+    data = dataset([[20., 30.], [np.nan, np.nan], [10., np.nan]], [80., 100., 10.], 'ab')
     hidden = np.zeros_like(data.counts, dtype=bool)
     result = restore_counts(data, np.array([[1., 2., 3.], [1., 2., 7.], [1., 0., 0.]]), hidden)
     np.testing.assert_allclose(result, [[20., 30.], [10., 20.], [10., 0.]])
@@ -75,7 +80,7 @@ def test_restore_observed_zero_residual_and_all_missing():
 
 
 def test_restore_extreme_weights_preserves_representable_tiny_mass():
-    data = CovidData(np.array([[np.nan, np.nan]]), np.array([1e308]), ('a', 'b'), [], [])
+    data = dataset([[np.nan, np.nan]], [1e308], 'ab')
     result = restore_counts(data, np.array([[1e-300, 1e308, 1e-300]]), np.array([[False, False]]))
     assert np.isfinite(result).all()
     assert result[0, 0] == 1e-300
