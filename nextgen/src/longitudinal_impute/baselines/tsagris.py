@@ -1,304 +1,186 @@
-"""Tsagris JSD-kNN, alpha mean, repeated leave-N-out and pattern adaptation.
+"""Tsagris et al., JSD k-NN (section 2.3) and JSD alpha-k-NN (section 2.4).
 
-JSD is Eq. (5), i.e. twice the usual divergence, with natural logarithms.
-Eq. (6) is interpreted with ROW-normalized powers, consistent with alpha=1
-arithmetic mean and alpha->0 geometric mean; PDF denominator indices have a
-typographical inconsistency. No handwritten annotations define this code.
+Donors are the complete rows. For an incomplete row the observed parts of
+the query and of every donor are closed on the same columns, compared with
+the JSD of Eq. 5, and the k nearest donors (ties broken by row index) are
+averaged with the Frechet mean of Eq. 6 over their FULL vectors. The mean at
+the missing positions is closed and multiplied by T = 1 - sum(observed).
+Optional global (k, alpha) tuning follows section 2.4.1 with a fixed
+leave-N-out size; the per-pattern adaptive variant (2.5) is not provided.
 """
-import copy
 import numpy as np
-from .common import BaselineError, CoreResult, simplex, closure, clr, stable_softmax, distance_order
-from ..errors import NotFittedError, PredictionUnavailableError
+from ..errors import BaselineError, NotFittedError
+
+RESIDUAL_TOLERANCE = 1e-12
 
 
 def jsd(x, y):
+    """Eq. 5: twice the usual Jensen-Shannon divergence, natural log, 0 log 0 = 0."""
     x, y = np.broadcast_arrays(np.asarray(x, float), np.asarray(y, float))
-    if not np.isfinite(x).all() or not np.isfinite(y).all() or (x < 0).any() or (y < 0).any():
+    if not (np.isfinite(x).all() and np.isfinite(y).all()) or (x < 0).any() or (y < 0).any():
         raise BaselineError('JSD requires finite nonnegative parts')
-    if not np.allclose(x.sum(axis=-1), 1.) or not np.allclose(y.sum(axis=-1), 1.):
-        raise BaselineError('JSD inputs must be closed compositions')
     middle = (x + y) / 2
     a, b = np.zeros_like(x), np.zeros_like(y)
-    ax, by = x > 0, y > 0
-    a[ax] = x[ax] * np.log(x[ax] / middle[ax])
-    b[by] = y[by] * np.log(y[by] / middle[by])
+    a[x > 0] = x[x > 0] * np.log(x[x > 0] / middle[x > 0])
+    b[y > 0] = y[y > 0] * np.log(y[y > 0] / middle[y > 0])
     return np.maximum((a + b).sum(axis=-1), 0.)
 
 
-def alpha_mean(values, alpha=1.):
-    x = simplex(values)
+def frechet_mean(x, alpha=1.):
+    """Eq. 6 with row-normalised powers; alpha = 1 is the arithmetic mean, alpha -> 0 the
+    closed geometric mean. alpha <= 0 needs strictly positive rows."""
+    x = np.asarray(x, float)
     if not np.isfinite(alpha) or not -1 <= alpha <= 1:
-        raise BaselineError('alpha must be finite in [-1,1]')
-    if alpha < 0 and (x == 0).any():
-        raise BaselineError('alpha < 0 requires strictly positive donors; no implicit zero smoothing')
+        raise BaselineError('alpha must lie in [-1, 1]')
+    if alpha <= 0 and (x <= 0).any():
+        raise BaselineError('alpha <= 0 requires strictly positive compositions; use alpha in (0, 1]')
     if alpha == 1:
         return x.mean(axis=0)
-    if alpha == 0:
-        shared_positive = (x > 0).all(axis=0)
-        if not shared_positive.any():
-            raise BaselineError('Geometric mean has no common positive support; closure undefined')
-        answer = np.zeros(x.shape[1])
-        answer[shared_positive] = stable_softmax(np.log(x[:, shared_positive]).mean(axis=0))
-        return answer
-    if abs(alpha) < 1e-8 and (x > 0).all():
-        return stable_softmax(np.log(x).mean(axis=0))
-    # Work in logs; all-zero feature has zero mass for alpha>0.
-    with np.errstate(divide='ignore'):
-        logs = np.log(x)
-    powered = alpha * logs
-    maxima = powered.max(axis=1, keepdims=True)
-    lognorm = maxima + np.log(np.exp(powered - maxima).sum(axis=1, keepdims=True))
-    logu = powered - lognorm
-    colmax = logu.max(axis=0)
-    active = np.isfinite(colmax)
-    logmean = np.full(x.shape[1], -np.inf)
-    logmean[active] = colmax[active] + np.log(np.exp(logu[:, active] - colmax[active]).mean(axis=0))
-    loganswer = logmean / alpha
-    answer = np.zeros(x.shape[1])
-    answer[active] = np.exp(loganswer[active] - loganswer[active].max())
-    return closure(answer)
+    with np.errstate(divide='ignore'):     # a part that is zero in every row has log mean -inf
+        if alpha == 0:
+            z = np.log(x).mean(axis=0)
+        else:
+            powers = x ** alpha
+            z = np.log(np.mean(powers / powers.sum(axis=1, keepdims=True), axis=0)) / alpha
+    mean = np.exp(z - z.max())             # log scale keeps small alpha from underflowing
+    return mean / mean.sum()
+
+
+def _check(values, width=None):
+    x = np.array(values, dtype=float)
+    if x.ndim != 2 or x.shape[0] == 0 or x.shape[1] < 2:
+        raise BaselineError('Tsagris expects a nonempty N x D matrix with D >= 2')
+    if width is not None and x.shape[1] != width:
+        raise BaselineError('Feature dimension differs from fitted data',
+                            context={'expected': width, 'got': x.shape[1]})
+    bad = np.argwhere(np.isinf(x) | (np.isfinite(x) & (x < 0)))
+    if len(bad):
+        i, j = bad[0]
+        raise BaselineError(f'Tsagris requires finite nonnegative parts; row {i}, feature {j} is {x[i, j]!r}',
+                            context={'row': int(i), 'feature': int(j)})
+    return x
 
 
 class TsagrisKNN:
     input_domain = 'nonnegative'
-    prediction_policy = 'rowwise_adaptation'
 
-    def __init__(self, k=3, *, alpha=1., zero_anchor='error', zero_missing_mass='error'):
-        if not isinstance(k, int) or isinstance(k, bool) or k < 1:
-            raise BaselineError('k must be a positive integer')
-        if not np.isfinite(alpha) or not -1 <= alpha <= 1:
-            raise BaselineError('alpha must lie in [-1,1]')
-        if zero_anchor not in ('error', 'global') or zero_missing_mass not in ('error', 'uniform'):
-            raise BaselineError('Unknown explicit degenerate-case policy')
+    def __init__(self, k=3, *, alpha=1., zero_anchor='global', zero_missing_mass='uniform',
+                 tune=False, ks=(1, 3, 5, 10), alphas=(.25, .5, .75, 1.), leave_n=None,
+                 repetitions=5, seed=0):
+        for value in (k, *ks):
+            if not isinstance(value, int) or isinstance(value, bool) or value < 1:
+                raise BaselineError('k values must be positive integers')
+        for value in (alpha, *alphas):
+            if not np.isfinite(value) or not -1 <= value <= 1:
+                raise BaselineError('alpha values must lie in [-1, 1]')
+        if zero_anchor not in ('global', 'error') or zero_missing_mass not in ('uniform', 'error'):
+            raise BaselineError("zero_anchor is 'global'|'error'; zero_missing_mass is 'uniform'|'error'")
+        if not ks or not alphas or repetitions < 1 or (leave_n is not None and leave_n < 1):
+            raise BaselineError('Invalid tuning configuration')
         self.k, self.alpha = k, float(alpha)
         self.zero_anchor, self.zero_missing_mass = zero_anchor, zero_missing_mass
+        self.tune, self.ks, self.alphas = tune, tuple(ks), tuple(float(a) for a in alphas)
+        self.leave_n, self.repetitions, self.seed = leave_n, repetitions, seed
 
-    def fit(self, values, covariates=None):
-        candidate = copy.copy(self)
-        candidate.__dict__.pop('last_prediction_', None)
-        candidate._fit_in_place(values, covariates)
-        self.__dict__ = candidate.__dict__
+    def fit(self, values):
+        x = _check(values)
+        complete = np.isfinite(x).all(axis=1)
+        self.donors_ = x[complete]
+        if not len(self.donors_):
+            raise BaselineError('Tsagris needs at least one complete donor row')
+        sums = self.donors_.sum(axis=1)
+        if not np.allclose(sums, 1., atol=1e-10, rtol=0):
+            i = int(np.flatnonzero(complete)[np.argmax(np.abs(sums - 1))])
+            raise BaselineError(f'row {i}: complete rows must sum to 1', context={'row': i})
+        self.missing_patterns_ = ~np.isfinite(x[~complete])
+        self.tuning_ = self._tune() if self.tune else None
+        self.k_, self.alpha_ = ((self.tuning_['selected']['k'], self.tuning_['selected']['alpha'])
+                                if self.tune else (self.k, self.alpha))
         return self
 
-    def _fit_in_place(self, values, covariates=None):
-        x = simplex(values, partial=True)
-        self.width_ = x.shape[1]
-        self.donor_ids_ = np.flatnonzero(np.isfinite(x).all(axis=1))
-        self.donors_ = x[self.donor_ids_].copy()
-        if len(self.donors_) == 0:
-            raise BaselineError('Tsagris needs at least one complete donor')
-        if self.alpha < 0 and (self.donors_ == 0).any():
-            raise BaselineError('alpha < 0 requires positive complete donors')
-        return self
-
-    def with_degenerate_policies(self):
-        """Return a configured copy for adapters with declared fallbacks."""
-        from .registry import configure_core
-        return configure_core(self, degenerate_policies=True)
-
-    def predict_result(self, values, covariates=None):
+    def predict(self, values):
         if not hasattr(self, 'donors_'):
             raise NotFittedError('Fit TsagrisKNN before prediction')
-        x = simplex(values, partial=True)
-        if x.shape[1] != self.width_:
-            raise BaselineError('Query dimension differs from fit')
-        out, records = x.copy(), []
-        for i, row in enumerate(x):
-            observed, missing = np.isfinite(row), ~np.isfinite(row)
-            if not missing.any():
-                continue
-            residual = max(0., 1 - row[observed].sum())
-            if residual == 0:
+        out, counts = self._impute(_check(values, self.donors_.shape[1]), self.donors_, self.k_, self.alpha_)
+        self.info_ = {'method': 'tsagris_jsd_knn', 'k': self.k_, 'alpha': self.alpha_,
+                      'donors': len(self.donors_), **counts, 'tuning': self.tuning_}
+        return out
+
+    def _impute(self, x, donors, k, alpha):
+        out = x.copy()
+        counts = dict.fromkeys(('filled_rows', 'filled_cells', 'zero_residual_rows', 'zero_anchor_global_rows',
+                                'zero_missing_mass_uniform_rows', 'tied_rows'), 0)
+        everyone = None
+        for i in np.flatnonzero(~np.isfinite(x).all(axis=1)):
+            observed = np.isfinite(x[i])
+            missing = ~observed
+            anchor = x[i, observed].sum()
+            residual = 1. - anchor
+            counts['filled_rows'] += 1
+            counts['filled_cells'] += int(missing.sum())
+            if residual < -RESIDUAL_TOLERANCE:
+                raise BaselineError(f'row {i}: observed parts sum to {anchor!r} > 1',
+                                    context={'row': int(i), 'observed_sum': float(anchor)})
+            if residual <= RESIDUAL_TOLERANCE:
                 out[i, missing] = 0.
-                records.append({'row': i, 'policy': 'zero_residual'})
+                counts['zero_residual_rows'] += 1
                 continue
-            anchor_mass = row[observed].sum()
-            policy = 'subcomposition_jsd'
-            if anchor_mass == 0:
+            if anchor == 0:
                 if self.zero_anchor == 'error':
-                    raise PredictionUnavailableError(f'row {i}: zero-total observed subcomposition',
-                                                     context={'row': i})
-                # Explicit application fallback: full donor mean, not arbitrary
-                # first-k donors tied on an undefined distance.
-                selected = np.arange(len(self.donors_))
-                policy = 'global_donor_mean'
+                    raise BaselineError(f'row {i}: observed parts sum to 0, JSD is undefined',
+                                        context={'row': int(i), 'reason': 'zero_anchor'})
+                everyone = frechet_mean(donors, alpha) if everyone is None else everyone
+                mean = everyone
+                counts['zero_anchor_global_rows'] += 1
             else:
-                masses = self.donors_[:, observed].sum(axis=1)
+                masses = donors[:, observed].sum(axis=1)
                 eligible = np.flatnonzero(masses > 0)
                 if not len(eligible):
-                    raise PredictionUnavailableError(f'row {i}: all donor anchor masses zero',
-                                                     context={'row': i})
-                distances = jsd(row[observed] / anchor_mass,
-                                self.donors_[eligible][:, observed] / masses[eligible, None])
-                selected = eligible[distance_order(distances, limit=self.k)[:self.k]]
-            mean = alpha_mean(self.donors_[selected], self.alpha)
+                    raise BaselineError(f'row {i}: every donor has zero mass on the observed parts',
+                                        context={'row': int(i), 'reason': 'zero_donor_mass'})
+                distances = jsd(x[i, observed] / anchor, donors[eligible][:, observed] / masses[eligible, None])
+                order = np.argsort(distances, kind='stable')
+                if len(order) > k and distances[order[k]] == distances[order[k - 1]]:
+                    counts['tied_rows'] += 1
+                mean = frechet_mean(donors[eligible[order[:k]]], alpha)
             weights = mean[missing]
             if weights.sum() == 0:
                 if self.zero_missing_mass == 'error':
-                    raise PredictionUnavailableError(f'row {i}: donor mean has zero missing-part mass',
-                                                     context={'row': i})
+                    raise BaselineError(f'row {i}: donor mean has zero mass on the missing parts',
+                                        context={'row': int(i), 'reason': 'zero_missing_mass'})
                 weights = np.ones(missing.sum())
-                policy += '+uniform_missing'
+                counts['zero_missing_mass_uniform_rows'] += 1
             out[i, missing] = residual * weights / weights.sum()
-            records.append({'row': i, 'donor_ids': self.donor_ids_[selected].tolist(),
-                            'effective_k': len(selected), 'alpha': self.alpha,
-                            'policy': policy, 'one_anchor': bool(observed.sum() == 1)})
-        return CoreResult(out, {'method': 'tsagris_knn', 'records': records,
-                               'jsd_scale': 'twice_standard_natural_log'})
+        return out, counts
 
-    def predict(self, values, covariates=None):
-        result = self.predict_result(values)
-        self.last_prediction_ = result.diagnostics
-        return result.values
-
-    def impute(self, values, covariates=None):
-        return self.fit(values).predict(values)
-
-
-class TsagrisAdaptive:
-    input_domain = 'nonnegative'
-    prediction_policy = 'rowwise_adaptation'
-
-    """Section 2.4.1/2.5 CV using only supplied fitting population.
-
-    adaptive=False chooses one global pair; True chooses a pair per pattern.
-    leave_n=None uses the number of incomplete fit rows (paper rule). If that
-    leaves no donors, raise and ask caller to choose a documented CV size.
-    Unseen query patterns must be tuned from fit donors, never from query truth.
-    """
-    def __init__(self, *, ks=(1, 3, 5), alphas=(.25, .5, 1.), repetitions=5,
-                 leave_n=None, adaptive=True, seed=42, zero_anchor='error',
-                 zero_missing_mass='error'):
-        if not ks or not alphas or repetitions < 1 or (leave_n is not None and leave_n < 1):
-            raise BaselineError('Invalid CV configuration')
-        self.ks, self.alphas = tuple(ks), tuple(alphas)
-        for k in ks:
-            for a in alphas:
-                TsagrisKNN(k, alpha=a)
-        self.repetitions, self.leave_n, self.adaptive = repetitions, leave_n, adaptive
-        self.seed, self.zero_anchor, self.zero_missing_mass = seed, zero_anchor, zero_missing_mass
-
-    def _model(self, k, alpha):
-        return TsagrisKNN(k, alpha=alpha, zero_anchor=self.zero_anchor,
-                          zero_missing_mass=self.zero_missing_mass)
-
-    def _tune(self, patterns, leave_n):
-        donors = self.donors_
+    def _tune(self):
+        """Section 2.4.1: repeated leave-N-out on complete rows, mean JSD (data contain zeros)."""
+        donors, patterns = self.donors_, self.missing_patterns_
+        leave_n = self.leave_n if self.leave_n is not None else max(1, int(.2 * len(donors)))
+        if not len(patterns):
+            raise BaselineError('tune=True needs incomplete rows to copy missingness patterns from')
         if leave_n >= len(donors):
-            raise BaselineError('CV leave-N-out leaves no complete training donors')
+            raise BaselineError(f'leave_n={leave_n} leaves no training donors',
+                                context={'leave_n': leave_n, 'donors': len(donors)})
         rng = np.random.default_rng(self.seed)
-        # Shared splits across all candidates; do not let model-specific
-        # randomness change the task used to choose hyperparameters.
-        splits = []
+        splits = []          # shared by every candidate
         for _ in range(self.repetitions):
             hold = rng.choice(len(donors), leave_n, replace=False)
-            train = np.setdiff1d(np.arange(len(donors)), hold)
             query = donors[hold].copy()
-            for i in range(leave_n):
-                query[i, list(patterns[i % len(patterns)])] = np.nan
-            splits.append((train, hold, query))
+            query[patterns[rng.integers(len(patterns), size=leave_n)]] = np.nan
+            splits.append((np.setdiff1d(np.arange(len(donors)), hold), hold, query))
         table = []
         for k in self.ks:
             for alpha in self.alphas:
-                scores, error = [], None
-                if k > len(donors) - leave_n:
-                    table.append({'k': k, 'alpha': alpha, 'score': None, 'error': 'k exceeds CV donor count'})
-                    continue
-                for train, hold, query in splits:
-                    try:
-                        pred = self._model(k, alpha).fit(donors[train]).predict(query)
-                        if (donors == 0).any():
-                            distances = jsd(donors[hold], pred)
-                        else:
-                            distances = np.linalg.norm(clr(donors[hold]) - clr(pred), axis=1)
-                        scores.append(float(distances.mean()))
-                    except BaselineError as exc:
-                        error = str(exc)
-                        break
-                table.append({'k': k, 'alpha': alpha,
-                              'score': float(np.mean(scores)) if error is None else None,
-                              'error': error})
-        valid = [entry for entry in table if entry['score'] is not None]
+                try:
+                    score = np.mean([jsd(donors[hold], self._impute(query, donors[train], k, alpha)[0]).mean()
+                                     for train, hold, query in splits])
+                    table.append({'k': k, 'alpha': alpha, 'mean_jsd': float(score), 'error': None})
+                except BaselineError as exc:
+                    table.append({'k': k, 'alpha': alpha, 'mean_jsd': None, 'error': str(exc)})
+        valid = [row for row in table if row['error'] is None]
         if not valid:
-            raise BaselineError('No valid CV candidate: ' + repr(table))
-        best = min(valid, key=lambda entry: (entry['score'], entry['k'], entry['alpha']))
-        return (best['k'], best['alpha']), table
-
-    def fit(self, values, covariates=None, *, patterns=None):
-        candidate = copy.copy(self)
-        candidate.__dict__.pop('last_prediction_', None)
-        candidate._fit_in_place(values, covariates, patterns=patterns)
-        self.__dict__ = candidate.__dict__
-        return self
-
-    def _fit_in_place(self, values, covariates=None, *, patterns=None):
-        x = simplex(values, partial=True)
-        self.donors_ = x[np.isfinite(x).all(axis=1)].copy()
-        if len(self.donors_) < 2:
-            raise BaselineError('Adaptive tuning needs at least two complete donors')
-        inferred = [tuple(int(j) for j in np.flatnonzero(~np.isfinite(row))) for row in x if np.isnan(row).any()]
-        patterns = inferred if patterns is None else [tuple(int(j) for j in p) for p in patterns]
-        if not patterns:
-            raise BaselineError('Supply training missingness patterns when fit data are complete')
-        for pattern in patterns:
-            if not pattern or len(set(pattern)) != len(pattern) or min(pattern) < 0 or max(pattern) >= x.shape[1]:
-                raise BaselineError('Invalid missingness pattern')
-        self.patterns_ = patterns  # repeats retain empirical pattern frequencies
-        self.leave_n_ = self.leave_n if self.leave_n is not None else len(patterns)
-        self.selected_, self.cv_, self.cv_sizes_ = {}, {}, {}
-        if self.adaptive:
-            for pattern in sorted(set(patterns)):
-                count = self.leave_n if self.leave_n is not None else patterns.count(pattern)
-                self.cv_sizes_[str(pattern)] = count
-                self.selected_[pattern], self.cv_[str(pattern)] = self._tune([pattern], count)
-        else:
-            self.global_, self.cv_['global'] = self._tune(patterns, self.leave_n_)
-        self.fit_summary_ = {'method': 'tsagris_adaptive' if self.adaptive else 'tsagris_global_cv',
-                             'donors': len(self.donors_), 'training_patterns': [list(p) for p in patterns],
-                             'seed': self.seed, 'leave_n': self.leave_n_, 'repetitions': self.repetitions}
-        return self
-
-    def with_degenerate_policies(self):
-        """Return a configured copy for adapters with declared fallbacks."""
-        from .registry import configure_core
-        return configure_core(self, degenerate_policies=True)
-
-    def predict_result(self, values, covariates=None):
-        if not hasattr(self, 'selected_'):
-            raise NotFittedError('Fit TsagrisAdaptive before prediction')
-        x = simplex(values, partial=True)
-        if x.shape[1] != self.donors_.shape[1]:
-            raise BaselineError('Query width differs from fit')
-        out, records = x.copy(), []
-        for pattern in sorted(set(tuple(int(j) for j in np.flatnonzero(np.isnan(row))) for row in x)):
-            if not pattern:
-                continue
-            if self.adaptive and pattern not in self.selected_:
-                # Unseen pattern: use the explicit leave_n if supplied, else
-                # total TRAIN pattern count. This documented fitting-only
-                # fallback does not tune on query truths or donor values.
-                self.cv_sizes_[str(pattern)] = self.leave_n_
-                self.selected_[pattern], self.cv_[str(pattern)] = self._tune([pattern], self.leave_n_)
-            k, alpha = self.selected_[pattern] if self.adaptive else self.global_
-            rows = [i for i, row in enumerate(x) if tuple(np.flatnonzero(np.isnan(row))) == pattern]
-            result = self._model(k, alpha).fit(self.donors_).predict_result(x[rows])
-            out[rows] = result.values
-            for event in result.diagnostics.get('row_events', []):
-                event = dict(event)
-                local_row = int(event.get('row', 0))
-                if 0 <= local_row < len(rows):
-                    event['row'] = int(rows[local_row])
-                event.update({'pattern': list(pattern), 'k': k, 'alpha': alpha})
-                records.append(event)
-        return CoreResult(out, {'method': 'tsagris_adaptive' if self.adaptive else 'tsagris_global_cv',
-                               'seed': self.seed, 'leave_n': self.leave_n_, 'repetitions': self.repetitions,
-                               'cv': self.cv_.copy(), 'pattern_cv_sizes': self.cv_sizes_.copy(),
-                               'row_events': records})
-
-    def predict(self, values, covariates=None):
-        result = self.predict_result(values)
-        self.last_prediction_ = result.diagnostics
-        return result.values
-
-    def impute(self, values, covariates=None):
-        return self.fit(values).predict(values)
+            raise BaselineError('No (k, alpha) candidate could be scored', context={'table': table})
+        best = min(valid, key=lambda row: (row['mean_jsd'], row['k'], row['alpha']))
+        return {'selected': {'k': best['k'], 'alpha': best['alpha']}, 'table': table,
+                'leave_n': leave_n, 'repetitions': self.repetitions, 'seed': self.seed}
