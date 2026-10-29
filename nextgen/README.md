@@ -35,7 +35,7 @@ Tham số:
   - `none` (mặc định): chỉ chạy lượt điền thật.
   - `random_cell`: che từng ô observed với xác suất `--mask-rate`.
   - `whole_feature`: che trọn chuỗi của các cặp (entity, target).
-- **`--seeds`** (mặc định `0 1 2 3 4`): mỗi seed tạo một mask, dùng chung cho mọi model.
+- **`--seeds`** (mặc định `0 1 2 3 4`): mỗi seed tạo một mask, dùng chung cho mọi model; phải không âm và không trùng. Rate/seed sai gây `ValueError` trước mọi output/fit; lỗi cú pháp CLI vẫn do argparse xử lý.
 
 Thư mục `--output` phải chưa tồn tại.
 
@@ -58,11 +58,21 @@ Thư mục `--output` phải chưa tồn tại.
 `[micoda]` chạy qua `MICoDaCovid` trên **17 target, không cột Other**:
 
 - Input là raw counts + `total_sequence` + mask; chuẩn bị **A (min/2 + closure)** tự nằm trong adapter; giữ chính xác mọi observed kể cả zero.
-- Hoàn complete all-zero bị loại khỏi initial fit và refit, vẫn giữ nguyên ở output (cờ trong diagnostics).
-- Tham số TOML: `max_iter` (mặc định 120), `tol` (1e-8), không có `W`. `reference` không đặt để tự chọn cột ít NaN nhất; ERA này là lựa chọn, không phải parity nguyên bản paper/R.
+- Dòng complete all-zero bị loại khỏi initial fit và refit, vẫn giữ nguyên ở output (cờ trong diagnostics).
+- Tham số TOML: `max_iter` (mặc định 120), `tol` (1e-8), không có `W`. `reference` không đặt để tự chọn cột ít NaN nhất; đây là lựa chọn adaptation, không phải parity nguyên bản paper/R.
 - Trạng thái lượt: `completed` / `partial` / `failed` theo `CovidResult`; NaN còn lại luôn là ô chưa giải được, không có fallback ngầm.
-- `space` trong summary ghi rõ hai không gian khác nhau — **không so metric MICoDa với Hron/Tsagris như cùng một bảng**.
-- Chi tiết đặc tả: [reports/pipeline_protocol_3_baselines_2026-10-29.md](../reports/pipeline_protocol_3_baselines_2026-10-29.md).
+- **Giới hạn R1:** toàn bộ `total − tổng observed` được gán cho target thiếu, không dành ngân sách cho Other. Nếu total chứa nhóm ngoài target, lượng điền có thể cao có hệ thống. `space` chỉ là nhãn, không ngăn việc so sánh hay sửa thiên lệch này. Chưa dùng A17/R1 để kết luận baseline nào tốt hơn hoặc làm mốc main model.
+- Khi adapter `failed`, không xuất CSV; giữ mã lỗi, message, context và unassigned trong `summary.json`, ghi lỗi và exit 1. `partial` chỉ xuất `_partial.csv` ở lượt native, không tính metric masked.
+- Chi tiết đặc tả: [Contract 3 baseline](docs/THREE_BASELINE_CONTRACT_VI.md), [đối chiếu cross-check](docs/CROSSCHECK_RESPONSE_VI.md).
+
+## Kiểm chứng chạy lại
+
+```powershell
+python nextgen/scripts/verify_three_baselines.py --output <thu-muc-moi> `
+  --data data/covariants.csv --schema nextgen/configs/baselines_covariants.toml
+```
+
+Script chạy toàn bộ test với RuntimeWarning là lỗi, lưu log/JUnit/hash nguồn, và tính ngân sách R1 trên các dòng complete bị che (không fit model trong phần audit ngân sách). Không sửa dữ liệu.
 
 ## Đọc `errors.log`
 

@@ -1,8 +1,8 @@
 """CSV input for any count table, evaluation masks and count-space output."""
 import csv
+import os
 from dataclasses import dataclass
 from pathlib import Path
-import os
 import tomllib
 from tempfile import NamedTemporaryFile
 
@@ -46,6 +46,14 @@ def load_csv(path, schema_config):
         reader = csv.DictReader(stream)
         fields, rows, lines = reader.fieldnames, [], []
         for row in reader:
+            # DictReader keeps surplus fields under the key None and fills absent ones with None.
+            if None in row:
+                raise ValueError(f'{path}: CSV line {reader.line_num} has {len(row[None])} more field(s) than '
+                                 f'the {len(fields)} header columns, after column {fields[-1]!r}')
+            absent = [column for column in fields if row[column] is None]
+            if absent:
+                raise ValueError(f'{path}: CSV line {reader.line_num} has {len(fields) - len(absent)} of '
+                                 f'{len(fields)} fields; columns {absent} are missing')
             rows.append(row)
             lines.append(reader.line_num)
     if not rows or not fields:
@@ -57,12 +65,6 @@ def load_csv(path, schema_config):
     totals = np.empty(len(rows))
     keys = set()
     for i, (row, line) in enumerate(zip(rows, lines)):
-        if None in row or any(value is None for value in row.values()):
-            # Reject a row whose field count does not match the header (extra or
-            # missing fields) instead of letting DictReader fabricate None keys
-            # that later break parsing or add a bogus column to the output row.
-            raise ValueError(f'{path}: CSV line {line} (entity {row.get(entity)!r}): '
-                             f'expected {len(fields)} fields, found extra or missing fields')
         name = row[entity]
         where = f'CSV line {line} (entity {name!r})'
         if not name:

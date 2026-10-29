@@ -73,7 +73,7 @@ def test_loader_rejects_record_with_extra_fields(tmp_path):
     bad = lines[:]
     bad[9] = bad[9] + ',EXTRA'
     source_path = write(tmp_path, 'extra.csv', '\n'.join(bad) + '\n')
-    with pytest.raises(ValueError, match='fields'):
+    with pytest.raises(ValueError, match='field'):
         load_csv(source_path, write(tmp_path, 'schema.toml', SCHEMA))
 
 
@@ -81,7 +81,7 @@ def test_loader_rejects_record_with_missing_fields(tmp_path):
     lines = COVID.read_text().splitlines()
     lines[9] = ','.join(lines[9].split(',')[:-1])
     source_path = write(tmp_path, 'short.csv', '\n'.join(lines) + '\n')
-    with pytest.raises(ValueError, match='fields'):
+    with pytest.raises(ValueError, match='field'):
         load_csv(source_path, write(tmp_path, 'schema.toml', SCHEMA))
 
 
@@ -94,7 +94,7 @@ def test_completed_csv_never_published_when_run_failed(tmp_path):
     lines[9] = lines[9] + ',EXTRA'
     extra = write(tmp_path, 'extra.csv', '\n'.join(lines) + '\n')
     out = tmp_path / 'out'
-    with pytest.raises(ValueError, match='fields'):
+    with pytest.raises(ValueError, match='field'):
         run.main(['--data', str(extra), '--schema', str(write(tmp_path, 'schema.toml', SCHEMA)),
                   '--models', str(write(tmp_path, 'models.toml', '[hron]\nk = 3\n')),
                   '--output', str(out), '--mask', 'none'])

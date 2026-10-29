@@ -73,3 +73,19 @@ def test_clear_errors():
         HronKNN().predict([[1., np.nan]])
     with pytest.raises(BaselineError):
         HronKNN(ties='random')
+
+
+def test_rescaling_divides_first_so_tiny_scales_cancel():
+    out = HronKNN(1).fit([[1e-320, 1e-320]]).predict([[.2, np.nan]])
+    np.testing.assert_allclose(out, [[.2, .2]], rtol=1e-12)
+    out = HronKNN(1, adjustment='sum').fit([[1e-320, 1e-320]]).predict([[.2, np.nan]])
+    np.testing.assert_allclose(out, [[.2, .2]], rtol=1e-12)
+
+
+def test_unrepresentable_rescaled_value_is_a_numerical_error():
+    from longitudinal_impute.errors import NumericalError
+    model = HronKNN(1).fit([[1e-300, 1e300]])
+    with pytest.raises(NumericalError, match='not finite') as error:
+        model.predict([[1e300, np.nan]])           # the answer, 1e900, is not a float64
+    assert error.value.context == {'row': 0, 'feature': 1}
+    assert not hasattr(model, 'info_')

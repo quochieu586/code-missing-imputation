@@ -41,8 +41,54 @@ def test_frechet_mean_endpoints():
     zeros = np.array([[1., 0., 0.], [.5, .5, 0.]])
     np.testing.assert_allclose(frechet_mean(zeros, .5).sum(), 1.)
     assert frechet_mean(zeros, .5)[2] == 0.
-    with pytest.raises(BaselineError, match='strictly positive'):
-        frechet_mean(zeros, 0.)
+    # alpha = 0 with zeros: geometric mean on the parts positive in every row.
+    np.testing.assert_array_equal(frechet_mean(zeros, 0.), [1., 0., 0.])
+    with pytest.raises(BaselineError, match='common positive support'):
+        frechet_mean([[1., 0.], [0., 1.]], 0.)
+    for a in (-1., -.5, -1e-20):
+        with pytest.raises(BaselineError, match='strictly positive'):
+            frechet_mean(zeros, a)
+
+
+@pytest.mark.parametrize('alpha', [-1., -.5, -1e-20, 0., 1e-20, .25, .5, 1.])
+def test_frechet_mean_of_identical_donors_is_that_donor(alpha):
+    donor = [.1, .9]
+    np.testing.assert_allclose(frechet_mean([donor, donor], alpha), donor, rtol=1e-12)
+    np.testing.assert_allclose(frechet_mean([[.1, .3, .6]] * 3, alpha), [.1, .3, .6], rtol=1e-12)
+
+
+def test_frechet_mean_tends_to_the_geometric_mean_near_alpha_zero():
+    x = positive_data()
+    geometric = np.exp(np.log(x).mean(axis=0)); geometric /= geometric.sum()
+    for a in (-1e-6, -1e-9, -1e-20, 1e-20, 1e-9, 1e-6):
+        np.testing.assert_allclose(frechet_mean(x, a), geometric, atol=1e-6)
+
+
+def test_extreme_parts_stay_finite_or_raise_a_numerical_error():
+    x = [[1e-320, 1.], [1e-320, 1.]]
+    for alpha in (-1., -.5, 0., .5, 1.):
+        mean = frechet_mean(x, alpha)
+        assert np.isfinite(mean).all()
+        np.testing.assert_allclose(mean, [1e-320, 1.], rtol=1e-3, atol=0)
+    out = TsagrisKNN(alpha=-1.).fit(x).predict([[np.nan, np.nan]])
+    assert np.isfinite(out).all()
+    np.testing.assert_allclose(out, [[1e-320, 1.]], rtol=1e-3, atol=0)
+
+
+def test_non_finite_prediction_is_a_numerical_error_not_nan(monkeypatch):
+    from longitudinal_impute.baselines import tsagris
+    from longitudinal_impute.errors import NumericalError
+    model = TsagrisKNN(k=1, alpha=.5).fit(DONORS)
+    monkeypatch.setattr(tsagris, 'frechet_mean', lambda x, alpha: np.full(x.shape[1], np.nan))
+    with pytest.raises(NumericalError, match='row 0'):
+        model.predict([[.25, np.nan, .25]])
+    assert not hasattr(model, 'info_')
+
+
+@pytest.mark.parametrize('alpha', [1e-20, -1e-20, 0.])
+def test_near_zero_alpha_prediction_copies_identical_donors(alpha):
+    out = TsagrisKNN(k=2, alpha=alpha).fit([[.1, .3, .6], [.1, .3, .6]]).predict([[np.nan, np.nan, .6]])
+    np.testing.assert_allclose(out, [[.1, .3, .6]], rtol=1e-12)
 
 
 DONORS = [[.5, .5, 0.], [.6, .4, 0.]]

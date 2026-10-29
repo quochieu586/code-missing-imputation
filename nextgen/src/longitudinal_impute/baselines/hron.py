@@ -7,7 +7,7 @@ donor cells are rescaled by Eq. 7 (median/median, default) or Eq. 5
 positive; zero replacement happens before the model (data.model_input).
 """
 import numpy as np
-from ..errors import BaselineError, NotFittedError
+from ..errors import BaselineError, NotFittedError, NumericalError
 
 TIE_TOLERANCE = 1e-12
 
@@ -93,8 +93,13 @@ class HronKNN:
                                             context={'row': int(i), 'feature': int(j)})
                     chosen, tie = self._select(distances[eligible])
                     chosen = eligible[chosen]
-                    scale = row_scale / donor_scale[chosen]
-                    out[i, j] = np.median(scale * self.donors_[base[chosen], j])
+                    # Divide before multiplying: x_lj / scale_l stays representable when both are tiny.
+                    with np.errstate(over='ignore'):    # overflow is caught by the check below
+                        value = np.median(self.donors_[base[chosen], j] / donor_scale[chosen] * row_scale)
+                    if not np.isfinite(value):
+                        raise NumericalError(f'row {i}, feature {j}: rescaled donor value is not finite',
+                                             context={'row': int(i), 'feature': int(j)})
+                    out[i, j] = value
                     cells += 1
                     ties += tie
                     few += len(eligible) < self.k

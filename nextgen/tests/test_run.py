@@ -2,6 +2,7 @@
 import csv
 import hashlib
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -135,3 +136,66 @@ def test_refuses_existing_output_and_bad_model_config(tmp_path):
     with pytest.raises(ValueError):
         call(tmp_path, data, COVID_SCHEMA, '[tsagris]\nk = 0\n')
     assert not (tmp_path / 'out').exists()
+
+
+def test_malformed_csv_stops_before_any_output(tmp_path):
+    source = write(tmp_path, 'bad.csv', 'location,date,total,a,b,c\nL,2020-01-01,100,10,20,70\n'
+                                        'L,2020-01-02,100,20,30,50\nL,2020-01-03,100,20,,,EXTRA\n')
+    schema = '[dataset]\nentity="location"\ntime="date"\ntotal="total"\ntargets=["a","b","c"]\n'
+    with pytest.raises(ValueError, match='CSV line 4 has 1 more field'):
+        call(tmp_path, source, schema, '[tsagris]\n')
+    assert not (tmp_path / 'out').exists()
+
+
+def test_interrupted_completed_csv_is_not_published(tmp_path, monkeypatch):
+    original = csv.DictWriter.writerow
+    calls = []
+
+    def fail_after_header(self, row):
+        if 'note' in self.fieldnames:             # only the completed CSV has the extra column
+            calls.append(row)
+            if len(calls) == 3:                   # header and one row written, then the write breaks
+                raise ValueError('write interrupted (simulated)')
+        return original(self, row)
+
+    monkeypatch.setattr(csv.DictWriter, 'writerow', fail_after_header)
+    code, out = call(tmp_path, FIXTURES / 'covid_small.csv', COVID_SCHEMA, '[hron]\n', '--mask', 'none')
+    monkeypatch.undo()
+    assert code == 1
+    assert not list(out.glob('*_completed.csv')) and not list(out.glob('.*tmp'))
+    [line] = (out / 'errors.log').read_text(encoding='utf-8').splitlines()
+    assert line.startswith('hron | native | - | ValueError | write interrupted')
+
+
+@pytest.mark.parametrize('extra,message', [
+    (('--mask', 'random_cell', '--mask-rate', '1.0'), r'mask rate must be in \[0, 1\)'),
+    (('--mask', 'whole_feature', '--mask-rate', '-0.1'), r'mask rate must be in \[0, 1\)'),
+    (('--mask', 'random_cell', '--mask-rate', 'nan'), r'mask rate must be in \[0, 1\)'),
+    (('--mask', 'random_cell', '--seeds', '7', '7'), r'--seeds must be distinct nonnegative integers'),
+    (('--mask', 'random_cell', '--seeds', '-1'), r'--seeds must be distinct nonnegative integers'),
+    (('--mask', 'block',), r"invalid choice: 'block'"),
+])
+def test_bad_mask_settings_stop_before_any_fit_or_output(tmp_path, monkeypatch, capsys, extra, message):
+    fitted = []
+
+    class RecordingTsagris(run.TsagrisKNN):
+        def fit(self, values):
+            fitted.append(values)
+            return super().fit(values)
+
+    monkeypatch.setitem(run.MODELS, 'tsagris', RecordingTsagris)
+    if 'block' in extra:
+        with pytest.raises(SystemExit) as stop:
+            call(tmp_path, FIXTURES / 'covid_small.csv', COVID_SCHEMA, '[tsagris]\n', *extra)
+        assert stop.value.code == 2
+        assert re.search(message, capsys.readouterr().err)
+    else:
+        with pytest.raises(ValueError, match=message):
+            call(tmp_path, FIXTURES / 'covid_small.csv', COVID_SCHEMA, '[tsagris]\n', *extra)
+    assert fitted == [] and not (tmp_path / 'out').exists()
+
+
+def test_mask_settings_are_ignored_without_a_mask(tmp_path):
+    code, out = call(tmp_path, FIXTURES / 'covid_small.csv', COVID_SCHEMA, '[hron]\n',
+                     '--mask', 'none', '--mask-rate', '1.0')
+    assert code == 0 and (out / 'hron_completed.csv').exists()

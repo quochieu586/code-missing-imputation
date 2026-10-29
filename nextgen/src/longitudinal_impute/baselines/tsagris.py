@@ -9,7 +9,7 @@ Optional global (k, alpha) tuning follows section 2.4.1 with a fixed
 leave-N-out size; the per-pattern adaptive variant (2.5) is not provided.
 """
 import numpy as np
-from ..errors import BaselineError, NotFittedError
+from ..errors import BaselineError, NotFittedError, NumericalError
 
 RESIDUAL_TOLERANCE = 1e-12
 
@@ -27,22 +27,41 @@ def jsd(x, y):
 
 
 def frechet_mean(x, alpha=1.):
-    """Eq. 6 with row-normalised powers; alpha = 1 is the arithmetic mean, alpha -> 0 the
-    closed geometric mean. alpha <= 0 needs strictly positive rows."""
+    """Eq. 6 with row-normalised powers, computed in log space (log-sum-exp per row).
+
+    alpha = 1 is the arithmetic mean. alpha = 0, and |alpha| < 1e-8 on strictly positive
+    rows, is the closed geometric mean; with zeros, alpha = 0 uses the parts positive in
+    every row. alpha < 0 needs strictly positive rows.
+    """
     x = np.asarray(x, float)
     if not np.isfinite(alpha) or not -1 <= alpha <= 1:
         raise BaselineError('alpha must lie in [-1, 1]')
-    if alpha <= 0 and (x <= 0).any():
-        raise BaselineError('alpha <= 0 requires strictly positive compositions; use alpha in (0, 1]')
+    if alpha < 0 and (x == 0).any():
+        raise BaselineError('alpha < 0 requires strictly positive compositions; use alpha in [0, 1]')
     if alpha == 1:
         return x.mean(axis=0)
-    with np.errstate(divide='ignore'):     # a part that is zero in every row has log mean -inf
-        if alpha == 0:
-            z = np.log(x).mean(axis=0)
-        else:
-            powers = x ** alpha
-            z = np.log(np.mean(powers / powers.sum(axis=1, keepdims=True), axis=0)) / alpha
-    mean = np.exp(z - z.max())             # log scale keeps small alpha from underflowing
+    with np.errstate(divide='ignore'):     # log 0 = -inf marks a zero part
+        logs = np.log(x)
+    z = np.full(x.shape[1], -np.inf)       # log of the unclosed mean; -inf = zero part
+    if alpha == 0 or (abs(alpha) < 1e-8 and (x > 0).all()):
+        # Powers x**alpha lose every digit near alpha = 0; use the limit instead.
+        support = (x > 0).all(axis=0)
+        if not support.any():
+            raise BaselineError('Geometric mean has no common positive support; closure undefined')
+        z[support] = logs[:, support].mean(axis=0)
+    else:
+        powered = alpha * logs
+        top = powered.max(axis=1, keepdims=True)
+        logu = powered - top - np.log(np.exp(powered - top).sum(axis=1, keepdims=True))
+        colmax = logu.max(axis=0)
+        active = np.isfinite(colmax)       # a part zero in every row keeps mass 0 (alpha > 0)
+        z[active] = (colmax[active] + np.log(np.exp(logu[:, active] - colmax[active]).mean(axis=0))) / alpha
+    finite = np.isfinite(z)
+    mean = np.zeros(x.shape[1])
+    if finite.any():
+        mean[finite] = np.exp(z[finite] - z[finite].max())
+    if not finite.any() or not np.isfinite(mean).all() or not mean.sum() > 0:
+        raise NumericalError(f'Frechet mean with alpha={alpha!r} is not finite', context={'alpha': alpha})
     return mean / mean.sum()
 
 
@@ -83,26 +102,31 @@ class TsagrisKNN:
         self.leave_n, self.repetitions, self.seed = leave_n, repetitions, seed
 
     def fit(self, values):
+        # Everything is computed locally and published only once it all succeeded,
+        # so a failed fit leaves no state (first fit) or the previous state (refit).
         x = _check(values)
         complete = np.isfinite(x).all(axis=1)
-        self.donors_ = x[complete]
-        if not len(self.donors_):
+        donors = x[complete]
+        if not len(donors):
             raise BaselineError('Tsagris needs at least one complete donor row')
-        sums = self.donors_.sum(axis=1)
+        sums = donors.sum(axis=1)
         if not np.allclose(sums, 1., atol=1e-10, rtol=0):
             i = int(np.flatnonzero(complete)[np.argmax(np.abs(sums - 1))])
             raise BaselineError(f'row {i}: complete rows must sum to 1', context={'row': i})
-        self.missing_patterns_ = ~np.isfinite(x[~complete])
-        self.tuning_ = self._tune() if self.tune else None
-        self.k_, self.alpha_ = ((self.tuning_['selected']['k'], self.tuning_['selected']['alpha'])
-                                if self.tune else (self.k, self.alpha))
+        patterns = ~np.isfinite(x[~complete])
+        tuning = self._tune(donors, patterns) if self.tune else None
+        k, alpha = (tuning['selected']['k'], tuning['selected']['alpha']) if self.tune else (self.k, self.alpha)
+        self.donors_, self.missing_patterns_, self.tuning_, self.k_, self.alpha_ = donors, patterns, tuning, k, alpha
         return self
 
     def predict(self, values):
         if not hasattr(self, 'donors_'):
             raise NotFittedError('Fit TsagrisKNN before prediction')
         out, counts = self._impute(_check(values, self.donors_.shape[1]), self.donors_, self.k_, self.alpha_)
-        self.info_ = {'method': 'tsagris_jsd_knn', 'k': self.k_, 'alpha': self.alpha_,
+        if not np.isfinite(out).all():
+            i = int(np.argwhere(~np.isfinite(out))[0, 0])
+            raise NumericalError(f'row {i}: Tsagris prediction is not finite', context={'row': i})
+        self.info_ ={'method': 'tsagris_jsd_knn', 'k': self.k_, 'alpha': self.alpha_,
                       'donors': len(self.donors_), **counts, 'tuning': self.tuning_}
         return out
 
@@ -153,9 +177,8 @@ class TsagrisKNN:
             out[i, missing] = residual * weights / weights.sum()
         return out, counts
 
-    def _tune(self):
+    def _tune(self, donors, patterns):
         """Section 2.4.1: repeated leave-N-out on complete rows, mean JSD (data contain zeros)."""
-        donors, patterns = self.donors_, self.missing_patterns_
         leave_n = self.leave_n if self.leave_n is not None else max(1, int(.2 * len(donors)))
         if not len(patterns):
             raise BaselineError('tune=True needs incomplete rows to copy missingness patterns from')

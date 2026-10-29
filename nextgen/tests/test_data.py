@@ -1,10 +1,11 @@
 """Generic CSV loading, evaluation masks and the hidden-truth firewall."""
+import csv as csv_module
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-from longitudinal_impute.data import load_csv, make_mask, model_input
+from longitudinal_impute.data import load_csv, make_mask, model_input, write_completed_csv
 
 FIXTURES = Path(__file__).resolve().parent / 'fixtures'
 COVID_SCHEMA = '[dataset]\nentity="location"\ntime="date"\ntotal="total_sequence"\ntargets=["v1","v2","v3","v4"]\n'
@@ -117,3 +118,55 @@ def test_hidden_truth_never_reaches_model_input_not_even_through_other(covid, ki
     np.testing.assert_array_equal(before, model_input(covid, hidden, positive=positive))
     assert np.isnan(before[:, :-1][hidden]).all()
     assert np.isnan(before[hidden.any(axis=1), -1]).all()
+
+
+MALFORMED_SCHEMA = '[dataset]\nentity="location"\ntime="date"\ntotal="total"\ntargets=["a","b","c"]\n'
+HEADER = 'location,date,total,a,b,c,note\nL,2020-01-01,100,10,20,70,x\nL,2020-01-02,100,20,30,50,x\n'
+
+
+@pytest.mark.parametrize('last,message', [
+    ('L,2020-01-03,100,20,,,x,EXTRA', r"CSV line 4 has 1 more field\(s\) than the 7 header columns, after column 'note'"),
+    ('L,2020-01-03,100,20', r"CSV line 4 has 4 of 7 fields; columns \['b', 'c', 'note'\] are missing"),
+    ('L,2020-01-03,100,20,10,70', r"CSV line 4 has 6 of 7 fields; columns \['note'\] are missing"),
+])
+def test_rows_with_surplus_or_absent_fields_are_rejected_with_line_and_columns(tmp_path, last, message):
+    csv = tmp_path / 'data.csv'
+    csv.write_text(HEADER + last + '\n')
+    with pytest.raises(ValueError, match=message):
+        load_csv(csv, schema(tmp_path, MALFORMED_SCHEMA))
+
+
+def completed_table(covid):
+    return np.where(np.isfinite(covid.counts), covid.counts, 0.)
+
+
+def test_writer_publishes_only_complete_files_and_never_overwrites(tmp_path, covid):
+    target = tmp_path / 'out' / 'm_completed.csv'
+    target.parent.mkdir()
+    write_completed_csv(target, covid, completed_table(covid))
+    assert [p.name for p in target.parent.iterdir()] == ['m_completed.csv']
+    assert len(target.read_text(encoding='utf-8').splitlines()) == len(covid.rows) + 1
+    before = target.read_bytes()
+    with pytest.raises(FileExistsError):
+        write_completed_csv(target, covid, completed_table(covid))
+    assert target.read_bytes() == before
+    assert [p.name for p in target.parent.iterdir()] == ['m_completed.csv']
+
+
+def test_interrupted_write_leaves_neither_the_final_nor_a_temporary_file(tmp_path, covid, monkeypatch):
+    written = []
+    original = csv_module.DictWriter.writerow
+
+    def fail_on_third_row(self, row):
+        if len(written) == 3:
+            raise OSError('disk full (simulated)')
+        written.append(row)
+        return original(self, row)
+
+    monkeypatch.setattr(csv_module.DictWriter, 'writerow', fail_on_third_row)
+    target = tmp_path / 'out' / 'm_completed.csv'
+    target.parent.mkdir()
+    with pytest.raises(OSError, match='disk full'):
+        write_completed_csv(target, covid, completed_table(covid))
+    assert len(written) == 3                        # header and two rows reached the temporary file
+    assert list(target.parent.iterdir()) == []
