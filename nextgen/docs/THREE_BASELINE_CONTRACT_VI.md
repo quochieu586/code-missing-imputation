@@ -9,8 +9,8 @@ Runtime **của ba baseline** ở `nextgen/src/longitudinal_impute/`. Không ph�
 | Entry point | `run.py:main` | CLI, preflight, config/provenance, native, mask theo seed, gọi từng model, xuất summary/log và exit code |
 | Biên dữ liệu | `data.py` | CSV width/schema/count validation; mask; Hron/Tsagris model input và restore; writer không overwrite |
 | Hron/Tsagris | `baselines/hron.py`, `baselines/tsagris.py` | fit/predict; kế thừa nguyên bản sửa F1/F2/E1 từ tác giả PR #2 |
-| MICoDa adapter | `micoda_covid.py` | raw counts + N + mask → A17 → core V2 → R1; structured status/diagnostics |
-| MICoDa core | `baselines/micoda.py` | ALR, hồi quy intercept-only trong adapter, phân bổ và refit; kiểm tra state dương |
+| MICoDa (lõi V2 + adapter COVID, một file) | `baselines/micoda.py` | Lõi: ALR, hồi quy, phân bổ, refit — bất khả xâm phạm dataset. Adapter trong cùng file: raw counts + N + mask → A17 → lõi → R1; status/diagnostics có cấu trúc |
+| MICoDa lõi V2 | `baselines/micoda.py` (phần lõi trong cùng file) | ALR, hồi quy intercept-only, phân bổ và refit; kiểm tra state dương |
 | Đánh giá | `evaluate.py` | W1 native (không có truth NaN); MSE/MAE ô che; aggregate mean/sample SD trên run ok |
 
 ## Luồng plain text

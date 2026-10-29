@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from longitudinal_impute import run
-from longitudinal_impute.micoda_covid import CovidResult, MICoDaCovid, prepare, restore
+from longitudinal_impute.baselines.micoda import CovidResult, MICoDaCovid, prepare, restore
 from test_run import call, write, FIXTURES, COVID_SCHEMA
 
 

@@ -18,7 +18,7 @@ from .data import load_csv, read_schema, make_mask, validate_mask, model_input, 
 from .evaluate import wasserstein_scores, masked_errors, summarize
 from .baselines.hron import HronKNN
 from .baselines.tsagris import TsagrisKNN
-from .micoda_covid import MICoDaCovid
+from .baselines.micoda import MICoDaCovid
 
 MICODA_INFO_KEYS = ('status', 'delta', 'reference', 'iterations', 'converged',
                     'termination_reason', 'initial_complete_rows', 'excluded_all_zero_rows',

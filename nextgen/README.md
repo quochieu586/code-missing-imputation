@@ -55,7 +55,7 @@ Thư mục `--output` phải chưa tồn tại.
 
 ## MICoDa (adapter counts, 17 targets)
 
-`[micoda]` chạy qua `MICoDaCovid` trên **17 target, không cột Other**:
+`[micoda]` chạy qua `MICoDaCovid` (định nghĩa trong [`baselines/micoda.py`](src/longitudinal_impute/baselines/micoda.py), cùng file với lõi — một model, một file) trên **17 target, không cột Other**:
 
 - Input là raw counts + `total_sequence` + mask; chuẩn bị **A (min/2 + closure)** tự nằm trong adapter; giữ chính xác mọi observed kể cả zero.
 - Dòng complete all-zero bị loại khỏi initial fit và refit, vẫn giữ nguyên ở output (cờ trong diagnostics).
