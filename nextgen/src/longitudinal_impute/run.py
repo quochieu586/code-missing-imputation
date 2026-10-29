@@ -107,6 +107,12 @@ def main(argv=None):
     parser.add_argument('--mask-rate', type=float, default=.05)
     parser.add_argument('--seeds', type=int, nargs='+', default=[0, 1, 2, 3, 4])
     args = parser.parse_args(argv)
+    # Mask settings are checked here, before any output or model run (same rate rule as make_mask).
+    if args.mask != 'none':
+        if not np.isfinite(args.mask_rate) or not 0 <= args.mask_rate < 1:
+            parser.error(f'--mask-rate must be in [0, 1), got {args.mask_rate!r}')
+        if min(args.seeds) < 0 or len(set(args.seeds)) != len(args.seeds):
+            parser.error(f'--seeds must be distinct nonnegative integers, got {args.seeds}')
 
     # 1. Load and validate everything before writing; never overwrite an earlier run.
     if args.output.exists():

@@ -2,6 +2,7 @@
 import csv
 import hashlib
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -167,3 +168,33 @@ def test_interrupted_completed_csv_is_not_published(tmp_path, monkeypatch):
     assert not list(out.glob('*_completed.csv')) and not list(out.glob('.*tmp'))
     [line] = (out / 'errors.log').read_text(encoding='utf-8').splitlines()
     assert line.startswith('hron | native | - | ValueError | write interrupted')
+
+
+@pytest.mark.parametrize('extra,message', [
+    (('--mask', 'random_cell', '--mask-rate', '1.0'), r'--mask-rate must be in \[0, 1\), got 1\.0'),
+    (('--mask', 'whole_feature', '--mask-rate', '-0.1'), r'--mask-rate must be in \[0, 1\)'),
+    (('--mask', 'random_cell', '--mask-rate', 'nan'), r'--mask-rate must be in \[0, 1\), got nan'),
+    (('--mask', 'random_cell', '--seeds', '7', '7'), r'--seeds must be distinct nonnegative integers'),
+    (('--mask', 'random_cell', '--seeds', '-1'), r'--seeds must be distinct nonnegative integers'),
+    (('--mask', 'block',), r"invalid choice: 'block'"),
+])
+def test_bad_mask_settings_stop_before_any_fit_or_output(tmp_path, monkeypatch, capsys, extra, message):
+    fitted = []
+
+    class RecordingTsagris(run.TsagrisKNN):
+        def fit(self, values):
+            fitted.append(values)
+            return super().fit(values)
+
+    monkeypatch.setitem(run.MODELS, 'tsagris', RecordingTsagris)
+    with pytest.raises(SystemExit) as stop:
+        call(tmp_path, FIXTURES / 'covid_small.csv', COVID_SCHEMA, '[tsagris]\n', *extra)
+    assert stop.value.code == 2
+    assert re.search(message, capsys.readouterr().err)
+    assert fitted == [] and not (tmp_path / 'out').exists()
+
+
+def test_mask_settings_are_ignored_without_a_mask(tmp_path):
+    code, out = call(tmp_path, FIXTURES / 'covid_small.csv', COVID_SCHEMA, '[hron]\n',
+                     '--mask', 'none', '--mask-rate', '1.0')
+    assert code == 0 and (out / 'hron_completed.csv').exists()
