@@ -83,19 +83,21 @@ class TsagrisKNN:
         self.leave_n, self.repetitions, self.seed = leave_n, repetitions, seed
 
     def fit(self, values):
+        # Everything is computed locally and published only once it all succeeded,
+        # so a failed fit leaves no state (first fit) or the previous state (refit).
         x = _check(values)
         complete = np.isfinite(x).all(axis=1)
-        self.donors_ = x[complete]
-        if not len(self.donors_):
+        donors = x[complete]
+        if not len(donors):
             raise BaselineError('Tsagris needs at least one complete donor row')
-        sums = self.donors_.sum(axis=1)
+        sums = donors.sum(axis=1)
         if not np.allclose(sums, 1., atol=1e-10, rtol=0):
             i = int(np.flatnonzero(complete)[np.argmax(np.abs(sums - 1))])
             raise BaselineError(f'row {i}: complete rows must sum to 1', context={'row': i})
-        self.missing_patterns_ = ~np.isfinite(x[~complete])
-        self.tuning_ = self._tune() if self.tune else None
-        self.k_, self.alpha_ = ((self.tuning_['selected']['k'], self.tuning_['selected']['alpha'])
-                                if self.tune else (self.k, self.alpha))
+        patterns = ~np.isfinite(x[~complete])
+        tuning = self._tune(donors, patterns) if self.tune else None
+        k, alpha = (tuning['selected']['k'], tuning['selected']['alpha']) if self.tune else (self.k, self.alpha)
+        self.donors_, self.missing_patterns_, self.tuning_, self.k_, self.alpha_ = donors, patterns, tuning, k, alpha
         return self
 
     def predict(self, values):
@@ -153,9 +155,8 @@ class TsagrisKNN:
             out[i, missing] = residual * weights / weights.sum()
         return out, counts
 
-    def _tune(self):
+    def _tune(self, donors, patterns):
         """Section 2.4.1: repeated leave-N-out on complete rows, mean JSD (data contain zeros)."""
-        donors, patterns = self.donors_, self.missing_patterns_
         leave_n = self.leave_n if self.leave_n is not None else max(1, int(.2 * len(donors)))
         if not len(patterns):
             raise BaselineError('tune=True needs incomplete rows to copy missingness patterns from')
