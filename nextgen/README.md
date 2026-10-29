@@ -45,12 +45,24 @@ Thư mục `--output` phải chưa tồn tại.
 |---|---|
 | `config.json` | Đường dẫn và sha256 của data, schema, tham số model, mask, seeds, git commit (kèm cờ có thay đổi chưa commit). |
 | `<model>_completed.csv` | Bảng gốc đã điền ô thiếu thật. Ô observed và các cột khác giữ nguyên văn bản. Chỉ có cho model chạy thành công. |
+| `<model>_partial.csv` | Chỉ có cho MICoDa (adapter counts): còn ô NaN chưa giải được; ô observed giữ nguyên, các ô đã điền vẫn hợp lệ (`allow_partial`). |
 | `mask_<kind>_seed<s>.npy` | Mask H (bool, N × D) của từng seed. |
-| `summary.csv` | Một dòng cho mỗi model × lượt (`native`/`masked`) × seed. Gồm `status` (ok/failed), `seconds`, số ô che, số dòng đầy đủ còn lại sau mask, MSE/MAE trên count và tỷ lệ (cột hậu tố `_truth_zero`, `_truth_positive`, `_forced_zero`, `_model`, `_model_truth_zero` là các nhóm con). |
-| `summary.json` | Toàn bộ chi tiết: Wasserstein theo target của lượt thật, `info_` của model, thống kê mask, sai số theo nhóm, `aggregate` (mean ± sd qua seed). |
-| `errors.log` | Chỉ xuất hiện khi có lỗi. |
+| `summary.csv` | Một dòng cho mỗi model × lượt (`native`/`masked`) × seed. Gồm `status` (ok/failed), `space` (`18_with_other` cho Hron/Tsagris, `17_targets` cho MICoDa), `seconds`, số ô che, số ô đã giải (`resolved_cells`), số dòng đầy đủ còn lại sau mask, MSE/MAE trên count và tỷ lệ (cột hậu tố `_truth_zero`, `_truth_positive`, `_forced_zero`, `_model`, `_model_truth_zero` là các nhóm con). MSE/MAE chỉ được báo khi coverage đầy đủ; không bỏ ô lỗi để có số đẹp. |
+| `summary.json` | Toàn bộ chi tiết: Wasserstein theo target của lượt thật, `info_` của model (với MICoDa gồm δ, reference, hội tụ, warning counts), thống kê mask, sai số theo nhóm, `coverage` của lượt che, `aggregate` (mean ± sd qua seed). |
+| `errors.log` | Chỉ xuất hiện khi có lỗi hoặc có run không `completed` (kèm trạng thái `partial`). |
 
 Ô "bị ép về 0" nằm ở dòng mà tổng các ô nhìn thấy đã bằng N. Phần dư của dòng đó là 0, nên model không quyết định được ô này. Định nghĩa metric nằm trong [`evaluate.py`](src/longitudinal_impute/evaluate.py).
+
+## MICoDa (adapter counts, 17 targets)
+
+`[micoda]` chạy qua `MICoDaCovid` trên **17 target, không cột Other**:
+
+- Input là raw counts + `total_sequence` + mask; chuẩn bị **A (min/2 + closure)** tự nằm trong adapter; giữ chính xác mọi observed kể cả zero.
+- Hoàn complete all-zero bị loại khỏi initial fit và refit, vẫn giữ nguyên ở output (cờ trong diagnostics).
+- Tham số TOML: `max_iter` (mặc định 120), `tol` (1e-8), không có `W`. `reference` không đặt để tự chọn cột ít NaN nhất; ERA này là lựa chọn, không phải parity nguyên bản paper/R.
+- Trạng thái lượt: `completed` / `partial` / `failed` theo `CovidResult`; NaN còn lại luôn là ô chưa giải được, không có fallback ngầm.
+- `space` trong summary ghi rõ hai không gian khác nhau — **không so metric MICoDa với Hron/Tsagris như cùng một bảng**.
+- Chi tiết đặc tả: [reports/pipeline_protocol_3_baselines_2026-10-29.md](../reports/pipeline_protocol_3_baselines_2026-10-29.md).
 
 ## Đọc `errors.log`
 
