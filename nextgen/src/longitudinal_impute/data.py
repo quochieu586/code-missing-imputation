@@ -2,7 +2,9 @@
 import csv
 from dataclasses import dataclass
 from pathlib import Path
+import os
 import tomllib
+from tempfile import NamedTemporaryFile
 
 import numpy as np
 
@@ -55,6 +57,12 @@ def load_csv(path, schema_config):
     totals = np.empty(len(rows))
     keys = set()
     for i, (row, line) in enumerate(zip(rows, lines)):
+        if None in row or any(value is None for value in row.values()):
+            # Reject a row whose field count does not match the header (extra or
+            # missing fields) instead of letting DictReader fabricate None keys
+            # that later break parsing or add a bogus column to the output row.
+            raise ValueError(f'{path}: CSV line {line} (entity {row.get(entity)!r}): '
+                             f'expected {len(fields)} fields, found extra or missing fields')
         name = row[entity]
         where = f'CSV line {line} (entity {name!r})'
         if not name:
@@ -96,10 +104,17 @@ def parse(text, where, column, *, missing_ok):
     return value
 
 
-def make_mask(data, kind, rate, seed):
-    """Hide a reproducible subset H of the observed cells. Returns (H, statistics)."""
+def validate_mask(kind, rate):
+    """Pre-flight check shared by make_mask and the runner, before any side effect."""
+    if kind not in ('random_cell', 'whole_feature'):
+        raise ValueError(f"mask kind must be 'random_cell' or 'whole_feature', got {kind!r}")
     if not np.isfinite(rate) or not 0 <= rate < 1:
         raise ValueError('mask rate must be in [0, 1)')
+
+
+def make_mask(data, kind, rate, seed):
+    """Hide a reproducible subset H of the observed cells. Returns (H, statistics)."""
+    validate_mask(kind, rate)
     observed = np.isfinite(data.counts)
     rng = np.random.default_rng(seed)
     stats = {'kind': kind, 'rate': rate, 'seed': seed}
@@ -131,8 +146,6 @@ def make_mask(data, kind, rate, seed):
             count += len(series)
             used += 1
         stats.update(pairs_with_observed_cells=len(pairs), pairs_hidden=used, pairs_skipped=skipped)
-    else:
-        raise ValueError(f"mask kind must be 'random_cell' or 'whole_feature', got {kind!r}")
     complete = observed.all(axis=1)
     stats.update(observed_cells=int(observed.sum()), hidden_cells=int(hidden.sum()),
                  actual_rate=float(hidden.sum() / max(observed.sum(), 1)),
@@ -200,15 +213,49 @@ def check_completed(data, completed, hidden):
         raise ValueError('Output is incomplete or violates the row total')
 
 
-def write_completed_csv(path, data, completed):
+def write_completed_csv(path, data, completed, *, allow_partial=False):
+    """Publish only after a complete write: temp file, then an atomic hard link.
+
+    allow_partial publishes a `*_partial.csv` whose missing targets stay empty;
+    invariants are still enforced on the filled cells and on the row budget.
+    """
+    path = Path(path)
+    if path.exists():
+        raise FileExistsError(path)
+    temporary = None
+    try:
+        with NamedTemporaryFile(mode='w', encoding='utf-8', newline='', dir=path.parent,
+                                prefix=f'.{path.name}.', suffix='.tmp', delete=False) as stream:
+            temporary = Path(stream.name)
+            _write_completed_rows(stream, data, completed, allow_partial=allow_partial)
+        os.link(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def _validate_completed(data, completed, allow_partial=False):
     observed = np.isfinite(data.counts)
-    check_completed(data, completed, np.zeros_like(observed))
-    with Path(path).open('x', encoding='utf-8', newline='') as stream:
-        writer = csv.DictWriter(stream, fieldnames=data.fields)
-        writer.writeheader()
-        for i, source in enumerate(data.rows):
-            row = dict(source)
-            for j, name in enumerate(data.targets):
-                if not observed[i, j]:
-                    row[name] = format(completed[i, j], '.17g')
-            writer.writerow(row)
+    if completed.shape != data.counts.shape:
+        raise ValueError('Output shape differs from the dataset')
+    if not np.array_equal(completed[observed], data.counts[observed]):
+        raise ValueError('Observed counts changed')
+    if np.isinf(completed).any() or (completed < 0).any():
+        raise ValueError('Output is incomplete or violates the row total')
+    if not allow_partial and np.isnan(completed).any():
+        raise ValueError('Output is incomplete or violates the row total')
+    if (np.nansum(completed, axis=1) > data.totals + 1e-10 * np.maximum(1., data.totals)).any():
+        raise ValueError('Output is incomplete or violates the row total')
+
+
+def _write_completed_rows(stream, data, completed, *, allow_partial=False):
+    observed = np.isfinite(data.counts)
+    _validate_completed(data, completed, allow_partial=allow_partial)
+    writer = csv.DictWriter(stream, fieldnames=data.fields)
+    writer.writeheader()
+    for i, source in enumerate(data.rows):
+        row = dict(source)
+        for j, name in enumerate(data.targets):
+            if not observed[i, j]:
+                row[name] = '' if np.isnan(completed[i, j]) else format(completed[i, j], '.17g')
+        writer.writerow(row)

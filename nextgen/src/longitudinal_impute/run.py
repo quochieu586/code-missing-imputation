@@ -14,22 +14,45 @@ import tomllib
 
 import numpy as np
 
-from .data import load_csv, read_schema, make_mask, model_input, restore_counts, check_completed, write_completed_csv
+from .data import load_csv, read_schema, make_mask, validate_mask, model_input, restore_counts, check_completed, write_completed_csv
 from .evaluate import wasserstein_scores, masked_errors, summarize
 from .baselines.hron import HronKNN
 from .baselines.micoda import MICoDa
 from .baselines.tsagris import TsagrisKNN
+from .micoda_covid import MICoDaCovid
 
-MODELS = {'hron': HronKNN, 'micoda': MICoDa, 'tsagris': TsagrisKNN}
+MICODA_INFO_KEYS = ('status', 'delta', 'reference', 'iterations', 'converged',
+                    'termination_reason', 'initial_complete_rows', 'excluded_all_zero_rows',
+                    'initial_regression_support', 'warning_counts', 'coefficients',
+                    'coefficient_target_indices', 'missing_cells', 'resolved_cells',
+                    'unresolved_cells')
+MODELS = {'hron': HronKNN, 'micoda': MICoDaCovid, 'tsagris': TsagrisKNN}
+SPACE = {'micoda': '17_targets', 'hron': '18_with_other', 'tsagris': '18_with_other'}
 
 
-def impute(data, model, hidden):
-    """Fit on the visible cells, predict proportions and return checked counts."""
+def run_model(data, model, hidden):
+    """Fit on the visible cells and return (values, status, info) with counts checked."""
+    if isinstance(model, MICoDaCovid):
+        result = model.impute_counts(data.counts, data.totals, hidden)
+        if result.values is None:
+            raise ValueError(f'counts adapter returned no values: {result.status}')
+        return result.values, result.status, {k: result.diagnostics[k] for k in MICODA_INFO_KEYS
+                                             if k in result.diagnostics}
     values = model_input(data, hidden, positive=model.input_domain == 'positive')
     model.fit(values)
     completed = restore_counts(data, model.predict(values) * data.totals[:, None], hidden)
     check_completed(data, completed, hidden)
-    return completed
+    return completed, 'completed', getattr(model, 'info_', None)
+
+
+def impute(data, model, hidden):
+    """Legacy helper: fit on the visible cells and return checked counts."""
+    return run_model(data, model, hidden)[0]
+
+
+def space(name):
+    """Space label: 17 tracked targets for the counts adapter, 18 with Other otherwise."""
+    return SPACE.get(name, '18_with_other')
 
 
 def read_models(path):
@@ -113,6 +136,10 @@ def main(argv=None):
         raise FileExistsError(f'{args.output} already exists; choose a new output directory')
     data = load_csv(args.data, args.schema)
     models = read_models(args.models)
+    # Mask options are validated before any run or output side effect; the actual
+    # masks are still built per seed inside the evaluation loop.
+    if args.mask != 'none':
+        validate_mask(args.mask, args.mask_rate)
     output = args.output
     output.mkdir(parents=True)
     config = {'data': str(args.data.resolve()), 'data_sha256': hashlib.sha256(args.data.read_bytes()).hexdigest(),
@@ -137,15 +164,30 @@ def main(argv=None):
         start = time.perf_counter()
         try:
             model = MODELS[name](**params)
-            completed = impute(data, model, nothing)
+            completed, status, info = run_model(data, model, nothing)
             seconds = time.perf_counter() - start
-            write_completed_csv(output / f'{name}_completed.csv', data, completed)
-            result = {'status': 'ok', 'seconds': seconds, 'info': getattr(model, 'info_', None),
-                      'wasserstein': wasserstein_scores(data, completed)}
+            suffix = '_completed' if status == 'completed' else (
+                '_partial' if status == 'partial' else '')
+            if completed is not None:
+                write_completed_csv(output / f'{name}{suffix}.csv', data, completed,
+                                    allow_partial=status == 'partial')
+            if status == 'completed':
+                result = {'status': 'ok', 'space': space(name), 'seconds': seconds,
+                          'info': info, 'wasserstein': wasserstein_scores(data, completed)}
+            elif status == 'partial':
+                failed(name, 'native', None, ValueError(
+                    f'counts adapter left {info.get("unresolved_cells")} cells unresolved'))
+                result = {'status': 'partial', 'space': space(name), 'seconds': seconds,
+                          'info': info, 'error': 'partial completion'}
+            else:
+                result = {'status': 'failed', 'space': space(name), 'seconds': seconds,
+                          'info': info, 'error': 'adapter reported failure'}
         except ValueError as exc:
-            result = {**failed(name, 'native', None, exc), 'seconds': time.perf_counter() - start}
+            result = {**failed(name, 'native', None, exc), 'seconds': time.perf_counter() - start,
+                      'space': space(name)}
         detail['native'][name] = result
-        rows.append({'model': name, 'pass': 'native', 'mask': 'none', 'seed': None, 'status': result['status'],
+        rows.append({'model': name, 'pass': 'native', 'mask': 'none', 'seed': None,
+                     'status': result['status'], 'space': result['space'],
                      'seconds': result['seconds'], 'imputed_cells': int((~np.isfinite(data.counts)).sum()),
                      'error': result.get('error', '')})
 
@@ -158,16 +200,36 @@ def main(argv=None):
             start = time.perf_counter()
             try:
                 model = MODELS[name](**params)
-                completed = impute(data, model, hidden)
-                result = {'status': 'ok', 'seconds': time.perf_counter() - start,
-                          'info': getattr(model, 'info_', None), 'errors': masked_errors(data, completed, hidden)}
+                completed, status, info = run_model(data, model, hidden)
+                seconds = time.perf_counter() - start
+                if status != 'completed':
+                    failed(name, 'masked', seed, ValueError(
+                        f'run finished with status {status}; '
+                        f'{info.get("unresolved_cells", "-")} cells unresolved'))
+                    result = {'status': status, 'space': space(name), 'seconds': seconds,
+                              'info': info, 'error': f'{status} completion',
+                              'coverage': float((hidden & (np.isfinite(completed) if completed is not None
+                                                           else np.zeros(hidden.shape, bool))).sum()
+                                                / max(hidden.sum(), 1))}
+                    result['coverage'] = result['coverage'] if completed is not None else 0.
+                else:
+                    resolved = hidden & np.isfinite(completed)
+                    coverage = float(resolved.sum() / max(hidden.sum(), 1))
+                    result = {'status': 'ok', 'space': space(name), 'seconds': seconds,
+                              'info': info,
+                              'errors': masked_errors(data, completed, hidden) if coverage == 1. else None,
+                              'coverage': coverage}
             except ValueError as exc:
-                result = {**failed(name, 'masked', seed, exc), 'seconds': time.perf_counter() - start}
+                result = {**failed(name, 'masked', seed, exc),
+                          'seconds': time.perf_counter() - start, 'space': space(name),
+                          'coverage': 0.}
             detail['masked'][seed]['models'][name] = result
             rows.append({'model': name, 'pass': 'masked', 'mask': args.mask, 'seed': seed,
-                         'status': result['status'], 'seconds': result['seconds'],
+                         'status': result['status'], 'space': result['space'],
+                         'seconds': result['seconds'],
                          'hidden_cells': stats['hidden_cells'], 'actual_rate': stats['actual_rate'],
                          'complete_rows_after_mask': stats['complete_rows_after'],
+                         'resolved_cells': result.get('coverage', 0.) * stats['hidden_cells'],
                          **flat_errors(result.get('errors', {})), 'error': result.get('error', '')})
 
     # 4. summary.csv: one row per model x pass x seed; summary.json: everything above.

@@ -13,4 +13,6 @@ tune = false
 zero_anchor = "global"
 zero_missing_mass = "uniform"
 
-[micoda]                  # TV1 defaults
+[micoda]                  # counts adapter, 17 targets, no Other
+max_iter = 120
+tol = 1e-8
