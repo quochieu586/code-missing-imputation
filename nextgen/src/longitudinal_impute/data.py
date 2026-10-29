@@ -1,7 +1,9 @@
 """CSV input for any count table, evaluation masks and count-space output."""
 import csv
+import os
 from dataclasses import dataclass
 from pathlib import Path
+import tempfile
 import tomllib
 
 import numpy as np
@@ -44,6 +46,14 @@ def load_csv(path, schema_config):
         reader = csv.DictReader(stream)
         fields, rows, lines = reader.fieldnames, [], []
         for row in reader:
+            # DictReader keeps surplus fields under the key None and fills absent ones with None.
+            if None in row:
+                raise ValueError(f'{path}: CSV line {reader.line_num} has {len(row[None])} more field(s) than '
+                                 f'the {len(fields)} header columns, after column {fields[-1]!r}')
+            absent = [column for column in fields if row[column] is None]
+            if absent:
+                raise ValueError(f'{path}: CSV line {reader.line_num} has {len(fields) - len(absent)} of '
+                                 f'{len(fields)} fields; columns {absent} are missing')
             rows.append(row)
             lines.append(reader.line_num)
     if not rows or not fields:
@@ -201,14 +211,27 @@ def check_completed(data, completed, hidden):
 
 
 def write_completed_csv(path, data, completed):
+    """Write a temporary file next to path and publish it under path only once it is complete.
+
+    An existing path is never overwritten; on any failure the temporary file is removed, so
+    no truncated file is left under the final name.
+    """
+    path = Path(path)
     observed = np.isfinite(data.counts)
     check_completed(data, completed, np.zeros_like(observed))
-    with Path(path).open('x', encoding='utf-8', newline='') as stream:
-        writer = csv.DictWriter(stream, fieldnames=data.fields)
-        writer.writeheader()
-        for i, source in enumerate(data.rows):
-            row = dict(source)
-            for j, name in enumerate(data.targets):
-                if not observed[i, j]:
-                    row[name] = format(completed[i, j], '.17g')
-            writer.writerow(row)
+    if path.exists():
+        raise FileExistsError(f'{path} already exists')
+    handle, temporary = tempfile.mkstemp(dir=path.parent, prefix=f'.{path.name}.', suffix='.tmp')
+    try:
+        with os.fdopen(handle, 'w', encoding='utf-8', newline='') as stream:
+            writer = csv.DictWriter(stream, fieldnames=data.fields)
+            writer.writeheader()
+            for i, source in enumerate(data.rows):
+                row = dict(source)
+                for j, name in enumerate(data.targets):
+                    if not observed[i, j]:
+                        row[name] = format(completed[i, j], '.17g')
+                writer.writerow(row)
+        os.link(temporary, path)        # atomic publish; fails instead of overwriting an existing path
+    finally:
+        os.unlink(temporary)
