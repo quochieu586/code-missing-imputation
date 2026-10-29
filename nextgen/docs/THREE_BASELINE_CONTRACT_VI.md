@@ -50,6 +50,7 @@ Rate/seed không hợp lệ gây ValueError trước side effect; argparse vẫn
 | D04 | R1: toàn bộ residual gán cho target thiếu | Nếu N gồm Other thì có thiên lệch khối lượng; cần nhóm chốt lại trước benchmark chính |
 | D05 | Complete all-zero loại khỏi initial fit và refit, raw output giữ nguyên | Ghi diagnostics; không lấy các dòng này làm donor hồi quy |
 | D06 | max_iter=120, tol=1e-8; dùng fitted state cuối; warning nếu không hội tụ | completed chỉ nói đủ output, không chứng minh convergence hay accuracy |
+| D07 | **Chốt 2026-10-30:** giữ interface counts `impute_counts` (phương án A); **không** chuyển fit/predict chung | Dispatch `isinstance` trong runner là chủ đích; đổi interface sau này phải kèm version contract mới và duyệt khoa học lại |
 
 Đây là bản đưa vào Git của các lựa chọn đã duyệt trong hội thoại, không phải biên bản duyệt khoa học độc lập. Chưa tự ý đổi R1 sang R2/thêm Other. Khi một target duy nhất thiếu, R1 gán `N − sum visible` bất kể proposal. Ví dụ truth [20,30], N=100, Other=50: che 30 thì điền 80. Sai lệch 50 xuất phát từ ngân sách, không phải lỗi ALR.
 

@@ -36,4 +36,6 @@ PR #2 cập nhật từ `edfb0a2` lên `4b3e97177241b4e100853371372fb53d65944122
 
 ## Quyết định còn cần nhóm chốt
 
-Khuyến nghị: thống nhất model-space + budget có Other cho benchmark xác nhận cả baseline/main model; nếu đổi adapter MICoDa phải version contract và chạy lại đối chiếu, không gọi bản mới là A17/R1 cũ. Chưa thực hiện thay đổi khoa học đó trong cập nhật này. Tests pass chỉ chứng minh hành vi đã kiểm, không mở gate khoa học.
+**Đã chốt 2026-10-30 (chủ project): giữ interface counts `impute_counts` cho MICoDa — phương án A; không chuyển fit/predict chung.** Lý do: A17/R1 cần counts/N/mask mà interface proportions không truyền được; chuyển interface đồng nghĩa hủy contract đã duyệt và duyệt khoa học lại từ đầu. Dispatch `isinstance` trong runner là chi phí được chấp nhận có chủ đích.
+
+Vẫn mở: thống nhất model-space + budget có Other cho benchmark xác nhận cả baseline/main model; nếu đổi adapter MICoDa phải version contract và chạy lại đối chiếu, không gọi bản mới là A17/R1 cũ. Chưa thực hiện thay đổi khoa học đó trong cập nhật này. Tests pass chỉ chứng minh hành vi đã kiểm, không mở gate khoa học.
