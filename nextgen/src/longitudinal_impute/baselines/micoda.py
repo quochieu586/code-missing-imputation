@@ -213,8 +213,10 @@ class MICoDa:
 
 
 # ---------------------------------------------------------------------------
-# COVID counts adapter (A17/R1). Dataset policy lives below this line only;
-# the core above stays reusable for any composition and R-parity checks.
+# COVID counts adapter: A17/R1 is the default contract; other=True selects the
+# A18/R2 sensitivity variant (Other column, residual shared with Other).
+# Dataset policy lives below this line only; the core above stays reusable for
+# any composition and R-parity checks.
 # ---------------------------------------------------------------------------
 @dataclass
 class Prepared:

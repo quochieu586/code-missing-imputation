@@ -62,6 +62,7 @@ Thư mục `--output` phải chưa tồn tại.
 - Tham số TOML: `max_iter` (mặc định 120), `tol` (1e-8), không có `W`. `reference` không đặt để tự chọn cột ít NaN nhất; đây là lựa chọn adaptation, không phải parity nguyên bản paper/R.
 - Trạng thái lượt: `completed` / `partial` / `failed` theo `CovidResult`; NaN còn lại luôn là ô chưa giải được, không có fallback ngầm.
 - **Giới hạn R1:** toàn bộ `total − tổng observed` được gán cho target thiếu, không dành ngân sách cho Other. Nếu total chứa nhóm ngoài target, lượng điền có thể cao có hệ thống. `space` chỉ là nhãn, không ngăn việc so sánh hay sửa thiên lệch này. Chưa dùng A17/R1 để kết luận baseline nào tốt hơn hoặc làm mốc main model.
+- **Biến thể `other = true` (A18/R2, sensitivity):** thêm cột Other vào không gian model và chia residual giữa target thiếu và Other theo proposal — cùng cơ chế budget với Hron/Tsagris qua `restore_counts`. **Mặc định vẫn là A17/R1** (D08): biến thể này chỉ dùng cho phân tích độ nhạy; gate "cả MSE count và MSE tỷ lệ cải thiện trên cả hai mask" chưa đạt (MSE count random-cell tăng ~4.5 lần). Đánh giá đầy đủ: [MICODA_A18_EVALUATION_VI.md](docs/MICODA_A18_EVALUATION_VI.md).
 - Khi adapter `failed`, không xuất CSV; giữ mã lỗi, message, context và unassigned trong `summary.json`, ghi lỗi và exit 1. `partial` chỉ xuất `_partial.csv` ở lượt native, không tính metric masked.
 - Chi tiết đặc tả: [Contract 3 baseline](docs/THREE_BASELINE_CONTRACT_VI.md), [đối chiếu cross-check](docs/CROSSCHECK_RESPONSE_VI.md).
 

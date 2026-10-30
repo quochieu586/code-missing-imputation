@@ -51,6 +51,7 @@ Rate/seed không hợp lệ gây ValueError trước side effect; argparse vẫn
 | D05 | Complete all-zero loại khỏi initial fit và refit, raw output giữ nguyên | Ghi diagnostics; không lấy các dòng này làm donor hồi quy |
 | D06 | max_iter=120, tol=1e-8; dùng fitted state cuối; warning nếu không hội tụ | completed chỉ nói đủ output, không chứng minh convergence hay accuracy |
 | D07 | **Chốt 2026-10-30:** giữ interface counts `impute_counts` (phương án A); **không** chuyển fit/predict chung | Dispatch `isinstance` trong runner là chủ đích; đổi interface sau này phải kèm version contract mới và duyệt khoa học lại |
+| D08 | **Chốt 2026-10-30:** A17/R1 là mặc định và protocol chính thức. Biến thể `other = true` (A18/R2) chỉ là **sensitivity analysis** opt-in trong cùng adapter. Gate thăng hạng "cả MSE count và MSE tỷ lệ cải thiện trên cả hai mask" **chưa đạt** (random-cell MSE count ~×4.5). Prototype `MICoDa18` fit/predict **không nằm trong `src/`** — lưu dạng tài liệu đánh giá | Không dùng A17 lẫn A18 làm ground truth cho NaN tự nhiên; cả hai bị chặn khỏi benchmark xác nhận main model cho đến khi chốt giả định Other/budget và đánh giá lại với thiết kế xác nhận |
 
 Đây là bản đưa vào Git của các lựa chọn đã duyệt trong hội thoại, không phải biên bản duyệt khoa học độc lập. Chưa tự ý đổi R1 sang R2/thêm Other. Khi một target duy nhất thiếu, R1 gán `N − sum visible` bất kể proposal. Ví dụ truth [20,30], N=100, Other=50: che 30 thì điền 80. Sai lệch 50 xuất phát từ ngân sách, không phải lỗi ALR.
 
