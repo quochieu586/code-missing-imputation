@@ -47,28 +47,25 @@ def test_covid_like_run_writes_every_output_and_survives_a_failing_model(tmp_pat
     monkeypatch.setitem(run.MODELS, 'hron', RecordingHron)
     source = FIXTURES / 'covid_small.csv'
     digest = hashlib.sha256(source.read_bytes()).hexdigest()
-    # MICoDa defaults (W = 0) reject the zero counts, exactly as on the real COVID table.
+    # MICoDa is the counts adapter now; it completes wherever Hron/Tsagris do.
     code, out = call(tmp_path, source, COVID_SCHEMA, '[hron]\nk = 3\n[tsagris]\nk = 2\n[micoda]\n',
                      '--mask', 'whole_feature', '--mask-rate', '.2', '--seeds', '1', '2')
-    assert code == 1
+    assert code == 0
     names = {p.name for p in out.iterdir()}
-    assert names == {'config.json', 'hron_completed.csv', 'tsagris_completed.csv', 'mask_whole_feature_seed1.npy',
-                     'mask_whole_feature_seed2.npy', 'summary.csv', 'summary.json', 'errors.log'}
-    log = (out / 'errors.log').read_text(encoding='utf-8').splitlines()
-    assert [line.split(' | ')[:4] for line in log] == [['micoda', 'native', '-', 'BaselineError'],
-                                                      ['micoda', 'masked', '1', 'BaselineError'],
-                                                      ['micoda', 'masked', '2', 'BaselineError']]
-    assert 'MICoDa ALR needs positive parts' in log[0]
-
+    assert names == {'config.json', 'hron_completed.csv', 'tsagris_completed.csv', 'micoda_completed.csv',
+                     'mask_whole_feature_seed1.npy',
+                     'mask_whole_feature_seed2.npy', 'summary.csv', 'summary.json'}
     rows = read_rows(out / 'summary.csv')
     assert [(r['model'], r['pass'], r['seed'], r['status']) for r in rows] == [
-        ('hron', 'native', '', 'ok'), ('tsagris', 'native', '', 'ok'), ('micoda', 'native', '', 'failed'),
-        *[(m, 'masked', s, st) for s in '12' for m, st in (('hron', 'ok'), ('tsagris', 'ok'), ('micoda', 'failed'))]]
+        (m, 'native', '', 'ok') for m in ('hron', 'tsagris', 'micoda')] + [
+        (m, 'masked', s, 'ok') for s in '12' for m in ('hron', 'tsagris', 'micoda')]
     summary = json.loads((out / 'summary.json').read_text(encoding='utf-8'))
     assert summary['native']['tsagris']['info']['zero_anchor_global_rows'] == 1
     assert set(summary['native']['hron']['wasserstein']) == {'v1', 'v2', 'v3', 'v4'}
-    assert {a['model']: a['runs_ok'] for a in summary['aggregate'] if a['pass'] == 'masked'} == {
-        'hron': 2, 'tsagris': 2, 'micoda': 0}
+    mic = summary['native']['micoda']['info']
+    assert mic['status'] == 'completed' and mic['converged'] is not None
+    assert {a['model']: (a['space'], a['runs_ok']) for a in summary['aggregate'] if a['pass'] == 'masked'} == {
+        'hron': ('18_with_other', 2), 'tsagris': ('18_with_other', 2), 'micoda': ('17_targets', 2)}
     config = json.loads((out / 'config.json').read_text(encoding='utf-8'))
     assert config['data_sha256'] == digest and config['seeds'] == [1, 2]
     assert config['models'] == {'hron': {'k': 3}, 'tsagris': {'k': 2}, 'micoda': {}}
@@ -87,7 +84,7 @@ def test_covid_like_run_writes_every_output_and_survives_a_failing_model(tmp_pat
 
     # Completed CSV keeps every observed text cell and the extra columns; the input is untouched.
     original = read_rows(source)
-    for name in ('hron', 'tsagris'):
+    for name in ('hron', 'tsagris', 'micoda'):
         completed = load_csv(out / f'{name}_completed.csv', write(tmp_path, 'schema.toml', COVID_SCHEMA))
         assert np.isfinite(completed.counts).all()
         for i, row in enumerate(read_rows(out / f'{name}_completed.csv')):
@@ -111,7 +108,7 @@ def test_error_log_translates_row_context_to_entity_and_csv_line(tmp_path):
 
 def test_microbiome_without_total_column_runs_clean(tmp_path):
     source = FIXTURES / 'microbiome_small.csv'
-    code, out = call(tmp_path, source, MICROBIOME_SCHEMA, '[hron]\n[tsagris]\n[micoda]\nW = 0.5\n',
+    code, out = call(tmp_path, source, MICROBIOME_SCHEMA, '[hron]\n[tsagris]\n[micoda]\nmax_iter = 10\ntol = 1e-8\n',
                      '--mask', 'random_cell', '--mask-rate', '.1', '--seeds', '3')
     assert code == 0 and not (out / 'errors.log').exists()
     rows = read_rows(out / 'summary.csv')
@@ -171,9 +168,9 @@ def test_interrupted_completed_csv_is_not_published(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize('extra,message', [
-    (('--mask', 'random_cell', '--mask-rate', '1.0'), r'--mask-rate must be in \[0, 1\), got 1\.0'),
-    (('--mask', 'whole_feature', '--mask-rate', '-0.1'), r'--mask-rate must be in \[0, 1\)'),
-    (('--mask', 'random_cell', '--mask-rate', 'nan'), r'--mask-rate must be in \[0, 1\), got nan'),
+    (('--mask', 'random_cell', '--mask-rate', '1.0'), r'mask rate must be in \[0, 1\)'),
+    (('--mask', 'whole_feature', '--mask-rate', '-0.1'), r'mask rate must be in \[0, 1\)'),
+    (('--mask', 'random_cell', '--mask-rate', 'nan'), r'mask rate must be in \[0, 1\)'),
     (('--mask', 'random_cell', '--seeds', '7', '7'), r'--seeds must be distinct nonnegative integers'),
     (('--mask', 'random_cell', '--seeds', '-1'), r'--seeds must be distinct nonnegative integers'),
     (('--mask', 'block',), r"invalid choice: 'block'"),
@@ -187,10 +184,14 @@ def test_bad_mask_settings_stop_before_any_fit_or_output(tmp_path, monkeypatch, 
             return super().fit(values)
 
     monkeypatch.setitem(run.MODELS, 'tsagris', RecordingTsagris)
-    with pytest.raises(SystemExit) as stop:
-        call(tmp_path, FIXTURES / 'covid_small.csv', COVID_SCHEMA, '[tsagris]\n', *extra)
-    assert stop.value.code == 2
-    assert re.search(message, capsys.readouterr().err)
+    if 'block' in extra:
+        with pytest.raises(SystemExit) as stop:
+            call(tmp_path, FIXTURES / 'covid_small.csv', COVID_SCHEMA, '[tsagris]\n', *extra)
+        assert stop.value.code == 2
+        assert re.search(message, capsys.readouterr().err)
+    else:
+        with pytest.raises(ValueError, match=message):
+            call(tmp_path, FIXTURES / 'covid_small.csv', COVID_SCHEMA, '[tsagris]\n', *extra)
     assert fitted == [] and not (tmp_path / 'out').exists()
 
 

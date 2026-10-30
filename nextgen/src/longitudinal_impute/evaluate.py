@@ -72,9 +72,10 @@ def summarize(rows):
     for row in rows:
         groups.setdefault((row['model'], row['pass'], row['mask']), []).append(row)
     out = []
-    for (model, run, mask), members in groups.items():
+    for (model, run_name, mask_name), members in groups.items():
         ok = [r for r in members if r['status'] == 'ok']
-        summary = {'model': model, 'pass': run, 'mask': mask, 'runs_ok': len(ok),
+        summary = {'model': model, 'pass': run_name, 'mask': mask_name,
+                   'space': members[0].get('space'), 'runs_ok': len(ok),
                    'runs_failed': len(members) - len(ok)}
         metrics = dict.fromkeys(k for r in ok for k, v in r.items()
                                 if k != 'seed' and isinstance(v, (int, float)) and not isinstance(v, bool))
