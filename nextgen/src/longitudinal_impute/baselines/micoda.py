@@ -225,6 +225,7 @@ class Prepared:
     delta: float
     positive_source_cells: int
     events: list[dict]
+    other: bool = False             # A18: values carry a trailing Other column
 
 
 @dataclass
@@ -259,7 +260,7 @@ def _visible_input(counts, totals, hidden):
     return raw, totals
 
 
-def _prepare(raw, totals):
+def _prepare(raw, totals, *, other=False):
     with np.errstate(under='ignore'):
         values = raw / totals[:, None]
     if ((raw > 0) & (values == 0)).any():
@@ -273,19 +274,28 @@ def _prepare(raw, totals):
     known = np.isfinite(raw)
     complete = known.all(axis=1)
     excluded = complete & (raw == 0).all(axis=1)
+    if other:
+        # A18 parity with data.model_input: Other is derivable only when every
+        # target is visible; masked or natively partial rows leave it unknown.
+        other_values = np.full(len(raw), np.nan)
+        other_values[complete] = (totals[complete] - raw[complete].sum(axis=1)) / totals[complete]
+        values = np.column_stack((values, other_values))
+        known = np.column_stack((known, complete))
+        complete = known.all(axis=1)
     events = []
+    known_t = known[:, :-1] if other else known      # raw has no Other column
     for i in range(len(raw)):
         if excluded[i]:
             events.append({'row': i, 'code': 'all_zero_complete_excluded'})
-        if complete[i] and raw[i].sum() < totals[i]:
+        if complete[i] and raw[i].sum() < totals[i] and not other:
             events.append({'row': i, 'code': 'complete_residual_positive'})
         if excluded[i]:
             continue
-        values[i, known[i] & (raw[i] == 0)] = delta
+        values[i, known[i] & (values[i] == 0)] = delta
         if complete[i]:
             values[i] /= values[i].sum()
         else:
-            if known[i].any() and (raw[i, known[i]] == 0).all():
+            if known_t[i].any() and (raw[i, known_t[i]] == 0).all():
                 events.append({'row': i, 'code': 'partial_visible_all_zero'})
             headroom = max(1e-12, int((~known[i]).sum()) * delta)
             if not 0 < headroom < 1:
@@ -301,12 +311,12 @@ def _prepare(raw, totals):
         raise NumericalError('Preparation left an invalid model composition')
     if (np.nansum(values[~complete], axis=1) >= 1).any():
         raise NumericalError('Partial model composition has no representable headroom')
-    return Prepared(raw, totals, values, core_rows, delta, int(positives.size), events)
+    return Prepared(raw, totals, values, core_rows, delta, int(positives.size), events, other)
 
 
-def prepare(counts, totals, hidden=None):
+def prepare(counts, totals, hidden=None, *, other=False):
     """A on visible target proportions; no closure of partial observed mass."""
-    return _prepare(*_visible_input(counts, totals, hidden))
+    return _prepare(*_visible_input(counts, totals, hidden), other=other)
 
 
 def _diagnostics(status, events, **fields):
@@ -331,8 +341,16 @@ def _allocate_budget(weights, residual):
 
 
 def restore(prepared, proposals):
-    """R1: raw observed locked; entire residual goes to missing targets only."""
-    if np.shape(proposals) != prepared.raw.shape:
+    """R1: raw observed locked; entire residual goes to missing targets only.
+
+    R2 (other variant): the residual is shared between missing targets and Other
+    by proposal weight, like data.restore_counts does for Hron/Tsagris; Other's
+    share stays implicit (targets are the only output columns).
+    """
+    if prepared.other:
+        if np.shape(proposals) != prepared.values.shape:
+            raise BaselineInputError('Expected proposals for every target plus Other')
+    elif np.shape(proposals) != prepared.raw.shape:
         raise BaselineInputError('Expected one proposal per target, no Other column')
     result = prepared.raw.copy()
     events = list(prepared.events)
@@ -343,10 +361,19 @@ def restore(prepared, proposals):
         if residual == 0:
             result[i, missing[i]] = 0.
             continue
-        # With one unknown the composition constraint determines it exactly;
-        # no regression weight (possibly underflowed to zero) is needed.
-        allocation = np.array([residual]) if missing[i].sum() == 1 else _allocate_budget(
-            np.asarray(proposals)[i, missing[i]], residual)
+        if prepared.other:
+            # R2: Other carries proposal weight, so even a single missing target
+            # no longer absorbs the whole residual (no composition shortcut).
+            weights = np.r_[np.asarray(proposals)[i, :-1][missing[i]], proposals[i, -1]]
+            allocation = _allocate_budget(weights, residual)
+            if allocation is not None:
+                allocation = allocation[:-1]    # Other's share stays implicit
+        elif missing[i].sum() == 1:
+            # With one unknown the composition constraint determines it exactly;
+            # no regression weight (possibly underflowed to zero) is needed.
+            allocation = np.array([residual])
+        else:
+            allocation = _allocate_budget(np.asarray(proposals)[i, missing[i]], residual)
         if allocation is None:
             events.append({'row': int(i), 'code': 'allocation_unavailable'})
             continue
@@ -373,7 +400,8 @@ def restore(prepared, proposals):
             continue
         if corrected:
             events.append({'row': int(i), 'code': 'allocation_roundoff_corrected'})
-        unassigned[i] = 0.
+        # R1: nothing left over. R2: what remains is Other's implicit share.
+        unassigned[i] = 0. if not prepared.other else residual - float(result[i, missing[i]].sum())
     visible = ~missing
     if not np.array_equal(result[visible], prepared.raw[visible]):
         raise NumericalError('Restoration changed raw observed counts')
@@ -390,29 +418,32 @@ def restore(prepared, proposals):
 
 class MICoDaCovid:
     """Approved deterministic V2 adaptation, not a general-purpose policy engine."""
-    def __init__(self, *, max_iter=120, tol=1e-8, reference=None):
+    def __init__(self, *, max_iter=120, tol=1e-8, reference=None, other=False):
+        if not isinstance(other, (bool, np.bool_)):
+            raise BaselineInputError('other must be a boolean')
         # Reuse core configuration validation; no fitted state held by this adapter.
         MICoDa(max_iter=max_iter, tol=tol, reference=reference)
-        self.max_iter, self.tol, self.reference = max_iter, tol, reference
+        self.max_iter, self.tol, self.reference, self.other = max_iter, tol, reference, bool(other)
 
     def impute_counts(self, counts, totals, hidden=None):
         config = {'version': 'v2', 'semantics': 'paper', 'zero_policy': 'min2_closure',
-                  'budget_policy': 'R1', 'all_zero_policy': 'exclude_initial_and_refit',
+                  'budget_policy': 'R2' if self.other else 'R1',
+                  'all_zero_policy': 'exclude_initial_and_refit',
                   'max_iter': int(self.max_iter), 'tol': float(self.tol),
                   'reference_requested': None if self.reference is None else int(self.reference),
-                  'covariates': 'intercept_only', 'W': 0., 'other_column': False,
+                  'covariates': 'intercept_only', 'W': 0., 'other_column': self.other,
                   'positive_state_required': True}
         raw = n = prepared = None
         try:
             raw, n = _visible_input(counts, totals, hidden)
-            prepared = _prepare(raw, n)
+            prepared = _prepare(raw, n, other=self.other)
             core_values = prepared.values[prepared.core_rows]
             initial_rows = int(np.isfinite(core_values).all(axis=1).sum())
             if initial_rows <= 1:
                 raise InsufficientDataError('Complete-case initialization needs more than one row')
             core = MICoDa(max_iter=self.max_iter, tol=self.tol, reference=self.reference)
             core.fit(core_values, require_positive_state=True)
-            proposals = np.full(raw.shape, np.nan)
+            proposals = np.full(prepared.values.shape, np.nan)
             proposals[prepared.core_rows] = core.fit_result_.values
             result = restore(prepared, proposals)
             fit = core.fit_result_.diagnostics
@@ -424,7 +455,8 @@ class MICoDaCovid:
                 initial_complete_rows=initial_rows, core_rows=int(prepared.core_rows.sum()),
                 excluded_all_zero_rows=int((~prepared.core_rows).sum()),
                 coefficients=core.coefficients_.tolist(),
-                coefficient_target_indices=[j for j in range(raw.shape[1]) if j != core.reference_])
+                coefficient_target_indices=[j for j in range(core.fit_result_.values.shape[1])
+                                            if j != core.reference_])
             if not fit['converged']:
                 result.diagnostics['row_events'].append({'code': 'non_converged'})
                 result.diagnostics['warning_counts']['non_converged'] = 1

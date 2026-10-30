@@ -62,8 +62,10 @@ def adapter_error(status, info):
     return f'{status} completion; {(info or {}).get("unresolved_cells", "-")} cells unresolved'
 
 
-def space(name):
-    """Space label: 17 tracked targets for the counts adapter, 18 with Other otherwise."""
+def space(name, model=None):
+    """Space label: the counts adapter is 17 targets (A17) or 18 with Other (A18)."""
+    if isinstance(model, MICoDaCovid):
+        return '18_with_other' if model.other else '17_targets'
     return SPACE.get(name, '18_with_other')
 
 
@@ -185,17 +187,17 @@ def main(argv=None):
                 write_completed_csv(output / f'{name}{suffix}.csv', data, completed,
                                     allow_partial=status == 'partial')
             if status == 'completed':
-                result = {'status': 'ok', 'space': space(name), 'seconds': seconds,
+                result = {'status': 'ok', 'space': space(name, model), 'seconds': seconds,
                           'info': info, 'wasserstein': wasserstein_scores(data, completed)}
             elif status == 'partial':
                 message = adapter_error(status, info)
                 failed(name, 'native', None, ValueError(message))
-                result = {'status': 'partial', 'space': space(name), 'seconds': seconds,
+                result = {'status': 'partial', 'space': space(name, model), 'seconds': seconds,
                           'info': info, 'error': message}
             else:
                 message = adapter_error(status, info)
                 failed(name, 'native', None, ValueError(message))
-                result = {'status': 'failed', 'space': space(name), 'seconds': seconds,
+                result = {'status': 'failed', 'space': space(name, model), 'seconds': seconds,
                           'info': info, 'error': message}
         except ValueError as exc:
             result = {**failed(name, 'native', None, exc), 'seconds': time.perf_counter() - start,
@@ -220,7 +222,7 @@ def main(argv=None):
                 if status != 'completed':
                     message = adapter_error(status, info)
                     failed(name, 'masked', seed, ValueError(message))
-                    result = {'status': status, 'space': space(name), 'seconds': seconds,
+                    result = {'status': status, 'space': space(name, model), 'seconds': seconds,
                               'info': info, 'error': message,
                               'coverage': float((hidden & (np.isfinite(completed) if completed is not None
                                                            else np.zeros(hidden.shape, bool))).sum()
@@ -228,7 +230,7 @@ def main(argv=None):
                 else:
                     resolved = hidden & np.isfinite(completed)
                     coverage = float(resolved.sum() / max(hidden.sum(), 1))
-                    result = {'status': 'ok', 'space': space(name), 'seconds': seconds,
+                    result = {'status': 'ok', 'space': space(name, model), 'seconds': seconds,
                               'info': info,
                               'errors': masked_errors(data, completed, hidden) if coverage == 1. else None,
                               'coverage': coverage}
