@@ -1,0 +1,16 @@
+# Models run by longitudinal_impute.run; a model not listed here is not run.
+# Each table holds constructor parameters; an empty table uses the defaults.
+
+[hron]
+k = 3
+ties = "group"            # "index" reproduces the pre-rewrite output
+adjustment = "median"     # Eq. 7; "sum" = Eq. 5
+
+[tsagris]
+k = 3
+alpha = 1.0
+tune = false
+zero_anchor = "global"
+zero_missing_mass = "uniform"
+
+[micoda]                  # TV1 defaults

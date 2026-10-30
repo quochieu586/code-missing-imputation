@@ -1,0 +1,6 @@
+# Example schema for a count table without a total column (e.g. microbiome).
+# The row total is then the sum of the targets, so no target may be missing.
+[dataset]
+entity = "subject"
+time = "visit"            # optional
+targets = ["Bacteroides", "Prevotella", "Faecalibacterium", "Akkermansia", "Bifidobacterium"]

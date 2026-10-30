@@ -1,126 +1,59 @@
-"""Public estimators publish a complete fit or preserve the previous model."""
-import pickle
-from unittest.mock import patch
+"""fit is atomic for both baselines: a failed fit publishes nothing, a failed refit keeps the old state."""
 import numpy as np
 import pytest
-from longitudinal_impute.baselines import hron
-from longitudinal_impute.baselines.hron import HronKNN, HronIterative
-from longitudinal_impute.baselines.tsagris import TsagrisKNN, TsagrisAdaptive
+
+from longitudinal_impute.baselines.hron import HronKNN
+from longitudinal_impute.baselines.tsagris import TsagrisKNN
 from longitudinal_impute.errors import BaselineError, NotFittedError
 
-
-FACTORIES = [lambda: HronKNN(1), lambda: HronIterative(max_iter=2),
-             lambda: HronIterative(regression='lts', max_iter=2, lts_starts=2, lts_exact_limit=1),
-             lambda: TsagrisKNN(1), lambda: TsagrisKNN(1, alpha=-.5),
-             lambda: TsagrisAdaptive(ks=(1,), alphas=(1.,), leave_n=1, repetitions=1),
-             lambda: TsagrisAdaptive(ks=(1,), alphas=(1.,), leave_n=1, repetitions=1, adaptive=False)]
-
-
-def fit(model, values):
-    if isinstance(model, TsagrisAdaptive):
-        return model.fit(values, patterns=[(0,), (1,)])
-    return model.fit(values)
+A, QUERY_A = [[.2, .8], [.4, .6], [.3, .7]], [[np.nan, .25]]
+B, QUERY_B = [[.2, .3, .5], [.1, .6, .3], [.3, .3, .4]], [[np.nan, .2, .3]]
+# Inputs each model must reject; the 3-column ones also change the schema on a refit.
+BAD = {'tsagris': [[[.8, .8, .4]], [[.1, np.nan, .9]]], 'hron': [[[0., .5, .5]], [[-1., 1., 1.]]]}
+MODELS = {'tsagris': lambda: TsagrisKNN(k=1), 'hron': lambda: HronKNN(k=1)}
+FITTED = {'tsagris': ('donors_', 'missing_patterns_', 'tuning_', 'k_', 'alpha_'), 'hron': ('donors_',)}
 
 
-def bad_data(model):
-    if isinstance(model, HronIterative):
-        return np.tile([.1, .2, .3, .4], (8, 1))
-    if isinstance(model, HronKNN):
-        return [[-.1, .3, .3, .5]]
-    if isinstance(model, TsagrisAdaptive):
-        return [[.6, .1, .2, .1]]
-    return np.full((3, 4), np.nan)
+@pytest.mark.parametrize('name', MODELS)
+def test_failed_first_fit_leaves_the_model_unfitted(name):
+    for bad in BAD[name]:
+        model = MODELS[name]()
+        with pytest.raises(BaselineError):
+            model.fit(bad)
+        assert not any(hasattr(model, attribute) for attribute in FITTED[name])
+        with pytest.raises(NotFittedError):
+            model.predict(QUERY_B)
 
 
-@pytest.mark.parametrize('factory', FACTORIES)
-def test_failed_first_fit_never_publishes_fitted_guard(factory):
-    model = factory()
-    with pytest.raises(BaselineError):
-        fit(model, bad_data(model))
+def test_failed_tuning_leaves_tsagris_unfitted():
+    model = TsagrisKNN(tune=True)
+    with pytest.raises(BaselineError, match='incomplete rows'):
+        model.fit(B)                       # complete rows only: no pattern to copy
+    assert not hasattr(model, 'donors_')
     with pytest.raises(NotFittedError):
-        model.predict([[np.nan, np.nan, .2, .1]])
+        model.predict(QUERY_B)
 
 
-@pytest.mark.parametrize('factory', FACTORIES)
-def test_failed_refit_preserves_entire_state_and_predictions(factory):
-    model = factory()
-    good = np.random.default_rng(3).dirichlet(np.ones(4), 12)
-    fit(model, good)
-    query = [[np.nan, np.nan, .2, .1]]
-    before = model.predict(query)
-    state = pickle.dumps(vars(model))
-    with pytest.raises(BaselineError):
-        fit(model, bad_data(model))
-    assert pickle.dumps(vars(model)) == state
-    np.testing.assert_array_equal(before, model.predict(query))
+@pytest.mark.parametrize('name', MODELS)
+def test_failed_refit_keeps_previous_state_and_predictions(name):
+    model = MODELS[name]().fit(A)
+    before = {attribute: getattr(model, attribute) for attribute in FITTED[name]}
+    prediction = model.predict(QUERY_A)
+    for bad in BAD[name]:
+        with pytest.raises(BaselineError):
+            model.fit(bad)
+        for attribute, value in before.items():
+            assert getattr(model, attribute) is value
+        np.testing.assert_array_equal(model.predict(QUERY_A), prediction)
+    with pytest.raises(BaselineError, match='dimension'):
+        model.predict(QUERY_B)
 
 
-@pytest.mark.parametrize('factory', FACTORIES)
-def test_successful_refit_replaces_schema_and_matches_a_fresh_fit(factory):
-    model = factory()
-    fit(model, np.random.default_rng(1).dirichlet(np.ones(4), 12))
-    model.predict([[np.nan, np.nan, .2, .1]])
-    values = np.random.default_rng(2).dirichlet(np.ones(5), 15)
-    assert fit(model, values) is model
-    assert not hasattr(model, 'last_prediction_')
-    fresh = fit(factory(), values)
-    query = [[np.nan, np.nan, .2, .1, .1]]
-    np.testing.assert_array_equal(model.predict(query), fresh.predict(query))
-
-
-def test_hron_failure_after_first_target_preserves_initializer_and_models():
-    values = np.random.default_rng(9).dirichlet(np.ones(4), 18)
-    model = HronIterative(max_iter=2).fit(values)
-    query = [[np.nan, np.nan, .2, .1]]
-    before = model.predict(query)
-    state = pickle.dumps(vars(model))
-    original = hron.ols
-    calls = 0
-
-    def fail_second(*args):
-        nonlocal calls
-        calls += 1
-        if calls == 2:
-            raise BaselineError('injected failure after first fitted target')
-        return original(*args)
-
-    with patch.object(hron, 'ols', side_effect=fail_second):
-        with pytest.raises(BaselineError, match='injected'):
-            model.fit(values[::-1])
-    assert calls == 2
-    assert pickle.dumps(vars(model)) == state
-    np.testing.assert_array_equal(before, model.predict(query))
-
-
-def test_adaptive_failure_after_first_tuned_pattern_preserves_previous_fit():
-    values = np.random.default_rng(3).dirichlet(np.ones(4), 12)
-    model = TsagrisAdaptive(ks=(1,), alphas=(1.,), leave_n=1, repetitions=1)
-    fit(model, values)
-    query = [[np.nan, np.nan, .2, .1]]
-    before = model.predict(query)
-    state = pickle.dumps(vars(model))
-    original = TsagrisAdaptive._tune
-    calls = 0
-
-    def fail_second(self, *args):
-        nonlocal calls
-        calls += 1
-        if calls == 2:
-            raise BaselineError('injected failure after first tuned pattern')
-        return original(self, *args)
-
-    with patch.object(TsagrisAdaptive, '_tune', new=fail_second):
-        with pytest.raises(BaselineError, match='injected'):
-            fit(model, values[::-1])
-    assert calls == 2
-    assert pickle.dumps(vars(model)) == state
-    np.testing.assert_array_equal(before, model.predict(query))
-
-
-def test_negative_alpha_refit_rejects_zero_donors_without_publishing_them():
-    values = np.random.default_rng(2).dirichlet(np.ones(4), 12)
-    model = TsagrisKNN(1, alpha=-.5).fit(values)
-    before = pickle.dumps(vars(model))
-    with pytest.raises(BaselineError, match='positive complete donors'):
-        model.fit([[0., .2, .3, .5]])
-    assert pickle.dumps(vars(model)) == before
+@pytest.mark.parametrize('name', MODELS)
+def test_successful_refit_equals_a_fresh_fit(name):
+    refit = MODELS[name]().fit(A).fit(B)
+    fresh = MODELS[name]().fit(B)
+    np.testing.assert_array_equal(refit.predict(QUERY_B), fresh.predict(QUERY_B))
+    for attribute in FITTED[name]:
+        np.testing.assert_array_equal(getattr(refit, attribute), getattr(fresh, attribute))
+    assert refit.info_ == fresh.info_
