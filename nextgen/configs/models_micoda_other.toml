@@ -1,0 +1,7 @@
+# MICoDa counts adapter, A18/R2 sensitivity variant (other = true): the residual is shared
+# between missing targets and Other, as in Hron/Tsagris. run.py has no variant names yet,
+# so this runs as a separate pass and is reported as "micoda_other".
+[micoda]
+max_iter = 120
+tol = 1e-8
+other = true
