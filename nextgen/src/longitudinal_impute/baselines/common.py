@@ -122,3 +122,44 @@ def design_matrix(covariates, n):
     if x.ndim != 2 or len(x) != n or not np.isfinite(x).all():
         raise BaselineError('Covariates must be a complete finite N x P numeric matrix')
     return np.column_stack((np.ones(n), x))
+
+
+def fill_within_residual(values, proposal):
+    """Put per-cell proposals into the missing targets without exceeding the row residual.
+
+    values: N x (D+1) model input (targets c/N then Other, NaN = missing).
+    proposal: N x D proposed proportions; only the missing target cells are read.
+    Per incomplete row, R = 1 - sum(observed targets). If the proposals sum to more than R
+    they are scaled down to R; Other gets the rest, max(R - filled, 0). A row whose filled
+    mass and Other are both 0 gets Other = 1 as a pure weight, so restore_counts sends any
+    (rounding-level) residual to Other instead of failing. Returns (matrix, rows_scaled_down).
+    """
+    x = np.asarray(values, float)
+    targets = x[:, :-1]
+    missing = ~np.isfinite(targets)
+    rows = missing.any(axis=1)
+    proposal = np.asarray(proposal, float)
+    if proposal.shape != targets.shape or not np.isfinite(proposal[missing]).all() or (proposal[missing] < 0).any():
+        raise BaselineInputError('Proposals must be finite, nonnegative and N x D')
+    residual = np.maximum(1. - np.nansum(targets, axis=1), 0.)
+    fill = np.where(missing, proposal, 0.)
+    mass = fill.sum(axis=1)
+    over = rows & (mass > residual)
+    fill[over] *= (residual[over] / mass[over])[:, None]
+    out = x.copy()
+    out[:, :-1][missing] = fill[missing]
+    other = np.maximum(residual - fill.sum(axis=1), 0.)
+    other[rows & (other == 0) & (fill.sum(axis=1) == 0)] = 1.
+    out[rows, -1] = other[rows]
+    return out, int(over.sum())
+
+
+def observed_columns(values, model):
+    """Model input check shared by the floor/time baselines: N x (D+1), finite cells in [0, 1]."""
+    x = np.array(values, dtype=float)
+    if x.ndim != 2 or x.shape[0] == 0 or x.shape[1] < 3:
+        raise BaselineInputError(f'{model} expects a nonempty N x (D+1) matrix (targets plus Other)')
+    finite = x[np.isfinite(x)]
+    if np.isinf(x).any() or (finite < 0).any() or (finite > 1 + 1e-10).any():
+        raise BaselineInputError(f'{model} expects proportions in [0, 1] or NaN')
+    return x
