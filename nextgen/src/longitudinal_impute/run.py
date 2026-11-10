@@ -2,6 +2,10 @@
 
     python -m longitudinal_impute.run --data <csv> --schema <toml> --models <toml> --output <dir>
            [--mask whole_feature|random_cell|none] [--mask-rate 0.05] [--seeds 0 1 2 3 4]
+           [--only NAME [NAME ...]]
+
+Every [name] table of --models runs, except tables with `enabled = false`.
+--only runs exactly the named tables (enabled or not), in the given order.
 """
 import argparse
 import csv
@@ -19,13 +23,19 @@ from .evaluate import wasserstein_scores, masked_errors, summarize
 from .baselines.hron import HronKNN
 from .baselines.tsagris import TsagrisKNN
 from .baselines.micoda import MICoDaCovid
+from .baselines.zero_fill import ZeroFill
+from .baselines.mean_fill import MeanFill
+from .baselines.marginal_sampler import MarginalSampler
+from .baselines.same_day_mean import SameDayMean
 
 MICODA_INFO_KEYS = ('status', 'delta', 'reference', 'iterations', 'converged',
                     'termination_reason', 'initial_complete_rows', 'excluded_all_zero_rows',
                     'initial_regression_support', 'warning_counts', 'coefficients',
                     'coefficient_target_indices', 'missing_cells', 'resolved_cells',
                     'unresolved_cells', 'error', 'row_events', 'config')
-MODELS = {'hron': HronKNN, 'micoda': MICoDaCovid, 'tsagris': TsagrisKNN}
+MODELS = {'hron': HronKNN, 'micoda': MICoDaCovid, 'tsagris': TsagrisKNN,
+          'zero_fill': ZeroFill, 'mean_fill': MeanFill, 'marginal_sampler': MarginalSampler,
+          'same_day_mean': SameDayMean}
 SPACE = {'micoda': '17_targets', 'hron': '18_with_other', 'tsagris': '18_with_other'}
 
 
@@ -41,7 +51,12 @@ def run_model(data, model, hidden):
             check_completed(data, result.values, hidden)
         return result.values, result.status, info
     values = model_input(data, hidden, positive=model.input_domain == 'positive')
-    model.fit(values)
+    if getattr(model, 'needs_context', False):
+        # Row facts known for every row whatever the mask: N, time, group, entity. No counts.
+        model.fit(values, context={'totals': data.totals, 'days': data.days, 'time_kind': data.time_kind,
+                                   'groups': data.groups, 'entities': data.entities})
+    else:
+        model.fit(values)
     completed = restore_counts(data, model.predict(values) * data.totals[:, None], hidden)
     check_completed(data, completed, hidden)
     return completed, 'completed', getattr(model, 'info_', None)
@@ -69,18 +84,36 @@ def space(name, model=None):
     return SPACE.get(name, '18_with_other')
 
 
-def read_models(path):
-    """[name] tables with constructor parameters; only the models listed are run."""
+def read_models(path, only=None):
+    """[name] tables with constructor parameters -> {name: params} of the models to run.
+
+    A table with `enabled = false` is validated but only runs when --only names it.
+    """
     with Path(path).open('rb') as stream:
         config = tomllib.load(stream)
     if not config or set(config) - set(MODELS):
         raise ValueError(f'{path}: declare one or more of {sorted(MODELS)}, got {sorted(config)}')
+    selected = {}
     for name, params in config.items():
+        params = dict(params)
+        enabled = params.pop('enabled', True)
+        if not isinstance(enabled, bool):
+            raise ValueError(f'{path}: [{name}] enabled must be true or false')
         try:
             MODELS[name](**params)          # reject bad parameters before any run starts
         except TypeError as exc:
             raise ValueError(f'{path}: [{name}] {exc}') from None
-    return config
+        selected[name] = (params, enabled)
+    if only:
+        absent = [name for name in only if name not in selected]
+        if absent or len(set(only)) != len(only):
+            raise ValueError(f'--only {list(only)}: names must be distinct tables of {path}, '
+                             f'missing {absent}')
+        return {name: selected[name][0] for name in only}
+    models = {name: params for name, (params, enabled) in selected.items() if enabled}
+    if not models:
+        raise ValueError(f'{path}: every model has enabled = false; pick some with --only')
+    return models
 
 
 def describe(exc, data):
@@ -125,11 +158,11 @@ def flat_errors(errors):
 def print_table(aggregate):
     def number(value, digits):
         return '-' if value is None else f'{value:.{digits}g}'
-    print(f"{'model':10} {'space':14} {'pass':7} {'mask':14} {'ok/fail':8} {'sec':>7} "
+    print(f"{'model':16} {'space':14} {'pass':7} {'mask':14} {'ok/fail':8} {'sec':>7} "
           f"{'MSE prop (mean +- sd)':>24} {'MSE count':>11} {'MAE prop':>9}")
     for r in aggregate:
         mse = number(r.get('mse_proportion_mean'), 4) + ' +- ' + number(r.get('mse_proportion_sd'), 2)
-        print(f"{r['model']:10} {r['space']:14} {r['pass']:7} {r['mask']:14} {r['runs_ok']}/{r['runs_failed']:<6} "
+        print(f"{r['model']:16} {r['space']:14} {r['pass']:7} {r['mask']:14} {r['runs_ok']}/{r['runs_failed']:<6} "
               f"{number(r.get('seconds_mean'), 3):>7} {mse:>24} {number(r.get('mse_count_mean'), 6):>11} "
               f"{number(r.get('mae_proportion_mean'), 3):>9}")
 
@@ -143,6 +176,8 @@ def main(argv=None):
     parser.add_argument('--mask', choices=('none', 'random_cell', 'whole_feature'), default='none')
     parser.add_argument('--mask-rate', type=float, default=.05)
     parser.add_argument('--seeds', type=int, nargs='+', default=[0, 1, 2, 3, 4])
+    parser.add_argument('--only', nargs='+', metavar='NAME',
+                        help='run only these [name] tables of --models, even those with enabled = false')
     args = parser.parse_args(argv)
     # Mask settings are checked here, before any output or model run (same rate rule as make_mask).
     if args.mask != 'none':
@@ -154,12 +189,12 @@ def main(argv=None):
     if args.output.exists():
         raise FileExistsError(f'{args.output} already exists; choose a new output directory')
     data = load_csv(args.data, args.schema)
-    models = read_models(args.models)
+    models = read_models(args.models, args.only)
     output = args.output
     output.mkdir(parents=True)
     config = {'data': str(args.data.resolve()), 'data_sha256': hashlib.sha256(args.data.read_bytes()).hexdigest(),
               'rows': len(data.counts), 'schema_path': str(args.schema.resolve()), 'schema': read_schema(args.schema),
-              'models_path': str(args.models.resolve()), 'models': models,
+              'models_path': str(args.models.resolve()), 'models': models, 'only': args.only,
               'mask': args.mask, 'mask_rate': args.mask_rate if args.mask != 'none' else None,
               'seeds': args.seeds if args.mask != 'none' else None, 'git': git_commit()}
     (output / 'config.json').write_text(json.dumps(config, indent=1, default=plain), encoding='utf-8')

@@ -30,7 +30,11 @@ Tham số:
 - **Schema** (`[dataset]`): `entity` và `targets` là bắt buộc; `time` và `total` là tùy chọn.
   - Thiếu `total` thì total của một dòng là tổng các target. Khi đó mọi ô target phải có giá trị.
   - Ô trống, `na`, `nan`, `none` được hiểu là thiếu.
-- **`--models`**: mỗi bảng `[hron]`, `[tsagris]`, `[micoda]` chứa tham số constructor; bảng rỗng dùng mặc định. Model không có trong file thì không chạy.
+  - `time` được đọc thành `Dataset.days`: ngày ISO `YYYY-MM-DD` (hoặc theo `time_format`, cú pháp strptime) thành số ngày kể từ ngày nhỏ nhất, kèm `week = days // 7`; số (mốc thăm khám 1, 2, 3...) giữ nguyên giá trị; chữ khác thành nhãn. Ngày sai định dạng, hoặc trộn ngày ISO với giá trị khác, báo lỗi kèm dòng CSV.
+  - `group_col` (tùy chọn): cột nhóm lớn, ví dụ châu lục. Nếu CSV không có cột này thì `group_map` trỏ tới file CSV (đường dẫn tương đối theo file schema) có hai cột `<entity>,<group_col>`. Không khai báo thì cả bảng là một nhóm. Chỉ `same_day_mean` dùng `days`/`group_col`; Hron/Tsagris/MICoDa không đổi.
+- **`--models`**: mỗi bảng `[hron]`, `[tsagris]`, `[micoda]`, `[zero_fill]`, `[mean_fill]`, `[marginal_sampler]`, `[same_day_mean]` chứa tham số constructor; bảng rỗng dùng mặc định. Model không có trong file, hoặc có `enabled = false`, thì không chạy.
+  - `same_day_mean` là baseline chính thức, chạy mặc định cùng Hron/Tsagris/MICoDa. `zero_fill`, `mean_fill`, `marginal_sampler` là mức sàn (đối thủ giả), `enabled = false` trong `models_default.toml`. Chi tiết: [contract](docs/THREE_BASELINE_CONTRACT_VI.md#same_day_mean-và-ba-mức-sàn).
+- **`--only NAME ...`**: chỉ chạy các bảng được liệt kê (kể cả bảng `enabled = false`), theo thứ tự đã cho.
 - **`--mask`**:
   - `none` (mặc định): chỉ chạy lượt điền thật.
   - `random_cell`: che từng ô observed với xác suất `--mask-rate`.

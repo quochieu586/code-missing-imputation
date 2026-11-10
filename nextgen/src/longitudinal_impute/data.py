@@ -1,7 +1,9 @@
 """CSV input for any count table, evaluation masks and count-space output."""
 import csv
+from datetime import datetime
 import os
 from dataclasses import dataclass
+import re
 from pathlib import Path
 import tomllib
 from tempfile import NamedTemporaryFile
@@ -9,7 +11,8 @@ from tempfile import NamedTemporaryFile
 import numpy as np
 
 MISSING = ('', 'na', 'nan', 'none')
-SCHEMA_KEYS = {'entity', 'time', 'total', 'targets'}
+SCHEMA_KEYS = {'entity', 'time', 'total', 'targets', 'time_format', 'group_col', 'group_map'}
+ISO_DATE = re.compile(r'\d{4}-\d{2}-\d{2}')
 
 
 @dataclass
@@ -21,6 +24,15 @@ class Dataset:
     fields: list[str]
     rows: list[dict[str, str]]
     lines: list[int]              # CSV line of every row, for error messages
+    # Time axis, read by time-aware baselines only (Hron/Tsagris/MICoDa ignore it).
+    # time_kind 'date': days = whole days since the earliest date, week = days // 7.
+    # 'numeric' (e.g. visit 1, 2, 3): days = the value itself, week = None.
+    # 'label' (any other text): days = rank of the label among the sorted labels, no distance meaning.
+    # None (no time column): days = week = None.
+    days: np.ndarray | None = None
+    week: np.ndarray | None = None
+    time_kind: str | None = None
+    groups: tuple[str, ...] | None = None    # coarse group of every row (schema group_col); None = one group
 
 
 def read_schema(path):
@@ -33,9 +45,13 @@ def read_schema(path):
     targets = spec['targets']
     if len(targets) < 2 or len(set(targets)) != len(targets):
         raise ValueError(f'{path}: declare at least two unique target columns')
-    keys = [spec[k] for k in ('entity', 'time', 'total') if k in spec]
+    keys = [spec[k] for k in ('entity', 'time', 'total', 'group_col') if k in spec]
     if len(set(keys)) != len(keys) or set(keys) & set(targets):
-        raise ValueError(f'{path}: entity/time/total/target columns overlap')
+        raise ValueError(f'{path}: entity/time/total/group_col/target columns overlap')
+    if 'time_format' in spec and 'time' not in spec:
+        raise ValueError(f'{path}: time_format needs a time column')
+    if 'group_map' in spec and 'group_col' not in spec:
+        raise ValueError(f'{path}: group_map needs group_col')
     return spec
 
 
@@ -88,7 +104,77 @@ def load_csv(path, schema_config):
             totals[i] = counts[i].sum()
             if totals[i] <= 0:
                 raise ValueError(f'{where}: all targets are 0, the row total must be positive')
-    return Dataset(counts, totals, targets, tuple(row[entity] for row in rows), fields, rows, lines)
+    days, week, kind = (None, None, None) if time is None else parse_times(
+        [row[time] for row in rows], lines, time, spec.get('time_format'))
+    groups = None
+    if 'group_col' in spec:
+        groups = read_groups(rows, lines, fields, entity, spec['group_col'], spec.get('group_map'),
+                             Path(schema_config).parent)
+    return Dataset(counts, totals, targets, tuple(row[entity] for row in rows), fields, rows, lines,
+                   days, week, kind, groups)
+
+
+def parse_times(texts, lines, column, time_format=None):
+    """Time column -> (days, week, kind). See Dataset for the three kinds.
+
+    With time_format (strptime syntax) every value must be a date in that format.
+    Without it, values that all look like ISO YYYY-MM-DD are dates; an ISO-looking
+    value that is not a calendar date, or a mix of ISO and non-ISO values, is an error.
+    """
+    texts = [t.strip() for t in texts]
+    iso = [bool(ISO_DATE.fullmatch(t)) for t in texts]
+    if time_format is None and any(iso) and not all(iso):
+        bad = iso.index(False)
+        raise ValueError(f'CSV line {lines[bad]}: column {column!r} = {texts[bad]!r} is not a YYYY-MM-DD date, '
+                         'but other rows are; set time_format in the schema or fix the value')
+    if time_format is not None or (texts and all(iso)):
+        fmt = time_format or '%Y-%m-%d'
+        dates = []
+        for text, line in zip(texts, lines):
+            try:
+                dates.append(datetime.strptime(text, fmt).date())
+            except ValueError:
+                raise ValueError(f'CSV line {line}: column {column!r} = {text!r} is not a date '
+                                 f'in format {fmt!r}') from None
+        start = min(dates)
+        days = np.array([(d - start).days for d in dates], dtype=np.int64)
+        return days, days // 7, 'date'
+    try:
+        values = np.array([float(t) for t in texts])
+    except ValueError:
+        values = None
+    if values is not None and np.isfinite(values).all():
+        return values, None, 'numeric'
+    labels = sorted(set(texts))
+    rank = {label: k for k, label in enumerate(labels)}
+    return np.array([rank[t] for t in texts], dtype=np.int64), None, 'label'
+
+
+def read_groups(rows, lines, fields, entity, column, map_path, base):
+    """Group of every row: the CSV column if present, else looked up per entity in group_map."""
+    if column in fields:
+        groups = tuple(row[column].strip() for row in rows)
+        for group, line in zip(groups, lines):
+            if not group:
+                raise ValueError(f'CSV line {line}: empty group in column {column!r}')
+        return groups
+    if map_path is None:
+        raise ValueError(f'group_col {column!r} is not a CSV column and the schema declares no group_map')
+    path = Path(map_path) if Path(map_path).is_absolute() else base / map_path
+    with path.open(encoding='utf-8-sig', newline='') as stream:
+        reader = csv.DictReader(stream)
+        if entity not in (reader.fieldnames or []) or column not in reader.fieldnames:
+            raise ValueError(f'{path}: group map needs columns {entity!r} and {column!r}')
+        table = {}
+        for record in reader:
+            key, group = record[entity].strip(), (record[column] or '').strip()
+            if not group or table.setdefault(key, group) != group:
+                raise ValueError(f'{path}: line {reader.line_num}: empty or conflicting group for {key!r}')
+    unknown = sorted({row[entity] for row in rows} - set(table))
+    if unknown:
+        raise ValueError(f'{path}: no {column!r} for entities {unknown[:10]}'
+                         + (f' and {len(unknown) - 10} more' if len(unknown) > 10 else ''))
+    return tuple(table[row[entity]] for row in rows)
 
 
 def parse(text, where, column, *, missing_ok):

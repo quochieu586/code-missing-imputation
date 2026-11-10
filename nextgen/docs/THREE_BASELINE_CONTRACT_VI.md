@@ -57,6 +57,18 @@ Rate/seed không hợp lệ gây ValueError trước side effect; argparse vẫn
 
 **Gate trước main model:** chọn một contract ngân sách dùng chung (ví dụ Other tường minh, hoặc total của riêng target có nguồn xác định không dùng hidden truth). Không tính `total_target` từ truth của ô che để đưa cho model. Nếu vẫn giữ A17/R1, chỉ báo adaptation có giới hạn, không dùng làm baseline xếp hạng xác nhận main model.
 
+## same_day_mean và ba mức sàn
+
+**`same_day_mean`** (baseline chính thức, bật mặc định trong `models_default.toml`; [`baselines/same_day_mean.py`](../src/longitudinal_impute/baselines/same_day_mean.py)):
+
+- Ô thiếu (i, j) nhận tham chiếu Σc / ΣN (trung bình c/N có trọng số N) của target j trên các dòng **khác** cùng nhóm `group_col` (COVID: châu lục, qua `configs/covid_location_continent.csv`; không khai báo thì cả bảng là một nhóm), trong cửa sổ ±`window_days` ngày quanh ngày của dòng i. Chỉ ô visible được tính; ô che/NaN không bao giờ vào.
+- Tham số: `window_days = 28`, `min_obs = 20`, `max_widen = 2`, `exclude_same_location = false`. Cửa sổ có ít hơn `min_obs` ô visible thì gấp đôi, tối đa `max_widen` lần (±28 → ±56 → ±112 ngày); vẫn thiếu thì dùng trung bình toàn cục (mọi nhóm, trọng số N) của target j. `info_['cells_by_level']` ghi số ô ở mỗi mức.
+- Time không phải ngày: dạng số xét cùng giá trị rồi ±1, ±2...; dạng nhãn chỉ cùng nhãn; không có cột time thì lấy cả nhóm.
+- **Quy tắc phần dư khác Hron/Tsagris:** đề xuất × N cho các ô thiếu; nếu tổng vượt R = N − Σ visible thì **co lại theo tỷ lệ cho bằng R** (Other = 0), nếu không thì Other nhận phần còn lại. Hron/Tsagris dự đoán cả Other rồi chia R theo tỷ lệ, nên luôn dùng hết R cho tỷ lệ đề xuất; hai cách khác nhau khi tổng đề xuất < R.
+- **Hạn chế:** trên ô thiếu thật của COVID (lượt native), 25.5% ô (21 946/86 050) không đủ `min_obs` sau 2 lần nới và phải dùng trung bình toàn cục, tức không còn thông tin thời gian/nhóm. Trên ô bị che tỷ lệ này thấp hơn nhiều (nhóm ô `model`: 1.4–9.0% với `whole_feature`, 0.7–1.0% với `random_cell`, seed 0–4; xem `tv2_step1/results_multiseed.md`), nên điểm masked lạc quan hơn chất lượng trên ô thiếu thật.
+
+**Ba mức sàn** (`zero_fill`, `mean_fill`, `marginal_sampler`; `enabled = false`, chạy bằng `--only`): không phải phương pháp nghiêm túc, chỉ để biết điểm của một model "không học gì". `zero_fill` điền 0 (R vào Other); `mean_fill` điền trung bình không trọng số của c/N toàn bảng; `marginal_sampler` rút một c/N từ ô visible của cùng target (seed trong config), khớp phân phối nhưng sai từng ô. Cùng quy tắc "co lại khi vượt R". Một baseline thật phải thắng cả ba trên nhóm ô `model`.
+
 ## Kiểm chứng
 
 `python nextgen/scripts/verify_three_baselines.py --output <new-dir> [--data ... --schema ...]` chạy tests, lưu log/JUnit/provenance và audit ngân sách tùy chọn. Các test trạng thái giả lập chỉ chứng minh orchestration; test insufficient-fit chạy adapter thật. Các số masked không kiểm định độ đúng của NaN tự nhiên. Với run thất bại, summary.json giữ mã lỗi/message/context, row events và unassigned budget.
