@@ -16,3 +16,23 @@ zero_missing_mass = "uniform"
 [micoda]                  # counts adapter, 17 targets, no Other
 max_iter = 120
 tol = 1e-8
+
+# --- Floors ("decoys") and the same-day mean. Off by default so the default run is unchanged;
+# run them with --only, e.g. --only hron tsagris micoda zero_fill mean_fill marginal_sampler same_day_mean
+
+[zero_fill]               # floor: every missing cell 0, the residual goes to Other
+enabled = false
+
+[mean_fill]               # floor: global mean of c/N of the target, capped by the row residual
+enabled = false
+
+[marginal_sampler]        # floor: one c/N drawn from the observed cells of the target
+enabled = false
+seed = 0
+
+[same_day_mean]           # N-weighted mean of c/N in the same group within +-window_days
+enabled = false
+window_days = 28
+min_obs = 20              # fewer visible cells in the window: double it, at most max_widen times
+max_widen = 2             # then fall back to the global mean of the target
+exclude_same_location = false
