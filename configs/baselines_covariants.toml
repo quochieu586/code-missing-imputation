@@ -1,5 +1,10 @@
 [dataset]
 entity = "location"
 time = "date"
+time_format = "%Y-%m-%d"
 total = "total_sequence"
 targets = ["recombinant", "20A", "20B", "20C", "20E", "Beta", "Alpha", "Gamma", "Delta", "Kappa", "Epsilon", "Eta", "Iota", "Lambda", "Mu", "Omicron", "S:677"]
+# Coarse group for time-aware baselines (same_day_mean). The CSV has no continent column,
+# so it is looked up per location in group_map (path relative to this file).
+group_col = "continent"
+group_map = "covid_location_continent.csv"
