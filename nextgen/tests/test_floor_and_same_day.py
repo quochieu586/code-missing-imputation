@@ -188,9 +188,9 @@ def test_same_day_mean_parameters_are_checked():
 
 # --- run.py: selection and end to end -------------------------------------------------------
 
-def test_default_config_still_runs_only_the_three_paper_baselines():
+def test_default_config_runs_the_paper_baselines_and_same_day_mean_but_no_floor():
     models = run.read_models(NEXTGEN / 'configs/models_default.toml')
-    assert list(models) == ['hron', 'tsagris', 'micoda']
+    assert list(models) == ['hron', 'tsagris', 'micoda', 'same_day_mean']
     picked = run.read_models(NEXTGEN / 'configs/models_default.toml', ['same_day_mean', 'hron'])
     assert list(picked) == ['same_day_mean', 'hron']
     assert picked['same_day_mean'] == {'window_days': 28, 'min_obs': 20, 'max_widen': 2,
