@@ -83,6 +83,10 @@ def validate_pair(root, mask):
         problems.append(f'micoda_other run must contain only MICoDa with other = true, got {other["models"]}')
     if problems:
         raise ValueError(f'refusing to pair main_{mask} with micoda_other_{mask}:\n  ' + '\n  '.join(problems))
+    for record in (main, other):        # the committed manifest keeps repository-relative paths only
+        if isinstance(record['group_map'], dict) and Path(record['group_map']['path']).is_relative_to(REPO):
+            record['group_map'] = {**record['group_map'],
+                                   'path': Path(record['group_map']['path']).relative_to(REPO).as_posix()}
     return [main, other]
 
 

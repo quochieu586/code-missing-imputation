@@ -1,6 +1,6 @@
 # Step 1: kết quả nhiều seed (COVID đầy đủ, che 5%, seed 0–4)
 
-Nhóm `model` = ô bị che mà phần dư của dòng > 0 (evaluate.forced_zero). Sắp theo MAE tỷ lệ trung bình. mean ± sd (ddof=1) qua 5 seed.
+Nhóm `model` = ô bị che mà phần dư của dòng > 0 (evaluate.forced_zero). Sắp theo MAE tỷ lệ trung bình. mean ± sd (ddof=1) qua 5 seed: độ lệch chuẩn mẫu, không phải khoảng tin cậy. Nguồn: results_manifest.json.
 
 ## Mask `whole_feature` (chính)
 
@@ -18,15 +18,6 @@ Trạng thái: mọi lượt ok
 | marginal_sampler | 5 | 0.1354 ± 0.0120 | 0.1107 ± 0.0122 | 225.1 ± 200.7 | 2595/2729/2522/2504/2406 |
 | micoda | 5 | 0.1406 ± 0.0099 | 0.0823 ± 0.0094 | 236.2 ± 188.5 | 2595/2729/2522/2504/2406 |
 | zero_fill | 5 | 0.1693 ± 0.0219 | 0.1525 ± 0.0230 | 287.1 ± 211.3 | 2595/2729/2522/2504/2406 |
-
-### Thắng/thua theo seed (ghép cặp, cùng mask; thắng = sai số nhỏ hơn)
-
-| Cặp (A vs B) | MAE tỷ lệ: A thắng | hiệu TB (A − B) | MSE tỷ lệ: A thắng | hiệu TB (A − B) |
-|---|---:|---:|---:|---:|
-| same_day_mean vs hron | 5/5 seed | -0.0525 | 5/5 seed | -0.0518 |
-| hron vs tsagris | 5/5 seed | -0.0204 | 0/5 seed | +0.0140 |
-| micoda_other vs mean_fill | 5/5 seed | -0.0278 | 4/5 seed | -0.0020 |
-| micoda vs mean_fill | 1/5 seed | +0.0052 | 0/5 seed | +0.0119 |
 
 ### MAE tỷ lệ theo đáp án
 
@@ -65,15 +56,6 @@ Trạng thái: mọi lượt ok
 | mean_fill | 5 | 0.1371 ± 0.0016 | 0.0692 ± 0.0007 | 152.4 ± 33.5 | 2851/2740/2762/2832/2750 |
 | zero_fill | 5 | 0.1716 ± 0.0035 | 0.1551 ± 0.0031 | 226.8 ± 52.7 | 2851/2740/2762/2832/2750 |
 
-### Thắng/thua theo seed (ghép cặp, cùng mask; thắng = sai số nhỏ hơn)
-
-| Cặp (A vs B) | MAE tỷ lệ: A thắng | hiệu TB (A − B) | MSE tỷ lệ: A thắng | hiệu TB (A − B) |
-|---|---:|---:|---:|---:|
-| same_day_mean vs hron | 5/5 seed | -0.0582 | 5/5 seed | -0.0502 |
-| hron vs tsagris | 5/5 seed | -0.0107 | 0/5 seed | +0.0130 |
-| micoda_other vs mean_fill | 5/5 seed | -0.0293 | 1/5 seed | +0.0003 |
-| micoda vs mean_fill | 5/5 seed | -0.0054 | 0/5 seed | +0.0111 |
-
 ### MAE tỷ lệ theo đáp án
 
 | Model | MAE tỷ lệ, đáp án = 0 (truth_zero) | đáp án = 0, ô model (model_truth_zero) | đáp án > 0 (truth_positive) | Số ô 0 / ô model 0 / ô > 0 (seed 0) |
@@ -94,3 +76,37 @@ Trạng thái: mọi lượt ok
 
 Ô thiếu thật (lượt native): window 51136, widened_1 4912, widened_2 8056, global 21946; toàn cục 25.5% trên 86050 ô.
 
+## Thắng/thua theo seed (ghép cặp, cùng mask; sinh từ results_multiseed.csv)
+
+**whole_feature** (thắng = sai số nhỏ hơn trên nhóm ô model; Δ = trung bình A − B; × = trung bình tỷ số A / B theo seed)
+
+| A vs B | MAE tỷ lệ | MSE tỷ lệ | MAE count | MSE count |
+|---|---|---|---|---|
+| same_day_mean vs hron | 5/5, Δ -0.05247, ×0.41 | 5/5, Δ -0.0518, ×0.224 | 4/5, Δ -45.16, ×0.637 | 4/5, Δ -4.95e+06, ×0.592 |
+| tsagris vs hron | 0/5, Δ +0.02036, ×1.23 | 5/5, Δ -0.01396, ×0.787 | 2/5, Δ -41.33, ×0.979 | 3/5, Δ -5.229e+06, ×1.11 |
+| micoda_other vs mean_fill | 5/5, Δ -0.02785, ×0.796 | 4/5, Δ -0.001956, ×0.973 | 4/5, Δ -29.55, ×0.815 | 2/5, Δ +1.3e+06, ×0.938 |
+| micoda vs mean_fill | 1/5, Δ +0.005246, ×1.05 | 0/5, Δ +0.01192, ×1.18 | 1/5, Δ +17.94, ×1.33 | 2/5, Δ -6.169e+06, ×1.56 |
+| micoda_other vs micoda | 5/5, Δ -0.03309, ×0.765 | 5/5, Δ -0.01387, ×0.833 | 4/5, Δ -47.49, ×0.708 | 4/5, Δ +7.469e+06, ×1.22 |
+
+**random_cell** (thắng = sai số nhỏ hơn trên nhóm ô model; Δ = trung bình A − B; × = trung bình tỷ số A / B theo seed)
+
+| A vs B | MAE tỷ lệ | MSE tỷ lệ | MAE count | MSE count |
+|---|---|---|---|---|
+| same_day_mean vs hron | 5/5, Δ -0.05825, ×0.348 | 5/5, Δ -0.05021, ×0.181 | 5/5, Δ -3.929, ×0.825 | 1/5, Δ +2.976e+04, ×1.72 |
+| tsagris vs hron | 0/5, Δ +0.0107, ×1.12 | 5/5, Δ -0.01304, ×0.789 | 0/5, Δ +3.633, ×1.17 | 0/5, Δ +1.357e+04, ×1.51 |
+| micoda_other vs mean_fill | 5/5, Δ -0.02931, ×0.786 | 1/5, Δ +0.0003484, ×1.01 | 5/5, Δ -42.84, ×0.709 | 4/5, Δ -8.011e+05, ×0.681 |
+| micoda vs mean_fill | 5/5, Δ -0.005373, ×0.961 | 0/5, Δ +0.01111, ×1.16 | 1/5, Δ +15.33, ×1.11 | 3/5, Δ -7.884e+05, ×0.874 |
+| micoda_other vs micoda | 5/5, Δ -0.02394, ×0.818 | 5/5, Δ -0.01076, ×0.866 | 5/5, Δ -58.17, ×0.644 | 3/5, Δ -1.267e+04, ×1.02 |
+
+Dạng câu:
+
+- whole_feature: same_day_mean thắng hron ở MAE tỷ lệ 5/5, MSE tỷ lệ 5/5, MAE count 4/5, MSE count 4/5 seed.
+- random_cell: same_day_mean thắng hron ở MAE tỷ lệ 5/5, MSE tỷ lệ 5/5, MAE count 5/5, MSE count 1/5 seed.
+- whole_feature: tsagris thắng hron ở MAE tỷ lệ 0/5, MSE tỷ lệ 5/5, MAE count 2/5, MSE count 3/5 seed.
+- random_cell: tsagris thắng hron ở MAE tỷ lệ 0/5, MSE tỷ lệ 5/5, MAE count 0/5, MSE count 0/5 seed.
+- whole_feature: micoda_other thắng mean_fill ở MAE tỷ lệ 5/5, MSE tỷ lệ 4/5, MAE count 4/5, MSE count 2/5 seed.
+- random_cell: micoda_other thắng mean_fill ở MAE tỷ lệ 5/5, MSE tỷ lệ 1/5, MAE count 5/5, MSE count 4/5 seed.
+- whole_feature: micoda thắng mean_fill ở MAE tỷ lệ 1/5, MSE tỷ lệ 0/5, MAE count 1/5, MSE count 2/5 seed.
+- random_cell: micoda thắng mean_fill ở MAE tỷ lệ 5/5, MSE tỷ lệ 0/5, MAE count 1/5, MSE count 3/5 seed.
+- whole_feature: micoda_other thắng micoda ở MAE tỷ lệ 5/5, MSE tỷ lệ 5/5, MAE count 4/5, MSE count 4/5 seed.
+- random_cell: micoda_other thắng micoda ở MAE tỷ lệ 5/5, MSE tỷ lệ 5/5, MAE count 5/5, MSE count 3/5 seed.
