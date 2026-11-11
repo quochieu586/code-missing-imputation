@@ -79,7 +79,7 @@ def status_rows(run_dir, config, summary, rename):
         for name in config['models']:
             rows.append(status_row(run_dir, rename.get(name, name), 'masked', config['mask'], str(seed),
                                    masked['models'].get(name), {k: stats.get(k) for k in (
-                                       'hidden_cells', 'forced_zero_cells', 'model_cells')}))
+                                       'hidden_cells', 'forced_zero_cells', 'model_cells', 'complete_rows_after')}))
     return rows
 
 
@@ -212,18 +212,20 @@ def status_markdown(status, rel):
     return out
 
 
-def seed_markdown(status, seed):
+def seed_markdown(status, seed, runs):
     rows = [r for r in status if r['seed'] == seed]
     if not rows:
         return []
     r0 = rows[0]
     out = [f"Seed {seed} ({r0['mask']}): {r0['hidden_cells']} ô che, {r0['forced_zero_cells']} ép về 0, "
-           f"{r0['model_cells']} ô model.", '',
-           '| Model | status | coverage | mã lỗi | thông điệp | hội tụ (MICoDa) |', '|---|---|---:|---|---|---|']
+           f"{r0['model_cells']} ô model; {r0['complete_rows_after']} dòng đầy đủ sau khi che.", '',
+           '| Model | status | coverage | mã lỗi | thông điệp | hội tụ (MICoDa) | MAE tỷ lệ (ô model) |',
+           '|---|---|---:|---|---|---|---:|']
     for r in rows:
         message = (r['error_message'] or '-').replace('|', '/')[:110]
         out.append(f"| {r['model']} | {r['status']} | {na(r['coverage'], 3)} | {r['error_code'] or '-'} | "
-                   f"{message} | {'-' if r['converged'] is None else r['converged']} |")
+                   f"{message} | {'-' if r['converged'] is None else r['converged']} | "
+                   f"{na(runs[r['model']][seed][PRIMARY])} |")
     return out
 
 
@@ -369,6 +371,8 @@ def summarize(root, out_dir, step1_runs=None):
         key = [pair(runs, a, b, SEEDS[mask]) for a, b in KEY_PAIRS if a in runs and b in runs]
         label = 'chính' if mask == 'whole_feature' else 'sensitivity'
         rel = reliability(status)
+        if mask == 'whole_feature':
+            blocks['seed109'] = seed_markdown(status, '109', runs)
         blocks[f'status_{mask}'] = status_markdown(status, rel)
         blocks[f'main_{mask}'] = main
         blocks[f'pairs_{mask}'] = pairs_markdown(key, f'**{mask}**, cặp chính')
@@ -379,7 +383,6 @@ def summarize(root, out_dir, step1_runs=None):
                '### Series-macro so với cell-weighted', '', *blocks[f'macro_{mask}'], '',
                f"Regression check: {check['values_checked']} giá trị khớp summary.json, "
                f"sai khác lớn nhất {check['max_abs_diff']:.3g} (ngưỡng {TOLERANCE:g}).", '']
-    blocks['seed109'] = seed_markdown(all_status, '109')
     md += ['## Seed 109 (whole_feature, ca thử chính sách failure)', '', *blocks['seed109'], '']
     out_dir.mkdir(parents=True, exist_ok=True)
     write_csv(out_dir / 'tier01_status.csv', all_status)
