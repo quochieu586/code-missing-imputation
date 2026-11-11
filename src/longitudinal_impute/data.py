@@ -334,7 +334,9 @@ def apply_residual_rule(data, composition, hidden, rule):
             'composition_row_sum': {'min': float(sums.min()), 'median': float(np.median(sums)),
                                     'max': float(sums.max())} if len(sums) else None}
     if rule == 'prop_other':
-        return restore_counts(data, composition * data.totals[:, None], hidden), info
+        # Rows without a missing target are not read; MICoDa leaves its excluded rows NaN there.
+        proposed = np.where(rows[:, None], composition, 0.) * data.totals[:, None]
+        return restore_counts(data, proposed, hidden), info
     closed = np.zeros_like(composition)
     closed[rows] = part / sums[:, None]
     filled, info['rows_scaled'] = fill_within_residual(model_input(data, hidden), closed[:, :-1], rule)

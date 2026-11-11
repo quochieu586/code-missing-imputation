@@ -192,3 +192,27 @@ def test_implied_other_agrees_with_the_completed_table(covid):
     true = (covid.totals[use] - covid.counts[use].sum(axis=1)) / covid.totals[use]
     assert out['rows'] == len(use) > 0
     assert out['mae_proportion'] == pytest.approx(np.mean(np.abs(implied - true)), abs=1e-12)
+
+
+def test_rows_without_a_missing_target_are_not_read(tmp_path):
+    # MICoDa leaves NaN on rows it excludes (complete and all zero); no rule may read them.
+    data, hidden = toy([[40., 10.], [0., 0.]], [100., 100.], [[False, True], [False, False]])
+    for rule in ('prop_other', 'cap', 'rescale'):
+        out, _ = apply_residual_rule(data, np.array([[.5, .2, .3], [np.nan] * 3]), hidden, rule)
+        np.testing.assert_array_equal(out[1], [0., 0.])
+        check_completed(data, out, hidden)
+
+
+@pytest.mark.parametrize('rule', ['prop_other', 'cap', 'rescale'])
+def test_micoda_other_with_an_all_zero_complete_row(tmp_path, rule):
+    text = (FIXTURES / 'covid_small.csv').read_text().rstrip('\n') + '\nZulu,2021-01-04,10,0,0,0,0,keep\n'
+    data = load_csv(write(tmp_path, 'zero.csv', text), write(tmp_path, 'schema.toml', COVID_SCHEMA))
+    hidden = make_mask(data, 'random_cell', .3, 4)[0]
+    hidden[-1] = False
+    model = FACTORIES['micoda_other']()
+    completed, status, info = run.run_model(data, model, hidden, rule)
+    assert status == 'completed' and np.isnan(model.proposals_[-1]).all()
+    np.testing.assert_array_equal(completed[-1], 0.)
+    if rule == 'prop_other':
+        np.testing.assert_allclose(completed, run.run_model(data, FACTORIES['micoda_other'](), hidden)[0],
+                                   rtol=1e-12, atol=1e-9)
