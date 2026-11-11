@@ -2,10 +2,12 @@
 
     python -m longitudinal_impute.run --data <csv> --schema <toml> --models <toml> --output <dir>
            [--mask whole_feature|random_cell|none] [--mask-rate 0.05] [--seeds 0 1 2 3 4]
-           [--only NAME [NAME ...]]
+           [--only NAME [NAME ...]] [--save-predictions]
 
 Every [name] table of --models runs, except tables with `enabled = false`.
 --only runs exactly the named tables (enabled or not), in the given order.
+--save-predictions also writes predictions_<mask>.csv.gz: one row per hidden cell of every
+completed masked run (see cells.py), for scoring outside this runner.
 """
 import argparse
 import csv
@@ -19,7 +21,8 @@ import tomllib
 import numpy as np
 
 from .data import load_csv, read_schema, make_mask, validate_mask, model_input, restore_counts, check_completed, write_completed_csv
-from .evaluate import wasserstein_scores, masked_errors, summarize, paired_summary
+from .evaluate import wasserstein_scores, masked_errors, summarize, paired_summary, forced_zero
+from .cells import prediction_rows, write_predictions
 from .baselines.hron import HronKNN
 from .baselines.tsagris import TsagrisKNN
 from .baselines.micoda import MICoDaCovid
@@ -80,6 +83,22 @@ def adapter_error(status, info):
     if error:
         return f'{error["code"]}: {error["message"]}; context={error.get("context", {})}'
     return f'{status} completion; {(info or {}).get("unresolved_cells", "-")} cells unresolved'
+
+
+def error_code(info=None, exc=None):
+    """Stable code of a failed or partial run: the exception's code, else the adapter's error code."""
+    if exc is not None:
+        return getattr(exc, 'code', type(exc).__name__)
+    return ((info or {}).get('error') or {}).get('code') or 'unresolved_cells'
+
+
+def cell_counts(data, hidden):
+    """Missing-to-the-model cells split into forced to 0 (row residual 0) and model-decided."""
+    forced = forced_zero(data, hidden)
+    missing = hidden | ~np.isfinite(data.counts)
+    return {'forced_zero_cells': int((forced & hidden).sum()), 'model_cells': int((hidden & ~forced).sum()),
+            'missing_forced_zero_cells': int((forced & missing).sum()),
+            'missing_model_cells': int((missing & ~forced).sum())}
 
 
 def space(name, model=None):
@@ -328,6 +347,8 @@ def main(argv=None):
     parser.add_argument('--from-run', type=Path)
     parser.add_argument('--only', nargs='+', metavar='NAME',
                         help='run only these [name] tables of --models, even those with enabled = false')
+    parser.add_argument('--save-predictions', action='store_true',
+                        help='write predictions_<mask>.csv.gz with every hidden cell of completed masked runs')
     args = parser.parse_args(argv)
     if args.output.exists():
         raise FileExistsError(f'{args.output} already exists; choose a new output directory')
@@ -436,7 +457,7 @@ def main(argv=None):
               'models_path': str(args.models.resolve()), 'models': models, 'only': args.only,
               'mask': args.mask, 'mask_rate': args.mask_rate if args.mask != 'none' else None,
               'seeds': args.seeds if args.mask != 'none' else None, 'git': git_commit(),
-              'group_map': data.group_map,
+              'group_map': data.group_map, 'save_predictions': args.save_predictions,
               'stage': args.stage, 'pass': args.passes, 'schema_sha256': sha256(args.schema),
               'models_sha256': sha256(args.models),
               'code_sha256': previous.get('code_sha256') if args.stage == 'evaluate' else code_hashes(),
@@ -447,7 +468,9 @@ def main(argv=None):
         config['evaluation_code_sha256'] = sha256(Path(__file__).with_name('evaluate.py'))
     (output / 'config.json').write_text(json.dumps(config, indent=1, default=plain), encoding='utf-8')
 
-    rows, detail, failures = [], {'native': {}, 'masked': {}}, []
+    nothing = np.zeros(data.counts.shape, bool)
+    rows, detail, failures, predictions = [], {'native': {}, 'masked': {}}, [], []
+    detail['native_cells'] = cell_counts(data, nothing)
     artifacts = {'version': 1, 'files': {}, 'predictions': {}, 'initials': {}}
 
     def execute(name, model, hidden, case):
@@ -473,10 +496,9 @@ def main(argv=None):
         failures.append(line)
         with (output / 'errors.log').open('a', encoding='utf-8') as stream:
             stream.write(line + '\n')
-        return {'status': 'failed', 'error': f'{type(exc).__name__}: {exc}'}
+        return {'status': 'failed', 'error': f'{type(exc).__name__}: {exc}', 'error_code': error_code(exc=exc)}
 
     # 2. Native run: fill the real NaN cells from every observed cell.
-    nothing = np.zeros(data.counts.shape, bool)
     for name, params in (models.items() if args.passes in ('native', 'both') else []):
         start = time.perf_counter()
         try:
@@ -500,12 +522,12 @@ def main(argv=None):
                 message = adapter_error(status, info)
                 failed(name, 'native', None, ValueError(message))
                 result = {'status': 'partial', 'space': space(name, model), 'seconds': seconds,
-                          'info': info, 'error': message}
+                          'info': info, 'error': message, 'error_code': error_code(info)}
             else:
                 message = adapter_error(status, info)
                 failed(name, 'native', None, ValueError(message))
                 result = {'status': 'failed', 'space': space(name, model), 'seconds': seconds,
-                          'info': info, 'error': message}
+                          'info': info, 'error': message, 'error_code': error_code(info)}
         except ValueError as exc:
             result = {**failed(name, 'native', None, exc), 'seconds': time.perf_counter() - start,
                       'space': space(name)}
@@ -519,6 +541,7 @@ def main(argv=None):
     for seed in (args.seeds if args.mask != 'none' else []):
         hidden, stats = make_mask(data, args.mask, args.mask_rate, seed)
         np.save(output / f'mask_{args.mask}_seed{seed}.npy', hidden)
+        stats.update(cell_counts(data, hidden))
         detail['masked'][seed] = {'mask': stats, 'models': {}}
         for name, params in models.items():
             start = time.perf_counter()
@@ -538,7 +561,7 @@ def main(argv=None):
                     message = adapter_error(status, info)
                     failed(name, 'masked', seed, ValueError(message))
                     result = {'status': status, 'space': space(name, model), 'seconds': seconds,
-                              'info': info, 'error': message,
+                              'info': info, 'error': message, 'error_code': error_code(info),
                               'coverage': float((hidden & (np.isfinite(completed) if completed is not None
                                                            else np.zeros(hidden.shape, bool))).sum()
                                                 / max(hidden.sum(), 1))}
@@ -549,6 +572,9 @@ def main(argv=None):
                               'info': info,
                               'errors': masked_errors(data, completed, hidden) if coverage == 1. else None,
                               'coverage': coverage}
+                    if args.save_predictions:
+                        predictions += prediction_rows(data, completed, hidden, name, args.mask, seed,
+                                                       config['schema'].get('time'))
             except ValueError as exc:
                 result = {**failed(name, 'masked', seed, exc),
                           'seconds': time.perf_counter() - start, 'space': space(name),
@@ -571,6 +597,8 @@ def main(argv=None):
     paired = paired_summary(rows) if args.stage != 'init' else {'cases': {}, 'aggregate': []}
     (output / 'summary.json').write_text(json.dumps({**detail, 'rows': rows, 'aggregate': aggregate, 'paired': paired},
                                                     indent=1, default=plain), encoding='utf-8')
+    if args.save_predictions and args.mask != 'none':
+        write_predictions(output / f'predictions_{args.mask}.csv.gz', predictions)
     for path in output.rglob('*'):
         if path.is_file():
             artifacts['files'][path.relative_to(output).as_posix()] = sha256(path)
