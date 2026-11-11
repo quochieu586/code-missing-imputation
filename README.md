@@ -51,6 +51,8 @@ Tham số:
   - `group_col` (tùy chọn): cột nhóm lớn, ví dụ châu lục. Nếu CSV không có cột này thì `group_map` trỏ tới file CSV (đường dẫn tương đối theo file schema) có hai cột `<entity>,<group_col>`. Không khai báo thì cả bảng là một nhóm. Chỉ `same_day_mean` dùng `days`/`group_col`; Hron/Tsagris/MICoDa không đổi.
 - **`--models`**: mỗi bảng `[hron]`, `[tsagris]`, `[micoda]`, `[zero_fill]`, `[mean_fill]`, `[marginal_sampler]`, `[same_day_mean]` chứa tham số constructor; bảng rỗng dùng mặc định. Model không có trong file, hoặc có `enabled = false`, thì không chạy.
   - `same_day_mean` là baseline chính thức, chạy mặc định cùng Hron/Tsagris/MICoDa. `zero_fill`, `mean_fill`, `marginal_sampler` là mức sàn (đối thủ giả), `enabled = false` trong `models_default.toml`. Chi tiết: [contract](docs/THREE_BASELINE_CONTRACT_VI.md#same_day_mean-và-ba-mức-sàn).
+  - **Tên biến thể:** một bảng có tên khác tên model phải khai báo `model = "<tên model đã đăng ký>"`. Ví dụ `[sdm_no_time]` với `model = "same_day_mean"` chạy `SameDayMean` với tham số trong bảng, còn output mang tên `sdm_no_time`. Tên model sai thì báo lỗi trước mọi output. `config.json` ghi `resolved_models` (bảng → model, class, tham số). Ví dụ: `configs/models_sameday_ablation.toml`.
+  - `same_day_mean` có thêm các công tắc ablation `use_time`, `use_group`, `weighting` (`"n"`/`"none"`), `residual_rule` (`"cap"`/`"rescale"`). Mặc định giữ nguyên phương pháp và tái lập output cũ đúng từng byte.
 - **`--only NAME ...`**: chỉ chạy các bảng được liệt kê (kể cả bảng `enabled = false`), theo thứ tự đã cho.
 - **`--mask`**:
   - `none` (mặc định): chỉ chạy lượt điền thật.

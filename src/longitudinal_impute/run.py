@@ -4,7 +4,9 @@
            [--mask whole_feature|random_cell|none] [--mask-rate 0.05] [--seeds 0 1 2 3 4]
            [--only NAME [NAME ...]] [--save-predictions]
 
-Every [name] table of --models runs, except tables with `enabled = false`.
+Every [name] table of --models runs, except tables with `enabled = false`. A table named
+after a registered model runs that model; any other name needs `model = "<registered name>"`
+(e.g. [sdm_no_time] with model = "same_day_mean") and its outputs carry the table name.
 --only runs exactly the named tables (enabled or not), in the given order.
 --save-predictions also writes predictions_<mask>.csv.gz: one row per hidden cell of every
 completed masked run (see cells.py), for scoring outside this runner.
@@ -105,30 +107,54 @@ def space(name, model=None):
     """Space label: the counts adapter is 17 targets (A17) or 18 with Other (A18)."""
     if isinstance(model, MICoDaCovid):
         return '18_with_other' if model.other else '17_targets'
-    if name == 'micoda' and isinstance(model, dict):
-        return '18_with_other' if model.get('other', True) else '17_targets'
+    if isinstance(model, dict):                  # a table's parameters (replay): label by its model
+        name = model_kind(name, model)
+        if name == 'micoda':
+            return '18_with_other' if model.get('other', True) else '17_targets'
     return SPACE.get(name, '18_with_other')
+
+
+def model_kind(name, params):
+    """Registered model of a table: its `model` key, else the table name itself."""
+    return params.get('model', name)
+
+
+def build(name, params):
+    """A fresh model of table [name]: the class of model_kind, with every parameter but `model`."""
+    return MODELS[model_kind(name, params)](**{k: v for k, v in params.items() if k != 'model'})
+
+
+def resolve_models(models):
+    """{table: {'model': registered name, 'class': class name, 'params': constructor parameters}}."""
+    return {name: {'model': model_kind(name, params), 'class': MODELS[model_kind(name, params)].__name__,
+                   'params': {k: v for k, v in params.items() if k != 'model'}} for name, params in models.items()}
 
 
 def read_models(path, only=None, construct=True):
     """[name] tables with constructor parameters -> {name: params} of the models to run.
 
-    A table with `enabled = false` is validated but only runs when --only names it.
+    A table with `enabled = false` is validated but only runs when --only names it. A table
+    whose name is not a registered model must say which one with `model = "<name>"`; params
+    keep that key (build() drops it).
     construct=False (stage evaluate, a replay) selects the same tables without building a model.
     """
     with Path(path).open('rb') as stream:
         config = tomllib.load(stream)
-    if not config or set(config) - set(MODELS):
-        raise ValueError(f'{path}: declare one or more of {sorted(MODELS)}, got {sorted(config)}')
+    unnamed = [name for name, params in config.items() if name not in MODELS and 'model' not in params]
+    if not config or unnamed:
+        raise ValueError(f'{path}: declare one or more of {sorted(MODELS)} (or a table with '
+                         f'model = "<one of them>"), got {sorted(config)}')
     selected = {}
     for name, params in config.items():
         params = dict(params)
         enabled = params.pop('enabled', True)
         if not isinstance(enabled, bool):
             raise ValueError(f'{path}: [{name}] enabled must be true or false')
+        if model_kind(name, params) not in MODELS:
+            raise ValueError(f'{path}: [{name}] model = {params["model"]!r} is not one of {sorted(MODELS)}')
         try:
             if construct:
-                MODELS[name](**params)      # reject bad parameters before any run starts
+                build(name, params)         # reject bad parameters before any run starts
         except TypeError as exc:
             raise ValueError(f'{path}: [{name}] {exc}') from None
         selected[name] = (params, enabled)
@@ -266,7 +292,8 @@ def validate_run_metadata(config, summary):
             if not isinstance(config[key], str) or not config[key]:
                 raise ValueError(f'invalid {key}')
         models = config['models']
-        if not isinstance(models, dict) or not models or set(models) - set(MODELS):
+        if not isinstance(models, dict) or not models or any(
+                not isinstance(p, dict) or model_kind(n, p) not in MODELS for n, p in models.items()):
             raise ValueError('invalid models')
         if config['pass'] == 'native':
             if config['mask'] != 'none' or config['seeds'] is not None or config['mask_rate'] is not None:
@@ -454,7 +481,8 @@ def main(argv=None):
     output.mkdir(parents=True)
     config = {'data': str(args.data.resolve()), 'data_sha256': hashlib.sha256(args.data.read_bytes()).hexdigest(),
               'rows': len(data.counts), 'schema_path': str(args.schema.resolve()), 'schema': read_schema(args.schema),
-              'models_path': str(args.models.resolve()), 'models': models, 'only': args.only,
+              'models_path': str(args.models.resolve()), 'models': models,
+              'resolved_models': resolve_models(models), 'only': args.only,
               'mask': args.mask, 'mask_rate': args.mask_rate if args.mask != 'none' else None,
               'seeds': args.seeds if args.mask != 'none' else None, 'git': git_commit(),
               'group_map': data.group_map, 'save_predictions': args.save_predictions,
@@ -502,7 +530,7 @@ def main(argv=None):
     for name, params in (models.items() if args.passes in ('native', 'both') else []):
         start = time.perf_counter()
         try:
-            model = params if args.stage == 'evaluate' else MODELS[name](**params)
+            model = params if args.stage == 'evaluate' else build(name, params)
             completed, status, info = execute(name, model, nothing, 'native')
             seconds = replay[f'native/{name}'][0]['seconds'] if args.stage == 'evaluate' else time.perf_counter() - start
             suffix = '_completed' if status == 'completed' else (
@@ -530,7 +558,7 @@ def main(argv=None):
                           'info': info, 'error': message, 'error_code': error_code(info)}
         except ValueError as exc:
             result = {**failed(name, 'native', None, exc), 'seconds': time.perf_counter() - start,
-                      'space': space(name)}
+                      'space': space(model_kind(name, params))}
         detail['native'][name] = result
         rows.append({'model': name, 'pass': 'native', 'mask': 'none', 'seed': None,
                      'status': result['status'], 'space': result['space'],
@@ -546,7 +574,7 @@ def main(argv=None):
         for name, params in models.items():
             start = time.perf_counter()
             try:
-                model = params if args.stage == 'evaluate' else MODELS[name](**params)
+                model = params if args.stage == 'evaluate' else build(name, params)
                 completed, status, info = execute(name, model, hidden, f'{args.mask}_seed{seed}')
                 seconds = (replay[f'{args.mask}_seed{seed}/{name}'][0]['seconds'] if args.stage == 'evaluate'
                            else time.perf_counter() - start)
@@ -577,7 +605,7 @@ def main(argv=None):
                                                        config['schema'].get('time'))
             except ValueError as exc:
                 result = {**failed(name, 'masked', seed, exc),
-                          'seconds': time.perf_counter() - start, 'space': space(name),
+                          'seconds': time.perf_counter() - start, 'space': space(model_kind(name, params)),
                           'coverage': 0.}
             detail['masked'][seed]['models'][name] = result
             rows.append({'model': name, 'pass': 'masked', 'mask': args.mask, 'seed': seed,

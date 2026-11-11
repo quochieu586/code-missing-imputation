@@ -140,3 +140,47 @@ def test_switch_values_are_checked():
     for bad in ({'use_time': 'no'}, {'use_group': 1}, {'weighting': 'N'}, {'residual_rule': 'r1'}):
         with pytest.raises(ValueError):
             SameDayMean(**bad)
+
+
+ALIASES = ('[same_day_mean]\nwindow_days = 31\nmin_obs = 2\nmax_widen = 1\n'
+           '[sdm_no_time]\nmodel = "same_day_mean"\nwindow_days = 31\nmin_obs = 2\nmax_widen = 1\nuse_time = false\n'
+           '[mic17]\nmodel = "micoda"\nmax_iter = 40\n')
+
+
+def test_model_key_runs_the_registered_class_under_the_table_name(tmp_path):
+    import json
+    from test_run import call
+    code, out = call(tmp_path, FIXTURES / 'covid_small.csv', COVID_SCHEMA, ALIASES,
+                     '--mask', 'random_cell', '--mask-rate', '.2', '--seeds', '3', '--save-predictions')
+    assert code == 0
+    assert {p.name for p in out.glob('*_completed.csv')} == {
+        'same_day_mean_completed.csv', 'sdm_no_time_completed.csv', 'mic17_completed.csv'}
+    config = json.loads((out / 'config.json').read_text())
+    assert config['models']['sdm_no_time']['model'] == 'same_day_mean'
+    assert config['resolved_models']['sdm_no_time'] == {
+        'model': 'same_day_mean', 'class': 'SameDayMean',
+        'params': {'window_days': 31, 'min_obs': 2, 'max_widen': 1, 'use_time': False}}
+    assert config['resolved_models']['mic17']['class'] == 'MICoDaCovid'
+    summary = json.loads((out / 'summary.json').read_text())
+    masked = summary['masked']['3']['models']
+    assert set(masked) == {'same_day_mean', 'sdm_no_time', 'mic17'}
+    assert masked['mic17']['space'] == '17_targets' and masked['sdm_no_time']['info']['use_time'] is False
+    # The alias gives exactly what the class gives with the same parameters.
+    data = load_csv(FIXTURES / 'covid_small.csv', write(tmp_path, 'schema.toml', COVID_SCHEMA))
+    hidden = np.load(out / 'mask_random_cell_seed3.npy')
+    direct = run.run_model(data, SameDayMean(31, min_obs=2, max_widen=1, use_time=False), hidden)[0]
+    assert masked['sdm_no_time']['errors'] == run.masked_errors(data, direct, hidden)
+    assert masked['sdm_no_time']['errors'] != masked['same_day_mean']['errors']
+
+
+@pytest.mark.parametrize('models, message', [
+    ('[sdm_x]\nmodel = "same_day_means"\n', r"\[sdm_x\] model = 'same_day_means' is not one of"),
+    ('[sdm_x]\nmodel = 3\n', r'\[sdm_x\] model = 3 is not one of'),
+    ('[sdm_x]\nuse_time = false\n', 'declare one or more'),
+    ('[sdm_x]\nmodel = "same_day_mean"\nuse_time = "no"\n', 'use_time must be true or false'),
+])
+def test_bad_model_key_stops_before_any_output(tmp_path, models, message):
+    from test_run import call
+    with pytest.raises(ValueError, match=message):
+        call(tmp_path, FIXTURES / 'covid_small.csv', COVID_SCHEMA, models, '--mask', 'random_cell')
+    assert not (tmp_path / 'out').exists()
