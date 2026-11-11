@@ -63,6 +63,7 @@
     "predictions": "predictions_random_cell.csv.gz",
     "predictions_sha256": "0275f2e9274a102e7f7e9149ad5b4315192b01c4d84ce0713cc1fc33abecbe30",
     "rate": 0.05,
+    "resolved_models": null,
     "schema_sha256": "b708328690a124435103e83cdd4f43f5a5305b7b2d2f0d9f9dc9d4a4539602c5",
     "seeds": [
      "0",
@@ -109,6 +110,7 @@
     "predictions": "predictions_random_cell.csv.gz",
     "predictions_sha256": "59a11bc0e41a054b4328a08ee6ddc389a614ba276ba660906e688f4544f1fd1a",
     "rate": 0.05,
+    "resolved_models": null,
     "schema_sha256": "b708328690a124435103e83cdd4f43f5a5305b7b2d2f0d9f9dc9d4a4539602c5",
     "seeds": [
      "0",
@@ -191,6 +193,7 @@
     "predictions": "predictions_whole_feature.csv.gz",
     "predictions_sha256": "f7979c9d50484c79bfa1c4f4d002160d2aa55884323de25c0c8e7f8e33f23ef0",
     "rate": 0.05,
+    "resolved_models": null,
     "schema_sha256": "b708328690a124435103e83cdd4f43f5a5305b7b2d2f0d9f9dc9d4a4539602c5",
     "seeds": [
      "0",
@@ -239,6 +242,7 @@
     "predictions": "predictions_whole_feature.csv.gz",
     "predictions_sha256": "4dd0a4ae1c1b377288c1f79c91eab418c1fecf922cf1ccb569c0b48f6da11d4a",
     "rate": 0.05,
+    "resolved_models": null,
     "schema_sha256": "b708328690a124435103e83cdd4f43f5a5305b7b2d2f0d9f9dc9d4a4539602c5",
     "seeds": [
      "0",

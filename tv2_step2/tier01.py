@@ -283,27 +283,31 @@ def macro_markdown(runs, models, seeds):
 
 # ---------- driver ----------
 
+def load_run(folder, rename, mask):
+    """One run directory: status rows, scores from its long file (checked against summary.json), record."""
+    config = json.loads((folder / 'config.json').read_text(encoding='utf-8'))
+    summary = json.loads((folder / 'summary.json').read_text(encoding='utf-8'))
+    status = status_rows(folder.name, config, summary, rename)
+    path = folder / f'predictions_{mask}.csv.gz'
+    rows = read_predictions(path)
+    scores = {(rename.get(m, m), k, s): v for (m, k, s), v in score_predictions(rows).items()}
+    check = check_scores(scores, summary, rename, mask)
+    record = {'dir': folder.name, 'config_sha256': sha256(folder / 'config.json'),
+              'summary_sha256': sha256(folder / 'summary.json'), 'predictions': path.name,
+              'predictions_sha256': sha256(path), 'prediction_rows': len(rows), 'git': config.get('git'),
+              'resolved_models': config.get('resolved_models')}
+    return status, scores, record, check
+
+
 def load_mask(root, mask):
-    seeds = SEEDS[mask]
-    records = step1.validate_pair(root, mask, seeds)              # F2, raises on any mismatch
-    status, scores, check, files = [], {}, [0, 0.], []
-    for prefix, rename in PASSES:
-        folder = root / f'{prefix}_{mask}'
-        config = json.loads((folder / 'config.json').read_text(encoding='utf-8'))
-        summary = json.loads((folder / 'summary.json').read_text(encoding='utf-8'))
-        status += status_rows(folder.name, config, summary, rename)
-        path = folder / f'predictions_{mask}.csv.gz'
-        rows = read_predictions(path)
-        own = {(rename.get(m, m), k, s): v for (m, k, s), v in score_predictions(rows).items()}
-        checked, worst = check_scores(own, summary, rename, mask)
-        check = [check[0] + checked, max(check[1], worst)]
+    records = step1.validate_pair(root, mask, SEEDS[mask])        # F2, raises on any mismatch
+    status, scores, check = [], {}, [0, 0.]
+    for record, (prefix, rename) in zip(records, PASSES):
+        own_status, own, extra, (checked, worst) = load_run(root / f'{prefix}_{mask}', rename, mask)
+        status += own_status
         scores.update(own)
-        files.append({'dir': folder.name, 'config_sha256': sha256(folder / 'config.json'),
-                      'summary_sha256': sha256(folder / 'summary.json'), 'predictions': path.name,
-                      'predictions_sha256': sha256(path), 'prediction_rows': len(rows),
-                      'git': config.get('git')})
-    for record, extra in zip(records, files):
         record.update(extra)
+        check = [check[0] + checked, max(check[1], worst)]
     return status, scores, records, {'values_checked': check[0], 'max_abs_diff': check[1]}
 
 
