@@ -12,7 +12,8 @@ as micoda_other), written by run_all.sh with --save-predictions. Order of work:
    and must equal the errors in summary.json to 1e-12, or nothing is written.
 4. F07: a run counts only if completed with coverage 1. Model means are taken over the seeds
    where every model counts; each pair is compared over the seeds where both count. The
-   reliability table keeps every run. No per-model success-only mean is ranked.
+   reliability table keeps every run. No per-model success-only mean is ranked. Only the
+   pre-declared seeds (not UNDECLARED) enter metric and pair tables.
 Outputs in --out: tier01_status.csv, tier01_runs.csv, tier01_pairs.csv, tier01_results.md,
 tier01_manifest.json; the auto:* blocks of REPORT_vi.md are regenerated.
 """
@@ -38,6 +39,9 @@ step1 = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(step1)
 
 SEEDS = {'whole_feature': ('0', '1', '2', '3', '4', '109'), 'random_cell': ('0', '1', '2', '3', '4')}
+# Seeds not declared before the results were seen (109 was picked because it makes runs fail):
+# status and reliability tables only, never a metric table or a paired difference.
+UNDECLARED = ('109',)
 PASSES = (('main', {}), ('micoda_other', {'micoda': 'micoda_other'}))
 # (column, group, key, label); the first one is the primary metric.
 METRIC_COLUMNS = (('mae_prop', 'model', 'mae_proportion', 'MAE tỷ lệ'),
@@ -212,26 +216,27 @@ def status_markdown(status, rel):
     return out
 
 
-def seed_markdown(status, seed, runs):
+def seed_markdown(status, seed):
     rows = [r for r in status if r['seed'] == seed]
     if not rows:
         return []
     r0 = rows[0]
     out = [f"Seed {seed} ({r0['mask']}): {r0['hidden_cells']} ô che, {r0['forced_zero_cells']} ép về 0, "
            f"{r0['model_cells']} ô model; {r0['complete_rows_after']} dòng đầy đủ sau khi che.", '',
-           '| Model | status | coverage | mã lỗi | thông điệp | hội tụ (MICoDa) | MAE tỷ lệ (ô model) |',
-           '|---|---|---:|---|---|---|---:|']
+           '| Model | status | coverage | mã lỗi | thông điệp | hội tụ (MICoDa) |', '|---|---|---:|---|---|---|']
     for r in rows:
         message = (r['error_message'] or '-').replace('|', '/')[:110]
         out.append(f"| {r['model']} | {r['status']} | {na(r['coverage'], 3)} | {r['error_code'] or '-'} | "
-                   f"{message} | {'-' if r['converged'] is None else r['converged']} | "
-                   f"{na(runs[r['model']][seed][PRIMARY])} |")
+                   f"{message} | {'-' if r['converged'] is None else r['converged']} |")
     return out
 
 
-def main_markdown(runs, models, seeds):
+def main_markdown(runs, models, seeds, undeclared=()):
     order, used, dropped, _ = ranking(runs, models, seeds)
     out = [f"Tập seed chung (mọi model completed, coverage = 1): {', '.join(used) or 'rỗng'}."]
+    if undeclared:
+        out.append(f"Seed không khai báo trước ({', '.join(undeclared)}): chỉ có trong bảng trạng thái và "
+                   'reliability, không vào bảng metric hay hiệu ghép cặp.')
     out += [f"Seed {s} bị loại: {'; '.join(r)}." for s, r in dropped.items()]
     out += ['', 'Sắp theo MAE tỷ lệ (nhóm ô model) trung bình trên tập seed chung. mean ± sd (ddof=1) qua seed; '
             'sd không phải khoảng tin cậy. **exploratory**.', '',
@@ -356,27 +361,28 @@ def summarize(root, out_dir, step1_runs=None):
                           'step1_reuse': compare_step1(root, records, mask, step1_runs)}
         all_status += status
         runs = table_runs(status, scores)
+        seeds = tuple(s for s in SEEDS[mask] if s not in UNDECLARED)
         models = list(runs)
         for m in models:
-            for s in SEEDS[mask]:
+            for s in seeds:
                 run_rows.append({'mask': mask, 'model': m, 'seed': s, **runs[m][s]})
-        main, order = main_markdown(runs, models, SEEDS[mask])
-        pairs = [pair(runs, a, b, SEEDS[mask], column) for a, b in itertools.combinations(order, 2)
+        main, order = main_markdown(runs, models, seeds, [s for s in SEEDS[mask] if s in UNDECLARED])
+        pairs = [pair(runs, a, b, seeds, column) for a, b in itertools.combinations(order, 2)
                  for column, *_ in METRIC_COLUMNS]
         pair_rows += [{'mask': mask, **{k: v for k, v in p.items() if k not in ('seeds_used', 'dropped')},
                        'seeds_used': ' '.join(p['seeds_used']),
                        'dropped': '; '.join(f"{s}: {', '.join(r)}" for s, r in p['dropped'].items())}
                       for p in pairs]
         primary = [p for p in pairs if p['metric'] == PRIMARY]
-        key = [pair(runs, a, b, SEEDS[mask]) for a, b in KEY_PAIRS if a in runs and b in runs]
+        key = [pair(runs, a, b, seeds) for a, b in KEY_PAIRS if a in runs and b in runs]
         label = 'chính' if mask == 'whole_feature' else 'sensitivity'
         rel = reliability(status)
         if mask == 'whole_feature':
-            blocks['seed109'] = seed_markdown(status, '109', runs)
+            blocks['seed109'] = seed_markdown(status, '109')
         blocks[f'status_{mask}'] = status_markdown(status, rel)
         blocks[f'main_{mask}'] = main
         blocks[f'pairs_{mask}'] = pairs_markdown(key, f'**{mask}**, cặp chính')
-        blocks[f'macro_{mask}'] = macro_markdown(runs, models, SEEDS[mask])
+        blocks[f'macro_{mask}'] = macro_markdown(runs, models, seeds)
         md += [f'## {mask} ({label})', '', '### Tầng 0: reliability (mọi run đã lên lịch)', '',
                *blocks[f'status_{mask}'], '', '### Tầng 1: bảng metric', '', *main, '',
                '### Ghép cặp, mọi cặp (MAE tỷ lệ)', '', *pairs_markdown(primary, f'**{mask}**'), '',

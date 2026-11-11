@@ -75,7 +75,8 @@ def test_failed_and_missing_runs_stay_in_the_status_table():
     assert rel['micoda_x', 'masked']['not_ok'] == ['0: failed (insufficient_fit)', '1: missing (missing_result)']
 
 
-def test_end_to_end_on_fixture_with_one_failing_run(tmp_path, monkeypatch):
+def fixture_runs(tmp_path, monkeypatch):
+    """Main + micoda_other runs on the fixture, seeds 1 and 2; tsagris fails on seed 2."""
     calls = []
 
     class FailsOnSecondSeed(TsagrisKNN):
@@ -95,6 +96,10 @@ def test_end_to_end_on_fixture_with_one_failing_run(tmp_path, monkeypatch):
         run.main(['--data', str(FIXTURE), '--schema', str(tmp_path / 'schema.toml'), '--models',
                   str(tmp_path / f'{prefix}.toml'), '--output', str(tmp_path / 'runs' / f'{prefix}_whole_feature'),
                   '--mask', 'whole_feature', '--mask-rate', '.2', '--seeds', '1', '2', '--save-predictions'])
+
+
+def test_end_to_end_on_fixture_with_one_failing_run(tmp_path, monkeypatch):
+    fixture_runs(tmp_path, monkeypatch)
     manifest, status, run_rows, pair_rows = tier01.summarize(tmp_path / 'runs', tmp_path / 'out')
     failed = [r for r in status if r['status'] != 'completed']
     assert [(r['model'], r['seed'], r['error_code']) for r in failed] == [('tsagris', '2', 'insufficient_data')]
@@ -121,3 +126,15 @@ def test_regression_check_refuses_a_mismatch():
     scores['hron', 'random_cell', 0]['errors']['model']['mae_proportion'] = .5 + 1e-9
     with pytest.raises(ValueError, match='long file'):
         tier01.check_scores(scores, summary, {}, 'random_cell')
+
+
+def test_undeclared_seed_is_in_status_only(tmp_path, monkeypatch):
+    fixture_runs(tmp_path, monkeypatch)
+    monkeypatch.setattr(tier01, 'UNDECLARED', ('2',))     # the seed where tsagris fails
+    _, status, run_rows, pair_rows = tier01.summarize(tmp_path / 'runs', tmp_path / 'out')
+    assert [(r['model'], r['seed'], r['status']) for r in status if r['status'] != 'completed'] == [
+        ('tsagris', '2', 'failed')]
+    assert {r['seed'] for r in run_rows} == {'1'}
+    assert all(r['seeds_used'] == '1' and r['dropped'] == '' for r in pair_rows)
+    text = (tmp_path / 'out' / 'tier01_results.md').read_text()
+    assert 'Seed không khai báo trước (2)' in text and 'Seed 2 bị loại' not in text

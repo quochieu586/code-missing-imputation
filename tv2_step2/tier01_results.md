@@ -28,7 +28,7 @@ Sinh bởi `tier01.py`; không sửa tay. Metric chính: MAE tỷ lệ trên nh�
 ### Tầng 1: bảng metric
 
 Tập seed chung (mọi model completed, coverage = 1): 0, 1, 2, 3, 4.
-Seed 109 bị loại: hron failed (baseline_error); tsagris failed (baseline_error); micoda failed (insufficient_fit); micoda_other failed (insufficient_fit).
+Seed không khai báo trước (109): chỉ có trong bảng trạng thái và reliability, không vào bảng metric hay hiệu ghép cặp.
 
 Sắp theo MAE tỷ lệ (nhóm ô model) trung bình trên tập seed chung. mean ± sd (ddof=1) qua seed; sd không phải khoảng tin cậy. **exploratory**.
 
@@ -49,34 +49,34 @@ Sắp theo MAE tỷ lệ (nhóm ô model) trung bình trên tập seed chung. me
 
 | A vs B | n seed | A thắng | Δ MAE tỷ lệ | Seed loại (lý do) |
 |---|---:|---:|---|---|
-| same_day_mean vs hron | 5 | 5/5 | -0.05247 ± 0.01578 | 109: hron failed (baseline_error) |
-| same_day_mean vs micoda_other | 5 | 5/5 | -0.07245 ± 0.01355 | 109: micoda_other failed (insufficient_fit) |
-| same_day_mean vs tsagris | 5 | 5/5 | -0.07283 ± 0.02515 | 109: tsagris failed (baseline_error) |
-| same_day_mean vs mean_fill | 6 | 6/6 | -0.10059 ± 0.01691 | - |
-| same_day_mean vs marginal_sampler | 6 | 6/6 | -0.10068 ± 0.01522 | - |
-| same_day_mean vs micoda | 5 | 5/5 | -0.10554 ± 0.01238 | 109: micoda failed (insufficient_fit) |
-| same_day_mean vs zero_fill | 6 | 6/6 | -0.13628 ± 0.02401 | - |
-| hron vs micoda_other | 5 | 5/5 | -0.01998 ± 0.00474 | 109: hron failed (baseline_error), micoda_other failed (insufficient_fit) |
-| hron vs tsagris | 5 | 5/5 | -0.02036 ± 0.01274 | 109: hron failed (baseline_error), tsagris failed (baseline_error) |
-| hron vs mean_fill | 5 | 5/5 | -0.04782 ± 0.00853 | 109: hron failed (baseline_error) |
-| hron vs marginal_sampler | 5 | 5/5 | -0.04783 ± 0.00749 | 109: hron failed (baseline_error) |
-| hron vs micoda | 5 | 5/5 | -0.05307 ± 0.00769 | 109: hron failed (baseline_error), micoda failed (insufficient_fit) |
-| hron vs zero_fill | 5 | 5/5 | -0.08177 ± 0.01596 | 109: hron failed (baseline_error) |
-| micoda_other vs tsagris | 5 | 2/5 | -0.00038 ± 0.01360 | 109: micoda_other failed (insufficient_fit), tsagris failed (baseline_error) |
-| micoda_other vs mean_fill | 5 | 5/5 | -0.02785 ± 0.00699 | 109: micoda_other failed (insufficient_fit) |
-| micoda_other vs marginal_sampler | 5 | 5/5 | -0.02785 ± 0.00567 | 109: micoda_other failed (insufficient_fit) |
-| micoda_other vs micoda | 5 | 5/5 | -0.03309 ± 0.00681 | 109: micoda_other failed (insufficient_fit), micoda failed (insufficient_fit) |
-| micoda_other vs zero_fill | 5 | 5/5 | -0.06180 ± 0.01493 | 109: micoda_other failed (insufficient_fit) |
-| tsagris vs mean_fill | 5 | 5/5 | -0.02746 ± 0.01542 | 109: tsagris failed (baseline_error) |
-| tsagris vs marginal_sampler | 5 | 5/5 | -0.02747 ± 0.01411 | 109: tsagris failed (baseline_error) |
-| tsagris vs micoda | 5 | 5/5 | -0.03271 ± 0.01402 | 109: tsagris failed (baseline_error), micoda failed (insufficient_fit) |
-| tsagris vs zero_fill | 5 | 5/5 | -0.06141 ± 0.01933 | 109: tsagris failed (baseline_error) |
-| mean_fill vs marginal_sampler | 6 | 3/6 | -0.00009 ± 0.00427 | - |
-| mean_fill vs micoda | 5 | 4/5 | -0.00525 ± 0.01350 | 109: micoda failed (insufficient_fit) |
-| mean_fill vs zero_fill | 6 | 6/6 | -0.03568 ± 0.00842 | - |
-| marginal_sampler vs micoda | 5 | 3/5 | -0.00524 ± 0.01214 | 109: micoda failed (insufficient_fit) |
-| marginal_sampler vs zero_fill | 6 | 6/6 | -0.03559 ± 0.01052 | - |
-| micoda vs zero_fill | 5 | 5/5 | -0.02870 ± 0.02139 | 109: micoda failed (insufficient_fit) |
+| same_day_mean vs hron | 5 | 5/5 | -0.05247 ± 0.01578 | - |
+| same_day_mean vs micoda_other | 5 | 5/5 | -0.07245 ± 0.01355 | - |
+| same_day_mean vs tsagris | 5 | 5/5 | -0.07283 ± 0.02515 | - |
+| same_day_mean vs mean_fill | 5 | 5/5 | -0.10029 ± 0.01889 | - |
+| same_day_mean vs marginal_sampler | 5 | 5/5 | -0.10030 ± 0.01698 | - |
+| same_day_mean vs micoda | 5 | 5/5 | -0.10554 ± 0.01238 | - |
+| same_day_mean vs zero_fill | 5 | 5/5 | -0.13424 ± 0.02626 | - |
+| hron vs micoda_other | 5 | 5/5 | -0.01998 ± 0.00474 | - |
+| hron vs tsagris | 5 | 5/5 | -0.02036 ± 0.01274 | - |
+| hron vs mean_fill | 5 | 5/5 | -0.04782 ± 0.00853 | - |
+| hron vs marginal_sampler | 5 | 5/5 | -0.04783 ± 0.00749 | - |
+| hron vs micoda | 5 | 5/5 | -0.05307 ± 0.00769 | - |
+| hron vs zero_fill | 5 | 5/5 | -0.08177 ± 0.01596 | - |
+| micoda_other vs tsagris | 5 | 2/5 | -0.00038 ± 0.01360 | - |
+| micoda_other vs mean_fill | 5 | 5/5 | -0.02785 ± 0.00699 | - |
+| micoda_other vs marginal_sampler | 5 | 5/5 | -0.02785 ± 0.00567 | - |
+| micoda_other vs micoda | 5 | 5/5 | -0.03309 ± 0.00681 | - |
+| micoda_other vs zero_fill | 5 | 5/5 | -0.06180 ± 0.01493 | - |
+| tsagris vs mean_fill | 5 | 5/5 | -0.02746 ± 0.01542 | - |
+| tsagris vs marginal_sampler | 5 | 5/5 | -0.02747 ± 0.01411 | - |
+| tsagris vs micoda | 5 | 5/5 | -0.03271 ± 0.01402 | - |
+| tsagris vs zero_fill | 5 | 5/5 | -0.06141 ± 0.01933 | - |
+| mean_fill vs marginal_sampler | 5 | 2/5 | -0.00000 ± 0.00477 | - |
+| mean_fill vs micoda | 5 | 4/5 | -0.00525 ± 0.01350 | - |
+| mean_fill vs zero_fill | 5 | 5/5 | -0.03395 ± 0.00813 | - |
+| marginal_sampler vs micoda | 5 | 3/5 | -0.00524 ± 0.01214 | - |
+| marginal_sampler vs zero_fill | 5 | 5/5 | -0.03395 ± 0.01086 | - |
+| micoda vs zero_fill | 5 | 5/5 | -0.02870 ± 0.02139 | - |
 
 ### Series-macro so với cell-weighted
 
@@ -174,14 +174,14 @@ Regression check: 1200 giá trị khớp summary.json, sai khác lớn nhất 0 
 
 Seed 109 (whole_feature): 5626 ô che, 2726 ép về 0, 2900 ô model; 0 dòng đầy đủ sau khi che.
 
-| Model | status | coverage | mã lỗi | thông điệp | hội tụ (MICoDa) | MAE tỷ lệ (ô model) |
-|---|---|---:|---|---|---|---:|
-| hron | failed | 0.000 | baseline_error | BaselineError: row 0, feature 0: no donor observed on O_i and j | - | NA |
-| tsagris | failed | 0.000 | baseline_error | BaselineError: Tsagris needs at least one complete donor row | - | NA |
-| micoda | failed | 0.000 | insufficient_fit | insufficient_fit: Complete-case initialization needs more than one row; context={} | - | NA |
-| same_day_mean | completed | 1.000 | - | - | - | 0.0217 |
-| mean_fill | completed | 1.000 | - | - | - | 0.1238 |
-| marginal_sampler | completed | 1.000 | - | - | - | 0.1243 |
-| zero_fill | completed | 1.000 | - | - | - | 0.1682 |
-| micoda_other | failed | 0.000 | insufficient_fit | insufficient_fit: Complete-case initialization needs more than one row; context={} | - | NA |
+| Model | status | coverage | mã lỗi | thông điệp | hội tụ (MICoDa) |
+|---|---|---:|---|---|---|
+| hron | failed | 0.000 | baseline_error | BaselineError: row 0, feature 0: no donor observed on O_i and j | - |
+| tsagris | failed | 0.000 | baseline_error | BaselineError: Tsagris needs at least one complete donor row | - |
+| micoda | failed | 0.000 | insufficient_fit | insufficient_fit: Complete-case initialization needs more than one row; context={} | - |
+| same_day_mean | completed | 1.000 | - | - | - |
+| mean_fill | completed | 1.000 | - | - | - |
+| marginal_sampler | completed | 1.000 | - | - | - |
+| zero_fill | completed | 1.000 | - | - | - |
+| micoda_other | failed | 0.000 | insufficient_fit | insufficient_fit: Complete-case initialization needs more than one row; context={} | - |
 

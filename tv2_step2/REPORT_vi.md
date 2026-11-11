@@ -94,20 +94,20 @@ Bảng trạng thái từng run: [tier01_status.csv](tier01_status.csv) (cột `
 <!-- auto:seed109:start -->
 Seed 109 (whole_feature): 5626 ô che, 2726 ép về 0, 2900 ô model; 0 dòng đầy đủ sau khi che.
 
-| Model | status | coverage | mã lỗi | thông điệp | hội tụ (MICoDa) | MAE tỷ lệ (ô model) |
-|---|---|---:|---|---|---|---:|
-| hron | failed | 0.000 | baseline_error | BaselineError: row 0, feature 0: no donor observed on O_i and j | - | NA |
-| tsagris | failed | 0.000 | baseline_error | BaselineError: Tsagris needs at least one complete donor row | - | NA |
-| micoda | failed | 0.000 | insufficient_fit | insufficient_fit: Complete-case initialization needs more than one row; context={} | - | NA |
-| same_day_mean | completed | 1.000 | - | - | - | 0.0217 |
-| mean_fill | completed | 1.000 | - | - | - | 0.1238 |
-| marginal_sampler | completed | 1.000 | - | - | - | 0.1243 |
-| zero_fill | completed | 1.000 | - | - | - | 0.1682 |
-| micoda_other | failed | 0.000 | insufficient_fit | insufficient_fit: Complete-case initialization needs more than one row; context={} | - | NA |
+| Model | status | coverage | mã lỗi | thông điệp | hội tụ (MICoDa) |
+|---|---|---:|---|---|---|
+| hron | failed | 0.000 | baseline_error | BaselineError: row 0, feature 0: no donor observed on O_i and j | - |
+| tsagris | failed | 0.000 | baseline_error | BaselineError: Tsagris needs at least one complete donor row | - |
+| micoda | failed | 0.000 | insufficient_fit | insufficient_fit: Complete-case initialization needs more than one row; context={} | - |
+| same_day_mean | completed | 1.000 | - | - | - |
+| mean_fill | completed | 1.000 | - | - | - |
+| marginal_sampler | completed | 1.000 | - | - | - |
+| zero_fill | completed | 1.000 | - | - | - |
+| micoda_other | failed | 0.000 | insufficient_fit | insufficient_fit: Complete-case initialization needs more than one row; context={} | - |
 <!-- auto:seed109:end -->
 
 - Seed 109 không còn dòng đầy đủ nào sau khi che. Tsagris và MICoDa (cả A17 lẫn A18) fail như dự kiến. ⚠️ **Hron cũng fail** (`no donor observed on O_i and j`), điều mà đề bài không nêu trước.
-- same_day_mean và ba mức sàn chạy xong. Seed này bị loại khỏi bảng metric chung, nên MAE 0.0217 của same_day_mean ở đây không đi vào phép xếp hạng.
+- same_day_mean và ba mức sàn chạy xong. Seed này chỉ có trong bảng trạng thái và reliability (xem *Sửa sau review*).
 - Hron và Tsagris báo mã `baseline_error`, tức mã của lớp gốc, kém cụ thể hơn `insufficient_data`. Không sửa vì đó là code model.
 - Mọi run MICoDa completed đều `converged = True` (`termination_reason = tolerance`, 45–71 vòng).
 
@@ -117,7 +117,7 @@ Seed 109 (whole_feature): 5626 ô che, 2726 ép về 0, 2900 ô model; 0 dòng �
 
 <!-- auto:main_whole_feature:start -->
 Tập seed chung (mọi model completed, coverage = 1): 0, 1, 2, 3, 4.
-Seed 109 bị loại: hron failed (baseline_error); tsagris failed (baseline_error); micoda failed (insufficient_fit); micoda_other failed (insufficient_fit).
+Seed không khai báo trước (109): chỉ có trong bảng trạng thái và reliability, không vào bảng metric hay hiệu ghép cặp.
 
 Sắp theo MAE tỷ lệ (nhóm ô model) trung bình trên tập seed chung. mean ± sd (ddof=1) qua seed; sd không phải khoảng tin cậy. **exploratory**.
 
@@ -161,12 +161,12 @@ Vì seed 0–4 và các run trùng với step 1, số liệu trên tập seed 0�
 
 | A vs B | n seed | A thắng | Δ MAE tỷ lệ | Seed loại (lý do) |
 |---|---:|---:|---|---|
-| same_day_mean vs hron | 5 | 5/5 | -0.05247 ± 0.01578 | 109: hron failed (baseline_error) |
-| tsagris vs hron | 5 | 0/5 | +0.02036 ± 0.01274 | 109: tsagris failed (baseline_error), hron failed (baseline_error) |
-| micoda_other vs mean_fill | 5 | 5/5 | -0.02785 ± 0.00699 | 109: micoda_other failed (insufficient_fit) |
-| micoda vs mean_fill | 5 | 1/5 | +0.00525 ± 0.01350 | 109: micoda failed (insufficient_fit) |
-| micoda_other vs micoda | 5 | 5/5 | -0.03309 ± 0.00681 | 109: micoda_other failed (insufficient_fit), micoda failed (insufficient_fit) |
-| hron vs mean_fill | 5 | 5/5 | -0.04782 ± 0.00853 | 109: hron failed (baseline_error) |
+| same_day_mean vs hron | 5 | 5/5 | -0.05247 ± 0.01578 | - |
+| tsagris vs hron | 5 | 0/5 | +0.02036 ± 0.01274 | - |
+| micoda_other vs mean_fill | 5 | 5/5 | -0.02785 ± 0.00699 | - |
+| micoda vs mean_fill | 5 | 1/5 | +0.00525 ± 0.01350 | - |
+| micoda_other vs micoda | 5 | 5/5 | -0.03309 ± 0.00681 | - |
+| hron vs mean_fill | 5 | 5/5 | -0.04782 ± 0.00853 | - |
 <!-- auto:pairs_whole_feature:end -->
 
 <!-- auto:pairs_random_cell:start -->
@@ -209,7 +209,7 @@ Series-macro: same_day_mean < hron < tsagris < micoda_other < marginal_sampler <
 
 Mọi điều dưới đây là **exploratory**: masked pilot trên seed 0–4 đã được nhìn trước, dựng lại bảng cố định, không suy ra cho ô thiếu thật hay cho nước mới. sd là độ lệch chuẩn mẫu qua seed, **không phải khoảng tin cậy**. Chưa có bootstrap.
 
-1. **same_day_mean đứng đầu trên metric chính ở cả hai mask.** Nó thắng mọi model khác ở mọi seed chung: 5/5 với model fail ở seed 109, 6/6 với ba mức sàn. Lợi thế vẫn đến từ bốn yếu tố cùng lúc như ở step 1; chưa có ablation.
+1. **same_day_mean đứng đầu trên metric chính ở cả hai mask.** Nó thắng mọi model khác ở cả 5 seed khai báo trước (5/5). Lợi thế vẫn đến từ bốn yếu tố cùng lúc như ở step 1; chưa có ablation.
 2. **Hron xếp trên Tsagris theo metric chính** (MAE tỷ lệ: 5/5 seed ở cả hai mask). Theo MSE tỷ lệ thì ngược lại (xem step 1 và `tier01_pairs.csv`). Thứ hạng này là hệ quả của việc chốt MAE làm metric chính, không phải bằng chứng Hron tốt hơn về mọi mặt.
 3. **micoda_other và tsagris không phân định được ở whole_feature** (2/5, Δ −0.0004). Ở random_cell, tsagris thắng 5/5.
 4. **MICoDa A17 không vượt chắc mức sàn:** ở whole_feature, mean_fill thắng nó 4/5. Ở random_cell, nó thắng mean_fill 5/5 theo cell-weighted nhưng thua 5/5 theo series-macro. mean_fill và marginal_sampler gần như hòa.
@@ -218,13 +218,17 @@ Mọi điều dưới đây là **exploratory**: masked pilot trên seed 0–4 �
 ## 8. Quyết định thiết kế chưa chắc
 
 1. **Tập seed chung cho bảng metric là giao của cả 8 model.** Chỉ cần một model fail là seed đó bị loại cho mọi model. Hiện bảng metric dùng đúng 0–4. Cách thay thế là xếp hạng bằng số cặp thắng.
-2. **Mỗi cặp dùng tập seed chung riêng**, nên n khác nhau giữa các cặp (5 hoặc 6). Các cặp n = 6 (same_day_mean và ba mức sàn với nhau) có cả seed 109. Seed này được chọn *vì* nó gây fail, không phải ngẫu nhiên, nên đưa nó vào hiệu ghép cặp là một lựa chọn có thể gây lệch. Ở đây không đổi kết luận nào: các cặp đó đều 6/6 hoặc gần hòa.
+2. **Mỗi cặp dùng tập seed chung riêng** trong các seed khai báo trước (0–4). Bản đầu của report này có dùng seed 109 cho các cặp không fail ở seed đó; đã bỏ (xem *Sửa sau review*).
 3. **Cột cờ nhóm `model` được đặt tên `model_cell`**, vì cột `model` đã là tên model.
 4. **Bất biến input chỉ được kiểm ở đầu vào của phần fit.** Adapter MICoDa (`impute_counts`) vẫn nhận `data.counts` đầy đủ cùng `hidden` và tự che bên trong (thiết kế D07 có sẵn). Test kiểm tra input của lõi sau khi che, không kiểm chính adapter.
 5. **`evaluate.summarize` và bảng in của `run.py`** vẫn lấy trung bình trên các seed success của từng model. Tôi giữ nguyên để không phá output và test cũ. Các bảng này không sắp thứ hạng và step 2 không dùng chúng, nhưng vẫn có thể bị đọc nhầm (ví dụ hron 5/1).
 6. **Coverage của lượt native:** 1.0 nếu completed. Nếu partial thì lấy từ `resolved_cells / missing_cells` của MICoDa. Các trường hợp còn lại là NA.
 7. Series-macro chỉ tính trên nhóm `model`. Ở random_cell phần lớn chuỗi chỉ có 1–2 ô, nên series-macro gần với trung bình theo location hơn là theo chuỗi.
 8. File dự đoán xác định theo byte (header gzip cố định). Điều này đã được kiểm trên fixture; chưa chạy lại COVID hai lần để so hash.
+
+## Sửa sau review (step 3, phần A)
+
+Bảng metric và mọi hiệu ghép cặp giờ chỉ dùng seed khai báo trước (0–4). Seed 109 được chọn vì nó gây fail, nên chỉ còn trong bảng trạng thái và reliability; cột MAE cũng đã bỏ khỏi bảng seed 109. Các bảng trên đã được sinh lại. Chỉ các cặp trước đây có n = 6 thay đổi: same_day_mean với ba mức sàn và các mức sàn với nhau. Chúng đổi từ 6/6 thành 5/5, còn mean_fill vs marginal_sampler đổi từ 3/6 thành 2/5 (Δ ≈ 0 ở cả hai). Bảng metric chính vốn đã chỉ dùng 0–4 nên không đổi. **Không kết luận nào đổi.**
 
 ## 9. Việc để lại cho step sau
 

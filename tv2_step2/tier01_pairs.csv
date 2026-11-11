@@ -1,200 +1,200 @@
 mask,a,b,metric,n,mean_diff,sd_diff,wins,ties,seeds_used,dropped
-whole_feature,same_day_mean,hron,mae_prop,5,-0.0524714728584913,0.01578438388929144,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,same_day_mean,hron,mse_prop,5,-0.05179723943458921,0.012066141442228607,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,same_day_mean,hron,mae_count,5,-45.16065263141922,89.2914556121266,4,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,same_day_mean,hron,series_macro_mae_prop,5,-0.05084815321730043,0.01780430171571781,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,same_day_mean,hron,mae_prop_truth_zero,5,-0.007044853552919743,0.0027675320319011957,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,same_day_mean,hron,mae_prop_truth_positive,5,-0.11337999151295022,0.033471962821904094,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,same_day_mean,hron,mae_prop_model_truth_zero,5,-0.019972002391805816,0.006930863472328307,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,same_day_mean,micoda_other,mae_prop,5,-0.07244739107690411,0.013549164190520097,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,same_day_mean,micoda_other,mse_prop,5,-0.054194676806802164,0.010575798850002096,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,same_day_mean,micoda_other,mae_count,5,-159.2803252252022,180.15751303214492,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,same_day_mean,micoda_other,series_macro_mae_prop,5,-0.06799504427581764,0.01627034135063862,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,same_day_mean,micoda_other,mae_prop_truth_zero,5,-0.01608790880707217,0.003171507374147927,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,same_day_mean,micoda_other,mae_prop_truth_positive,5,-0.12116440485851225,0.03271241175471422,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,same_day_mean,micoda_other,mae_prop_model_truth_zero,5,-0.04597744194376775,0.008015329536465967,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,same_day_mean,tsagris,mae_prop,5,-0.07283020593085252,0.025145149460035588,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,same_day_mean,tsagris,mse_prop,5,-0.0378364934055723,0.011807115848557013,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,same_day_mean,tsagris,mae_count,5,-3.8274498230556517,12.436539009420681,4,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,same_day_mean,tsagris,series_macro_mae_prop,5,-0.07120698949281133,0.023195161425404003,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,same_day_mean,tsagris,mae_prop_truth_zero,5,-0.022746517680812917,0.007471850727273622,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,same_day_mean,tsagris,mae_prop_truth_positive,5,-0.08751755636255074,0.05911127197491378,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,same_day_mean,tsagris,mae_prop_model_truth_zero,5,-0.06513314952838789,0.02136408449830888,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,same_day_mean,mean_fill,mae_prop,6,-0.10059482726667686,0.01691132822146754,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,mean_fill,mse_prop,6,-0.05540222643998699,0.010401014724560018,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,mean_fill,mae_count,6,-164.0861524326575,157.6835496147588,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,mean_fill,series_macro_mae_prop,6,-0.08222305125946522,0.018468029877880824,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,mean_fill,mae_prop_truth_zero,6,-0.015267526191211573,0.003615262063899644,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,mean_fill,mae_prop_truth_positive,6,-0.20981850391905296,0.02886898733882127,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,mean_fill,mae_prop_model_truth_zero,6,-0.04225361243526265,0.008005323643578475,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,marginal_sampler,mae_prop,6,-0.10068417833556338,0.015216881181083953,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,marginal_sampler,mse_prop,6,-0.09624845657726015,0.013763791717257959,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,marginal_sampler,mae_count,6,-169.26328926469304,170.5175692926385,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,marginal_sampler,series_macro_mae_prop,6,-0.08289747132613769,0.017829892786068748,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,marginal_sampler,mae_prop_truth_zero,6,-0.011904030078246664,0.002654404158144121,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,marginal_sampler,mae_prop_truth_positive,6,-0.22754007865593465,0.02892446514358109,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,marginal_sampler,mae_prop_model_truth_zero,6,-0.03288603799856372,0.0048882443454592184,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,micoda,mae_prop,5,-0.10554030474454865,0.01237652728696513,5,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,same_day_mean,micoda,mse_prop,5,-0.06806783147775712,0.010716624650127371,5,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,same_day_mean,micoda,mae_count,5,-206.76981085138672,161.84168480058932,5,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,same_day_mean,micoda,series_macro_mae_prop,5,-0.09809085280754426,0.01668701658808008,5,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,same_day_mean,micoda,mae_prop_truth_zero,5,-0.03787451609114112,0.004424901899208268,5,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,same_day_mean,micoda,mae_prop_truth_positive,5,-0.09898253704018065,0.03480265887320637,5,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,same_day_mean,micoda,mae_prop_model_truth_zero,5,-0.1083294821091106,0.00914564509755945,5,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,same_day_mean,zero_fill,mae_prop,6,-0.13627764199078052,0.02401308465763838,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,zero_fill,mse_prop,6,-0.1400246517126473,0.02365030444138167,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,zero_fill,mae_count,6,-223.03081723436458,189.51025582764487,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,zero_fill,series_macro_mae_prop,6,-0.10107952543048193,0.026325913588216194,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,zero_fill,mae_prop_truth_zero,6,0.003276563192931446,0.0012258997668688724,0,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,zero_fill,mae_prop_truth_positive,6,-0.4092404939377352,0.05122361171240859,6,0,0 1 2 3 4 109,
-whole_feature,same_day_mean,zero_fill,mae_prop_model_truth_zero,6,0.009170740260474127,0.0036274995141471304,0,0,0 1 2 3 4 109,
-whole_feature,hron,micoda_other,mae_prop,5,-0.01997591821841281,0.0047384897982546996,5,0,0 1 2 3 4,"109: hron failed (baseline_error), micoda_other failed (insufficient_fit)"
-whole_feature,hron,micoda_other,mse_prop,5,-0.0023974373722129667,0.002745238594044856,4,0,0 1 2 3 4,"109: hron failed (baseline_error), micoda_other failed (insufficient_fit)"
-whole_feature,hron,micoda_other,mae_count,5,-114.11967259378298,97.17369865806675,5,0,0 1 2 3 4,"109: hron failed (baseline_error), micoda_other failed (insufficient_fit)"
-whole_feature,hron,micoda_other,series_macro_mae_prop,5,-0.017146891058517206,0.004158620983638551,5,0,0 1 2 3 4,"109: hron failed (baseline_error), micoda_other failed (insufficient_fit)"
-whole_feature,hron,micoda_other,mae_prop_truth_zero,5,-0.009043055254152428,0.0037145180533032273,5,0,0 1 2 3 4,"109: hron failed (baseline_error), micoda_other failed (insufficient_fit)"
-whole_feature,hron,micoda_other,mae_prop_truth_positive,5,-0.00778441334556203,0.021779878209068716,3,0,0 1 2 3 4,"109: hron failed (baseline_error), micoda_other failed (insufficient_fit)"
-whole_feature,hron,micoda_other,mae_prop_model_truth_zero,5,-0.026005439551961947,0.011047948593725753,5,0,0 1 2 3 4,"109: hron failed (baseline_error), micoda_other failed (insufficient_fit)"
-whole_feature,hron,tsagris,mae_prop,5,-0.020358733072361215,0.01274313475154657,5,0,0 1 2 3 4,"109: hron failed (baseline_error), tsagris failed (baseline_error)"
-whole_feature,hron,tsagris,mse_prop,5,0.013960746029016913,0.0051625791142655055,0,0,0 1 2 3 4,"109: hron failed (baseline_error), tsagris failed (baseline_error)"
-whole_feature,hron,tsagris,mae_count,5,41.333202808363566,100.74255068033716,3,0,0 1 2 3 4,"109: hron failed (baseline_error), tsagris failed (baseline_error)"
-whole_feature,hron,tsagris,series_macro_mae_prop,5,-0.02035883627551091,0.007817266627416355,5,0,0 1 2 3 4,"109: hron failed (baseline_error), tsagris failed (baseline_error)"
-whole_feature,hron,tsagris,mae_prop_truth_zero,5,-0.015701664127893176,0.006485812632028716,5,0,0 1 2 3 4,"109: hron failed (baseline_error), tsagris failed (baseline_error)"
-whole_feature,hron,tsagris,mae_prop_truth_positive,5,0.025862435150399495,0.02790410251519426,1,0,0 1 2 3 4,"109: hron failed (baseline_error), tsagris failed (baseline_error)"
-whole_feature,hron,tsagris,mae_prop_model_truth_zero,5,-0.04516114713658209,0.01902746461713663,5,0,0 1 2 3 4,"109: hron failed (baseline_error), tsagris failed (baseline_error)"
-whole_feature,hron,mean_fill,mae_prop,5,-0.04782259771098009,0.008529057917459348,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,mean_fill,mse_prop,5,-0.0043536290123842745,0.0033209914239197796,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,mean_fill,mae_count,5,-143.6718960473946,95.81736898995257,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,mean_fill,series_macro_mae_prop,5,-0.03213896809056132,0.005923454019874786,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,mean_fill,mae_prop_truth_zero,5,-0.007488991935224024,0.0031300136910438793,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,mean_fill,mae_prop_truth_positive,5,-0.09715407257394135,0.012310953622082675,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,mean_fill,mae_prop_model_truth_zero,5,-0.021476995701481334,0.009181437925205935,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,marginal_sampler,mae_prop,5,-0.04782559879731798,0.007491705509622548,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,marginal_sampler,mse_prop,5,-0.044638809376510255,0.006062749178580944,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,marginal_sampler,mae_count,5,-150.50430012464068,104.62093737070798,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,marginal_sampler,series_macro_mae_prop,5,-0.03303417505804308,0.005831632558510407,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,marginal_sampler,mae_prop_truth_zero,5,-0.004087201262387171,0.0013084507732802628,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,marginal_sampler,mae_prop_truth_positive,5,-0.11522887363849581,0.013621339017073046,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,marginal_sampler,mae_prop_model_truth_zero,5,-0.011786299975850924,0.0040473515316036815,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,micoda,mae_prop,5,-0.053068831886057356,0.007689998756439195,5,0,0 1 2 3 4,"109: hron failed (baseline_error), micoda failed (insufficient_fit)"
-whole_feature,hron,micoda,mse_prop,5,-0.016270592043167924,0.0065593574142001395,5,0,0 1 2 3 4,"109: hron failed (baseline_error), micoda failed (insufficient_fit)"
-whole_feature,hron,micoda,mae_count,5,-161.60915821996753,88.37365522241953,5,0,0 1 2 3 4,"109: hron failed (baseline_error), micoda failed (insufficient_fit)"
-whole_feature,hron,micoda,series_macro_mae_prop,5,-0.04724269959024383,0.0072489575453212095,5,0,0 1 2 3 4,"109: hron failed (baseline_error), micoda failed (insufficient_fit)"
-whole_feature,hron,micoda,mae_prop_truth_zero,5,-0.03082966253822138,0.004026846334370521,5,0,0 1 2 3 4,"109: hron failed (baseline_error), micoda failed (insufficient_fit)"
-whole_feature,hron,micoda,mae_prop_truth_positive,5,0.014397454472769577,0.029597835829857377,1,0,0 1 2 3 4,"109: hron failed (baseline_error), micoda failed (insufficient_fit)"
-whole_feature,hron,micoda,mae_prop_model_truth_zero,5,-0.08835747971730476,0.011290500185477987,5,0,0 1 2 3 4,"109: hron failed (baseline_error), micoda failed (insufficient_fit)"
-whole_feature,hron,zero_fill,mae_prop,5,-0.08177300485788219,0.015958497425702507,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,zero_fill,mse_prop,5,-0.08646270195657736,0.015731755543541243,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,zero_fill,mae_count,5,-212.56057668088278,139.46930935863583,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,zero_fill,series_macro_mae_prop,5,-0.04953297983202989,0.01436843961041968,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,zero_fill,mae_prop_truth_zero,5,0.010315161078127983,0.002699101059128675,0,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,zero_fill,mae_prop_truth_positive,5,-0.2907622722442044,0.03003342330301646,5,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,hron,zero_fill,mae_prop_model_truth_zero,5,0.02936011307444255,0.006497264304786083,0,0,0 1 2 3 4,109: hron failed (baseline_error)
-whole_feature,micoda_other,tsagris,mae_prop,5,-0.00038281485394840443,0.01359663648546064,2,0,0 1 2 3 4,"109: micoda_other failed (insufficient_fit), tsagris failed (baseline_error)"
-whole_feature,micoda_other,tsagris,mse_prop,5,0.016358183401229874,0.0030308902332865178,0,0,0 1 2 3 4,"109: micoda_other failed (insufficient_fit), tsagris failed (baseline_error)"
-whole_feature,micoda_other,tsagris,mae_count,5,155.45287540214653,192.2516026011404,0,0,0 1 2 3 4,"109: micoda_other failed (insufficient_fit), tsagris failed (baseline_error)"
-whole_feature,micoda_other,tsagris,series_macro_mae_prop,5,-0.003211945216993706,0.007313595870712665,4,0,0 1 2 3 4,"109: micoda_other failed (insufficient_fit), tsagris failed (baseline_error)"
-whole_feature,micoda_other,tsagris,mae_prop_truth_zero,5,-0.006658608873740748,0.009442989956324187,4,0,0 1 2 3 4,"109: micoda_other failed (insufficient_fit), tsagris failed (baseline_error)"
-whole_feature,micoda_other,tsagris,mae_prop_truth_positive,5,0.03364684849596152,0.03670234612173424,1,0,0 1 2 3 4,"109: micoda_other failed (insufficient_fit), tsagris failed (baseline_error)"
-whole_feature,micoda_other,tsagris,mae_prop_model_truth_zero,5,-0.019155707584620145,0.027349133063822993,4,0,0 1 2 3 4,"109: micoda_other failed (insufficient_fit), tsagris failed (baseline_error)"
-whole_feature,micoda_other,mean_fill,mae_prop,5,-0.02784667949256727,0.006987080194134628,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,mean_fill,mse_prop,5,-0.001956191640171308,0.002730398489605817,4,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,mean_fill,mae_count,5,-29.552223453611646,47.508006789589096,4,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,mean_fill,series_macro_mae_prop,5,-0.014992077032044119,0.007212832213732571,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,mean_fill,mae_prop_truth_zero,5,0.0015540633189284035,0.0016366755819659938,1,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,mean_fill,mae_prop_truth_positive,5,-0.08936965922837932,0.01585750688366638,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,mean_fill,mae_prop_model_truth_zero,5,0.004528443850480608,0.004799997709089737,1,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,marginal_sampler,mae_prop,5,-0.02784968057890517,0.005672354348458597,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,marginal_sampler,mse_prop,5,-0.042241372004297284,0.006855759392905958,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,marginal_sampler,mae_count,5,-36.38462753085773,37.125176549534636,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,marginal_sampler,series_macro_mae_prop,5,-0.015887283999525877,0.006232211984279482,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,marginal_sampler,mae_prop_truth_zero,5,0.004955853991765258,0.0026830944960010658,0,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,marginal_sampler,mae_prop_truth_positive,5,-0.10744446029293378,0.017781544354489295,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,marginal_sampler,mae_prop_model_truth_zero,5,0.01421913957611102,0.007842590296541725,0,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,micoda,mae_prop,5,-0.033092913667644545,0.006806676710469858,5,0,0 1 2 3 4,"109: micoda_other failed (insufficient_fit), micoda failed (insufficient_fit)"
-whole_feature,micoda_other,micoda,mse_prop,5,-0.013873154670954957,0.005261731716865463,5,0,0 1 2 3 4,"109: micoda_other failed (insufficient_fit), micoda failed (insufficient_fit)"
-whole_feature,micoda_other,micoda,mae_count,5,-47.489485626184546,50.421809183067786,4,0,0 1 2 3 4,"109: micoda_other failed (insufficient_fit), micoda failed (insufficient_fit)"
-whole_feature,micoda_other,micoda,series_macro_mae_prop,5,-0.03009580853172663,0.006022679814197948,5,0,0 1 2 3 4,"109: micoda_other failed (insufficient_fit), micoda failed (insufficient_fit)"
-whole_feature,micoda_other,micoda,mae_prop_truth_zero,5,-0.02178660728406895,0.002202499196824556,5,0,0 1 2 3 4,"109: micoda_other failed (insufficient_fit), micoda failed (insufficient_fit)"
-whole_feature,micoda_other,micoda,mae_prop_truth_positive,5,0.02218186781833161,0.010580373523703997,0,0,0 1 2 3 4,"109: micoda_other failed (insufficient_fit), micoda failed (insufficient_fit)"
-whole_feature,micoda_other,micoda,mae_prop_model_truth_zero,5,-0.062352040165342834,0.004658540397086604,5,0,0 1 2 3 4,"109: micoda_other failed (insufficient_fit), micoda failed (insufficient_fit)"
-whole_feature,micoda_other,zero_fill,mae_prop,5,-0.06179708663946939,0.014927087775388911,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,zero_fill,mse_prop,5,-0.08406526458436436,0.017600787418369356,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,zero_fill,mae_count,5,-98.44090408709987,92.9438698128131,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,zero_fill,series_macro_mae_prop,5,-0.03238608877351268,0.016121080755463785,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,zero_fill,mae_prop_truth_zero,5,0.01935821633228041,0.003643640942187629,0,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,zero_fill,mae_prop_truth_positive,5,-0.28297785889864235,0.04188895141521747,5,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,micoda_other,zero_fill,mae_prop_model_truth_zero,5,0.0553655526264045,0.009540494157883182,0,0,0 1 2 3 4,109: micoda_other failed (insufficient_fit)
-whole_feature,tsagris,mean_fill,mae_prop,5,-0.027463864638618867,0.015423194695304253,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,mean_fill,mse_prop,5,-0.01831437504140119,0.005042187123496506,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,mean_fill,mae_count,5,-185.00509885575818,174.41151618063805,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,mean_fill,series_macro_mae_prop,5,-0.011780131815050412,0.00817284605212388,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,mean_fill,mae_prop_truth_zero,5,0.008212672192669152,0.008479138451280946,0,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,mean_fill,mae_prop_truth_positive,5,-0.12301650772434085,0.03392529213242745,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,mean_fill,mae_prop_model_truth_zero,5,0.023684151435100748,0.024590999188266117,0,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,marginal_sampler,mae_prop,5,-0.027466865724956768,0.014105020465562996,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,marginal_sampler,mse_prop,5,-0.05859955540552717,0.00859492538702513,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,marginal_sampler,mae_count,5,-191.83750293300426,188.21343840115415,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,marginal_sampler,series_macro_mae_prop,5,-0.012675338782532172,0.00845883623034592,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,marginal_sampler,mae_prop_truth_zero,5,0.011614462865506004,0.007411314005353548,0,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,marginal_sampler,mae_prop_truth_positive,5,-0.14109130878889528,0.03658632379523202,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,marginal_sampler,mae_prop_model_truth_zero,5,0.033374847160731164,0.021531734526532852,0,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,micoda,mae_prop,5,-0.032710098813696145,0.014024389186692843,5,0,0 1 2 3 4,"109: tsagris failed (baseline_error), micoda failed (insufficient_fit)"
-whole_feature,tsagris,micoda,mse_prop,5,-0.030231338072184838,0.004305775884428291,5,0,0 1 2 3 4,"109: tsagris failed (baseline_error), micoda failed (insufficient_fit)"
-whole_feature,tsagris,micoda,mae_count,5,-202.94236102833113,174.1526045914817,5,0,0 1 2 3 4,"109: tsagris failed (baseline_error), micoda failed (insufficient_fit)"
-whole_feature,tsagris,micoda,series_macro_mae_prop,5,-0.026883863314732925,0.008707840175636519,5,0,0 1 2 3 4,"109: tsagris failed (baseline_error), micoda failed (insufficient_fit)"
-whole_feature,tsagris,micoda,mae_prop_truth_zero,5,-0.0151279984103282,0.00981157515258446,4,0,0 1 2 3 4,"109: tsagris failed (baseline_error), micoda failed (insufficient_fit)"
-whole_feature,tsagris,micoda,mae_prop_truth_positive,5,-0.011464980677629915,0.041200361105696026,3,0,0 1 2 3 4,"109: tsagris failed (baseline_error), micoda failed (insufficient_fit)"
-whole_feature,tsagris,micoda,mae_prop_model_truth_zero,5,-0.04319633258072269,0.027864328780771178,4,0,0 1 2 3 4,"109: tsagris failed (baseline_error), micoda failed (insufficient_fit)"
-whole_feature,tsagris,zero_fill,mae_prop,5,-0.06141427178552097,0.01933168298920427,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,zero_fill,mse_prop,5,-0.10042344798559424,0.01907372991943996,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,zero_fill,mae_count,5,-253.89377948924638,200.08261507905013,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,zero_fill,series_macro_mae_prop,5,-0.029174143556518973,0.013618527953512287,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,zero_fill,mae_prop_truth_zero,5,0.02601682520602116,0.007472773969336044,0,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,zero_fill,mae_prop_truth_positive,5,-0.3166247073946039,0.03684240309146087,5,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,tsagris,zero_fill,mae_prop_model_truth_zero,5,0.07452126021102465,0.021395262579602434,0,0,0 1 2 3 4,109: tsagris failed (baseline_error)
-whole_feature,mean_fill,marginal_sampler,mae_prop,6,-8.935106888651595e-05,0.004269909173094623,3,0,0 1 2 3 4 109,
-whole_feature,mean_fill,marginal_sampler,mse_prop,6,-0.04084623013727315,0.004196527233798717,6,0,0 1 2 3 4 109,
-whole_feature,mean_fill,marginal_sampler,mae_count,6,-5.177136832035551,15.685788098765174,2,0,0 1 2 3 4 109,
-whole_feature,mean_fill,marginal_sampler,series_macro_mae_prop,6,-0.0006744200666724635,0.0024933120782040614,3,0,0 1 2 3 4 109,
-whole_feature,mean_fill,marginal_sampler,mae_prop_truth_zero,6,0.0033634961129649092,0.0020880013206622666,0,0,0 1 2 3 4 109,
-whole_feature,mean_fill,marginal_sampler,mae_prop_truth_positive,6,-0.017721574736881702,0.005690626661119209,6,0,0 1 2 3 4 109,
-whole_feature,mean_fill,marginal_sampler,mae_prop_model_truth_zero,6,0.009367574436698925,0.006052966505897095,0,0,0 1 2 3 4 109,
-whole_feature,mean_fill,micoda,mae_prop,5,-0.0052462341750772745,0.013496140002747478,4,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,mean_fill,micoda,mse_prop,5,-0.011916963030783649,0.00783364940817705,5,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,mean_fill,micoda,mae_count,5,-17.937262172572908,66.8577227160884,4,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,mean_fill,micoda,series_macro_mae_prop,5,-0.01510373149968251,0.011714137064137514,4,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,mean_fill,micoda,mae_prop_truth_zero,5,-0.02334067060299735,0.0028331364031247497,5,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,mean_fill,micoda,mae_prop_truth_positive,5,0.11155152704671094,0.02605828188121772,0,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,mean_fill,micoda,mae_prop_model_truth_zero,5,-0.06688048401582344,0.007747703159652823,5,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,mean_fill,zero_fill,mae_prop,6,-0.035682814724103645,0.00841623445128406,6,0,0 1 2 3 4 109,
-whole_feature,mean_fill,zero_fill,mse_prop,6,-0.0846224252726603,0.015255891592580497,6,0,0 1 2 3 4 109,
-whole_feature,mean_fill,zero_fill,mae_count,6,-58.94466480170706,52.25872586320973,6,0,0 1 2 3 4 109,
-whole_feature,mean_fill,zero_fill,series_macro_mae_prop,6,-0.01885647417101671,0.009040924560130257,6,0,0 1 2 3 4 109,
-whole_feature,mean_fill,zero_fill,mae_prop_truth_zero,6,0.01854408938414302,0.0037563530355179445,0,0,0 1 2 3 4 109,
-whole_feature,mean_fill,zero_fill,mae_prop_truth_positive,6,-0.19942199001868222,0.028684484179128167,6,0,0 1 2 3 4 109,
-whole_feature,mean_fill,zero_fill,mae_prop_model_truth_zero,6,0.05142435269573676,0.008334986741013461,0,0,0 1 2 3 4 109,
-whole_feature,marginal_sampler,micoda,mae_prop,5,-0.005243233088739377,0.012144760610487016,3,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,marginal_sampler,micoda,mse_prop,5,0.028368217333342327,0.01174632320524195,0,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,marginal_sampler,micoda,mae_count,5,-11.10485809532682,66.4095680862171,3,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,marginal_sampler,micoda,series_macro_mae_prop,5,-0.01420852453220075,0.011680980796649362,4,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,marginal_sampler,micoda,mae_prop_truth_zero,5,-0.026742461275834205,0.0035838476484979487,5,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,marginal_sampler,micoda,mae_prop_truth_positive,5,0.12962632811126537,0.02763164025230173,0,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,marginal_sampler,micoda,mae_prop_model_truth_zero,5,-0.07657117974145386,0.009300847660831892,5,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,marginal_sampler,zero_fill,mae_prop,6,-0.03559346365521713,0.010516179761568257,6,0,0 1 2 3 4 109,
-whole_feature,marginal_sampler,zero_fill,mse_prop,6,-0.04377619513538716,0.011311925982318373,6,0,0 1 2 3 4 109,
-whole_feature,marginal_sampler,zero_fill,mae_count,6,-53.767527969671505,55.53536712985766,6,0,0 1 2 3 4 109,
-whole_feature,marginal_sampler,zero_fill,series_macro_mae_prop,6,-0.018182054104344245,0.010381530728891981,6,0,0 1 2 3 4 109,
-whole_feature,marginal_sampler,zero_fill,mae_prop_truth_zero,6,0.015180593271178112,0.002565256384989917,0,0,0 1 2 3 4 109,
-whole_feature,marginal_sampler,zero_fill,mae_prop_truth_positive,6,-0.18170041528180056,0.030168495397640164,6,0,0 1 2 3 4 109,
-whole_feature,marginal_sampler,zero_fill,mae_prop_model_truth_zero,6,0.04205677825903784,0.003979259653517688,0,0,0 1 2 3 4 109,
-whole_feature,micoda,zero_fill,mae_prop,5,-0.028704172971824836,0.021386321148697172,5,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,micoda,zero_fill,mse_prop,5,-0.07019210991340942,0.021616448325955908,5,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,micoda,zero_fill,mae_count,5,-50.9514184609153,104.9832774363519,3,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,micoda,zero_fill,series_macro_mae_prop,5,-0.0022902802417860526,0.02008316712932643,3,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,micoda,zero_fill,mae_prop_truth_zero,5,0.04114482361634936,0.005067116506904926,0,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,micoda,zero_fill,mae_prop_truth_positive,5,-0.305159726716974,0.0520836798424415,5,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
-whole_feature,micoda,zero_fill,mae_prop_model_truth_zero,5,0.11771759279174734,0.011598612242012241,0,0,0 1 2 3 4,109: micoda failed (insufficient_fit)
+whole_feature,same_day_mean,hron,mae_prop,5,-0.0524714728584913,0.01578438388929144,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,hron,mse_prop,5,-0.05179723943458921,0.012066141442228607,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,hron,mae_count,5,-45.16065263141922,89.2914556121266,4,0,0 1 2 3 4,
+whole_feature,same_day_mean,hron,series_macro_mae_prop,5,-0.05084815321730043,0.01780430171571781,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,hron,mae_prop_truth_zero,5,-0.007044853552919743,0.0027675320319011957,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,hron,mae_prop_truth_positive,5,-0.11337999151295022,0.033471962821904094,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,hron,mae_prop_model_truth_zero,5,-0.019972002391805816,0.006930863472328307,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,micoda_other,mae_prop,5,-0.07244739107690411,0.013549164190520097,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,micoda_other,mse_prop,5,-0.054194676806802164,0.010575798850002096,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,micoda_other,mae_count,5,-159.2803252252022,180.15751303214492,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,micoda_other,series_macro_mae_prop,5,-0.06799504427581764,0.01627034135063862,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,micoda_other,mae_prop_truth_zero,5,-0.01608790880707217,0.003171507374147927,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,micoda_other,mae_prop_truth_positive,5,-0.12116440485851225,0.03271241175471422,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,micoda_other,mae_prop_model_truth_zero,5,-0.04597744194376775,0.008015329536465967,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,tsagris,mae_prop,5,-0.07283020593085252,0.025145149460035588,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,tsagris,mse_prop,5,-0.0378364934055723,0.011807115848557013,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,tsagris,mae_count,5,-3.8274498230556517,12.436539009420681,4,0,0 1 2 3 4,
+whole_feature,same_day_mean,tsagris,series_macro_mae_prop,5,-0.07120698949281133,0.023195161425404003,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,tsagris,mae_prop_truth_zero,5,-0.022746517680812917,0.007471850727273622,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,tsagris,mae_prop_truth_positive,5,-0.08751755636255074,0.05911127197491378,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,tsagris,mae_prop_model_truth_zero,5,-0.06513314952838789,0.02136408449830888,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,mean_fill,mae_prop,5,-0.10029407056947137,0.01888949094962331,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,mean_fill,mse_prop,5,-0.05615086844697348,0.011446523389918754,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,mean_fill,mae_count,5,-188.83254867881382,162.7490286302787,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,mean_fill,series_macro_mae_prop,5,-0.08298712130786176,0.02054158311015605,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,mean_fill,mae_prop_truth_zero,5,-0.014533845488143769,0.0035072060722082412,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,mean_fill,mae_prop_truth_positive,5,-0.21053406408689157,0.03221696509306547,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,mean_fill,mae_prop_model_truth_zero,5,-0.04144899809328716,0.008674732070974921,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,marginal_sampler,mae_prop,5,-0.10029707165580928,0.016979927980934045,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,marginal_sampler,mse_prop,5,-0.09643604881109946,0.015379808896686503,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,marginal_sampler,mae_count,5,-195.6649527560599,176.40136913726585,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,marginal_sampler,series_macro_mae_prop,5,-0.0838823282753435,0.01975112077517097,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,marginal_sampler,mae_prop_truth_zero,5,-0.011132054815306913,0.002082722555703057,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,marginal_sampler,mae_prop_truth_positive,5,-0.22860886515144604,0.03220580026183779,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,marginal_sampler,mae_prop_model_truth_zero,5,-0.03175830236765674,0.004508908801141786,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,micoda,mae_prop,5,-0.10554030474454865,0.01237652728696513,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,micoda,mse_prop,5,-0.06806783147775712,0.010716624650127371,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,micoda,mae_count,5,-206.76981085138672,161.84168480058932,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,micoda,series_macro_mae_prop,5,-0.09809085280754426,0.01668701658808008,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,micoda,mae_prop_truth_zero,5,-0.03787451609114112,0.004424901899208268,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,micoda,mae_prop_truth_positive,5,-0.09898253704018065,0.03480265887320637,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,micoda,mae_prop_model_truth_zero,5,-0.1083294821091106,0.00914564509755945,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,zero_fill,mae_prop,5,-0.1342444777163735,0.02626370339876303,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,zero_fill,mse_prop,5,-0.13825994139116654,0.02599643449248362,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,zero_fill,mae_count,5,-257.72122931230206,189.3858129686485,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,zero_fill,series_macro_mae_prop,5,-0.10038113304933031,0.029371057495984083,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,zero_fill,mae_prop_truth_zero,5,0.0032703075252082394,0.0013704905317700926,0,0,0 1 2 3 4,
+whole_feature,same_day_mean,zero_fill,mae_prop_truth_positive,5,-0.4041422637571547,0.05554172633050882,5,0,0 1 2 3 4,
+whole_feature,same_day_mean,zero_fill,mae_prop_model_truth_zero,5,0.00938811068263674,0.004011741099969992,0,0,0 1 2 3 4,
+whole_feature,hron,micoda_other,mae_prop,5,-0.01997591821841281,0.0047384897982546996,5,0,0 1 2 3 4,
+whole_feature,hron,micoda_other,mse_prop,5,-0.0023974373722129667,0.002745238594044856,4,0,0 1 2 3 4,
+whole_feature,hron,micoda_other,mae_count,5,-114.11967259378298,97.17369865806675,5,0,0 1 2 3 4,
+whole_feature,hron,micoda_other,series_macro_mae_prop,5,-0.017146891058517206,0.004158620983638551,5,0,0 1 2 3 4,
+whole_feature,hron,micoda_other,mae_prop_truth_zero,5,-0.009043055254152428,0.0037145180533032273,5,0,0 1 2 3 4,
+whole_feature,hron,micoda_other,mae_prop_truth_positive,5,-0.00778441334556203,0.021779878209068716,3,0,0 1 2 3 4,
+whole_feature,hron,micoda_other,mae_prop_model_truth_zero,5,-0.026005439551961947,0.011047948593725753,5,0,0 1 2 3 4,
+whole_feature,hron,tsagris,mae_prop,5,-0.020358733072361215,0.01274313475154657,5,0,0 1 2 3 4,
+whole_feature,hron,tsagris,mse_prop,5,0.013960746029016913,0.0051625791142655055,0,0,0 1 2 3 4,
+whole_feature,hron,tsagris,mae_count,5,41.333202808363566,100.74255068033716,3,0,0 1 2 3 4,
+whole_feature,hron,tsagris,series_macro_mae_prop,5,-0.02035883627551091,0.007817266627416355,5,0,0 1 2 3 4,
+whole_feature,hron,tsagris,mae_prop_truth_zero,5,-0.015701664127893176,0.006485812632028716,5,0,0 1 2 3 4,
+whole_feature,hron,tsagris,mae_prop_truth_positive,5,0.025862435150399495,0.02790410251519426,1,0,0 1 2 3 4,
+whole_feature,hron,tsagris,mae_prop_model_truth_zero,5,-0.04516114713658209,0.01902746461713663,5,0,0 1 2 3 4,
+whole_feature,hron,mean_fill,mae_prop,5,-0.04782259771098009,0.008529057917459348,5,0,0 1 2 3 4,
+whole_feature,hron,mean_fill,mse_prop,5,-0.0043536290123842745,0.0033209914239197796,5,0,0 1 2 3 4,
+whole_feature,hron,mean_fill,mae_count,5,-143.6718960473946,95.81736898995257,5,0,0 1 2 3 4,
+whole_feature,hron,mean_fill,series_macro_mae_prop,5,-0.03213896809056132,0.005923454019874786,5,0,0 1 2 3 4,
+whole_feature,hron,mean_fill,mae_prop_truth_zero,5,-0.007488991935224024,0.0031300136910438793,5,0,0 1 2 3 4,
+whole_feature,hron,mean_fill,mae_prop_truth_positive,5,-0.09715407257394135,0.012310953622082675,5,0,0 1 2 3 4,
+whole_feature,hron,mean_fill,mae_prop_model_truth_zero,5,-0.021476995701481334,0.009181437925205935,5,0,0 1 2 3 4,
+whole_feature,hron,marginal_sampler,mae_prop,5,-0.04782559879731798,0.007491705509622548,5,0,0 1 2 3 4,
+whole_feature,hron,marginal_sampler,mse_prop,5,-0.044638809376510255,0.006062749178580944,5,0,0 1 2 3 4,
+whole_feature,hron,marginal_sampler,mae_count,5,-150.50430012464068,104.62093737070798,5,0,0 1 2 3 4,
+whole_feature,hron,marginal_sampler,series_macro_mae_prop,5,-0.03303417505804308,0.005831632558510407,5,0,0 1 2 3 4,
+whole_feature,hron,marginal_sampler,mae_prop_truth_zero,5,-0.004087201262387171,0.0013084507732802628,5,0,0 1 2 3 4,
+whole_feature,hron,marginal_sampler,mae_prop_truth_positive,5,-0.11522887363849581,0.013621339017073046,5,0,0 1 2 3 4,
+whole_feature,hron,marginal_sampler,mae_prop_model_truth_zero,5,-0.011786299975850924,0.0040473515316036815,5,0,0 1 2 3 4,
+whole_feature,hron,micoda,mae_prop,5,-0.053068831886057356,0.007689998756439195,5,0,0 1 2 3 4,
+whole_feature,hron,micoda,mse_prop,5,-0.016270592043167924,0.0065593574142001395,5,0,0 1 2 3 4,
+whole_feature,hron,micoda,mae_count,5,-161.60915821996753,88.37365522241953,5,0,0 1 2 3 4,
+whole_feature,hron,micoda,series_macro_mae_prop,5,-0.04724269959024383,0.0072489575453212095,5,0,0 1 2 3 4,
+whole_feature,hron,micoda,mae_prop_truth_zero,5,-0.03082966253822138,0.004026846334370521,5,0,0 1 2 3 4,
+whole_feature,hron,micoda,mae_prop_truth_positive,5,0.014397454472769577,0.029597835829857377,1,0,0 1 2 3 4,
+whole_feature,hron,micoda,mae_prop_model_truth_zero,5,-0.08835747971730476,0.011290500185477987,5,0,0 1 2 3 4,
+whole_feature,hron,zero_fill,mae_prop,5,-0.08177300485788219,0.015958497425702507,5,0,0 1 2 3 4,
+whole_feature,hron,zero_fill,mse_prop,5,-0.08646270195657736,0.015731755543541243,5,0,0 1 2 3 4,
+whole_feature,hron,zero_fill,mae_count,5,-212.56057668088278,139.46930935863583,5,0,0 1 2 3 4,
+whole_feature,hron,zero_fill,series_macro_mae_prop,5,-0.04953297983202989,0.01436843961041968,5,0,0 1 2 3 4,
+whole_feature,hron,zero_fill,mae_prop_truth_zero,5,0.010315161078127983,0.002699101059128675,0,0,0 1 2 3 4,
+whole_feature,hron,zero_fill,mae_prop_truth_positive,5,-0.2907622722442044,0.03003342330301646,5,0,0 1 2 3 4,
+whole_feature,hron,zero_fill,mae_prop_model_truth_zero,5,0.02936011307444255,0.006497264304786083,0,0,0 1 2 3 4,
+whole_feature,micoda_other,tsagris,mae_prop,5,-0.00038281485394840443,0.01359663648546064,2,0,0 1 2 3 4,
+whole_feature,micoda_other,tsagris,mse_prop,5,0.016358183401229874,0.0030308902332865178,0,0,0 1 2 3 4,
+whole_feature,micoda_other,tsagris,mae_count,5,155.45287540214653,192.2516026011404,0,0,0 1 2 3 4,
+whole_feature,micoda_other,tsagris,series_macro_mae_prop,5,-0.003211945216993706,0.007313595870712665,4,0,0 1 2 3 4,
+whole_feature,micoda_other,tsagris,mae_prop_truth_zero,5,-0.006658608873740748,0.009442989956324187,4,0,0 1 2 3 4,
+whole_feature,micoda_other,tsagris,mae_prop_truth_positive,5,0.03364684849596152,0.03670234612173424,1,0,0 1 2 3 4,
+whole_feature,micoda_other,tsagris,mae_prop_model_truth_zero,5,-0.019155707584620145,0.027349133063822993,4,0,0 1 2 3 4,
+whole_feature,micoda_other,mean_fill,mae_prop,5,-0.02784667949256727,0.006987080194134628,5,0,0 1 2 3 4,
+whole_feature,micoda_other,mean_fill,mse_prop,5,-0.001956191640171308,0.002730398489605817,4,0,0 1 2 3 4,
+whole_feature,micoda_other,mean_fill,mae_count,5,-29.552223453611646,47.508006789589096,4,0,0 1 2 3 4,
+whole_feature,micoda_other,mean_fill,series_macro_mae_prop,5,-0.014992077032044119,0.007212832213732571,5,0,0 1 2 3 4,
+whole_feature,micoda_other,mean_fill,mae_prop_truth_zero,5,0.0015540633189284035,0.0016366755819659938,1,0,0 1 2 3 4,
+whole_feature,micoda_other,mean_fill,mae_prop_truth_positive,5,-0.08936965922837932,0.01585750688366638,5,0,0 1 2 3 4,
+whole_feature,micoda_other,mean_fill,mae_prop_model_truth_zero,5,0.004528443850480608,0.004799997709089737,1,0,0 1 2 3 4,
+whole_feature,micoda_other,marginal_sampler,mae_prop,5,-0.02784968057890517,0.005672354348458597,5,0,0 1 2 3 4,
+whole_feature,micoda_other,marginal_sampler,mse_prop,5,-0.042241372004297284,0.006855759392905958,5,0,0 1 2 3 4,
+whole_feature,micoda_other,marginal_sampler,mae_count,5,-36.38462753085773,37.125176549534636,5,0,0 1 2 3 4,
+whole_feature,micoda_other,marginal_sampler,series_macro_mae_prop,5,-0.015887283999525877,0.006232211984279482,5,0,0 1 2 3 4,
+whole_feature,micoda_other,marginal_sampler,mae_prop_truth_zero,5,0.004955853991765258,0.0026830944960010658,0,0,0 1 2 3 4,
+whole_feature,micoda_other,marginal_sampler,mae_prop_truth_positive,5,-0.10744446029293378,0.017781544354489295,5,0,0 1 2 3 4,
+whole_feature,micoda_other,marginal_sampler,mae_prop_model_truth_zero,5,0.01421913957611102,0.007842590296541725,0,0,0 1 2 3 4,
+whole_feature,micoda_other,micoda,mae_prop,5,-0.033092913667644545,0.006806676710469858,5,0,0 1 2 3 4,
+whole_feature,micoda_other,micoda,mse_prop,5,-0.013873154670954957,0.005261731716865463,5,0,0 1 2 3 4,
+whole_feature,micoda_other,micoda,mae_count,5,-47.489485626184546,50.421809183067786,4,0,0 1 2 3 4,
+whole_feature,micoda_other,micoda,series_macro_mae_prop,5,-0.03009580853172663,0.006022679814197948,5,0,0 1 2 3 4,
+whole_feature,micoda_other,micoda,mae_prop_truth_zero,5,-0.02178660728406895,0.002202499196824556,5,0,0 1 2 3 4,
+whole_feature,micoda_other,micoda,mae_prop_truth_positive,5,0.02218186781833161,0.010580373523703997,0,0,0 1 2 3 4,
+whole_feature,micoda_other,micoda,mae_prop_model_truth_zero,5,-0.062352040165342834,0.004658540397086604,5,0,0 1 2 3 4,
+whole_feature,micoda_other,zero_fill,mae_prop,5,-0.06179708663946939,0.014927087775388911,5,0,0 1 2 3 4,
+whole_feature,micoda_other,zero_fill,mse_prop,5,-0.08406526458436436,0.017600787418369356,5,0,0 1 2 3 4,
+whole_feature,micoda_other,zero_fill,mae_count,5,-98.44090408709987,92.9438698128131,5,0,0 1 2 3 4,
+whole_feature,micoda_other,zero_fill,series_macro_mae_prop,5,-0.03238608877351268,0.016121080755463785,5,0,0 1 2 3 4,
+whole_feature,micoda_other,zero_fill,mae_prop_truth_zero,5,0.01935821633228041,0.003643640942187629,0,0,0 1 2 3 4,
+whole_feature,micoda_other,zero_fill,mae_prop_truth_positive,5,-0.28297785889864235,0.04188895141521747,5,0,0 1 2 3 4,
+whole_feature,micoda_other,zero_fill,mae_prop_model_truth_zero,5,0.0553655526264045,0.009540494157883182,0,0,0 1 2 3 4,
+whole_feature,tsagris,mean_fill,mae_prop,5,-0.027463864638618867,0.015423194695304253,5,0,0 1 2 3 4,
+whole_feature,tsagris,mean_fill,mse_prop,5,-0.01831437504140119,0.005042187123496506,5,0,0 1 2 3 4,
+whole_feature,tsagris,mean_fill,mae_count,5,-185.00509885575818,174.41151618063805,5,0,0 1 2 3 4,
+whole_feature,tsagris,mean_fill,series_macro_mae_prop,5,-0.011780131815050412,0.00817284605212388,5,0,0 1 2 3 4,
+whole_feature,tsagris,mean_fill,mae_prop_truth_zero,5,0.008212672192669152,0.008479138451280946,0,0,0 1 2 3 4,
+whole_feature,tsagris,mean_fill,mae_prop_truth_positive,5,-0.12301650772434085,0.03392529213242745,5,0,0 1 2 3 4,
+whole_feature,tsagris,mean_fill,mae_prop_model_truth_zero,5,0.023684151435100748,0.024590999188266117,0,0,0 1 2 3 4,
+whole_feature,tsagris,marginal_sampler,mae_prop,5,-0.027466865724956768,0.014105020465562996,5,0,0 1 2 3 4,
+whole_feature,tsagris,marginal_sampler,mse_prop,5,-0.05859955540552717,0.00859492538702513,5,0,0 1 2 3 4,
+whole_feature,tsagris,marginal_sampler,mae_count,5,-191.83750293300426,188.21343840115415,5,0,0 1 2 3 4,
+whole_feature,tsagris,marginal_sampler,series_macro_mae_prop,5,-0.012675338782532172,0.00845883623034592,5,0,0 1 2 3 4,
+whole_feature,tsagris,marginal_sampler,mae_prop_truth_zero,5,0.011614462865506004,0.007411314005353548,0,0,0 1 2 3 4,
+whole_feature,tsagris,marginal_sampler,mae_prop_truth_positive,5,-0.14109130878889528,0.03658632379523202,5,0,0 1 2 3 4,
+whole_feature,tsagris,marginal_sampler,mae_prop_model_truth_zero,5,0.033374847160731164,0.021531734526532852,0,0,0 1 2 3 4,
+whole_feature,tsagris,micoda,mae_prop,5,-0.032710098813696145,0.014024389186692843,5,0,0 1 2 3 4,
+whole_feature,tsagris,micoda,mse_prop,5,-0.030231338072184838,0.004305775884428291,5,0,0 1 2 3 4,
+whole_feature,tsagris,micoda,mae_count,5,-202.94236102833113,174.1526045914817,5,0,0 1 2 3 4,
+whole_feature,tsagris,micoda,series_macro_mae_prop,5,-0.026883863314732925,0.008707840175636519,5,0,0 1 2 3 4,
+whole_feature,tsagris,micoda,mae_prop_truth_zero,5,-0.0151279984103282,0.00981157515258446,4,0,0 1 2 3 4,
+whole_feature,tsagris,micoda,mae_prop_truth_positive,5,-0.011464980677629915,0.041200361105696026,3,0,0 1 2 3 4,
+whole_feature,tsagris,micoda,mae_prop_model_truth_zero,5,-0.04319633258072269,0.027864328780771178,4,0,0 1 2 3 4,
+whole_feature,tsagris,zero_fill,mae_prop,5,-0.06141427178552097,0.01933168298920427,5,0,0 1 2 3 4,
+whole_feature,tsagris,zero_fill,mse_prop,5,-0.10042344798559424,0.01907372991943996,5,0,0 1 2 3 4,
+whole_feature,tsagris,zero_fill,mae_count,5,-253.89377948924638,200.08261507905013,5,0,0 1 2 3 4,
+whole_feature,tsagris,zero_fill,series_macro_mae_prop,5,-0.029174143556518973,0.013618527953512287,5,0,0 1 2 3 4,
+whole_feature,tsagris,zero_fill,mae_prop_truth_zero,5,0.02601682520602116,0.007472773969336044,0,0,0 1 2 3 4,
+whole_feature,tsagris,zero_fill,mae_prop_truth_positive,5,-0.3166247073946039,0.03684240309146087,5,0,0 1 2 3 4,
+whole_feature,tsagris,zero_fill,mae_prop_model_truth_zero,5,0.07452126021102465,0.021395262579602434,0,0,0 1 2 3 4,
+whole_feature,mean_fill,marginal_sampler,mae_prop,5,-3.0010863378976405e-06,0.0047680428937826175,2,0,0 1 2 3 4,
+whole_feature,mean_fill,marginal_sampler,mse_prop,5,-0.040285180364125976,0.0044331393696120346,5,0,0 1 2 3 4,
+whole_feature,mean_fill,marginal_sampler,mae_count,5,-6.832404077246087,16.94124000630421,2,0,0 1 2 3 4,
+whole_feature,mean_fill,marginal_sampler,series_macro_mae_prop,5,-0.0008952069674817598,0.0027212414413977522,3,0,0 1 2 3 4,
+whole_feature,mean_fill,marginal_sampler,mae_prop_truth_zero,5,0.003401790672836853,0.002332099557049574,0,0,0 1 2 3 4,
+whole_feature,mean_fill,marginal_sampler,mae_prop_truth_positive,5,-0.018074801064554457,0.006288344253942534,5,0,0 1 2 3 4,
+whole_feature,mean_fill,marginal_sampler,mae_prop_model_truth_zero,5,0.009690695725630413,0.006709318083582303,0,0,0 1 2 3 4,
+whole_feature,mean_fill,micoda,mae_prop,5,-0.0052462341750772745,0.013496140002747478,4,0,0 1 2 3 4,
+whole_feature,mean_fill,micoda,mse_prop,5,-0.011916963030783649,0.00783364940817705,5,0,0 1 2 3 4,
+whole_feature,mean_fill,micoda,mae_count,5,-17.937262172572908,66.8577227160884,4,0,0 1 2 3 4,
+whole_feature,mean_fill,micoda,series_macro_mae_prop,5,-0.01510373149968251,0.011714137064137514,4,0,0 1 2 3 4,
+whole_feature,mean_fill,micoda,mae_prop_truth_zero,5,-0.02334067060299735,0.0028331364031247497,5,0,0 1 2 3 4,
+whole_feature,mean_fill,micoda,mae_prop_truth_positive,5,0.11155152704671094,0.02605828188121772,0,0,0 1 2 3 4,
+whole_feature,mean_fill,micoda,mae_prop_model_truth_zero,5,-0.06688048401582344,0.007747703159652823,5,0,0 1 2 3 4,
+whole_feature,mean_fill,zero_fill,mae_prop,5,-0.03395040714690211,0.008126006572858295,5,0,0 1 2 3 4,
+whole_feature,mean_fill,zero_fill,mse_prop,5,-0.08210907294419306,0.015606112132851117,5,0,0 1 2 3 4,
+whole_feature,mean_fill,zero_fill,mae_count,5,-68.88868063348822,51.692283317602396,5,0,0 1 2 3 4,
+whole_feature,mean_fill,zero_fill,series_macro_mae_prop,5,-0.01739401174146856,0.00928072860521517,5,0,0 1 2 3 4,
+whole_feature,mean_fill,zero_fill,mae_prop_truth_zero,5,0.017804153013352007,0.00367851076023447,0,0,0 1 2 3 4,
+whole_feature,mean_fill,zero_fill,mae_prop_truth_positive,5,-0.19360819967026308,0.027838792254029802,5,0,0 1 2 3 4,
+whole_feature,mean_fill,zero_fill,mae_prop_model_truth_zero,5,0.05083710877592389,0.009178975395212082,0,0,0 1 2 3 4,
+whole_feature,marginal_sampler,micoda,mae_prop,5,-0.005243233088739377,0.012144760610487016,3,0,0 1 2 3 4,
+whole_feature,marginal_sampler,micoda,mse_prop,5,0.028368217333342327,0.01174632320524195,0,0,0 1 2 3 4,
+whole_feature,marginal_sampler,micoda,mae_count,5,-11.10485809532682,66.4095680862171,3,0,0 1 2 3 4,
+whole_feature,marginal_sampler,micoda,series_macro_mae_prop,5,-0.01420852453220075,0.011680980796649362,4,0,0 1 2 3 4,
+whole_feature,marginal_sampler,micoda,mae_prop_truth_zero,5,-0.026742461275834205,0.0035838476484979487,5,0,0 1 2 3 4,
+whole_feature,marginal_sampler,micoda,mae_prop_truth_positive,5,0.12962632811126537,0.02763164025230173,0,0,0 1 2 3 4,
+whole_feature,marginal_sampler,micoda,mae_prop_model_truth_zero,5,-0.07657117974145386,0.009300847660831892,5,0,0 1 2 3 4,
+whole_feature,marginal_sampler,zero_fill,mae_prop,5,-0.03394740606056421,0.010858925081938966,5,0,0 1 2 3 4,
+whole_feature,marginal_sampler,zero_fill,mse_prop,5,-0.04182389258006709,0.01146138941317729,5,0,0 1 2 3 4,
+whole_feature,marginal_sampler,zero_fill,mae_count,5,-62.05627655624213,57.792266821130745,5,0,0 1 2 3 4,
+whole_feature,marginal_sampler,zero_fill,series_macro_mae_prop,5,-0.016498804773986804,0.010652242159871544,5,0,0 1 2 3 4,
+whole_feature,marginal_sampler,zero_fill,mae_prop_truth_zero,5,0.014402362340515154,0.0019192055752603545,0,0,0 1 2 3 4,
+whole_feature,marginal_sampler,zero_fill,mae_prop_truth_positive,5,-0.17553339860570863,0.02919643699277066,5,0,0 1 2 3 4,
+whole_feature,marginal_sampler,zero_fill,mae_prop_model_truth_zero,5,0.04114641305029348,0.0036847521135011103,0,0,0 1 2 3 4,
+whole_feature,micoda,zero_fill,mae_prop,5,-0.028704172971824836,0.021386321148697172,5,0,0 1 2 3 4,
+whole_feature,micoda,zero_fill,mse_prop,5,-0.07019210991340942,0.021616448325955908,5,0,0 1 2 3 4,
+whole_feature,micoda,zero_fill,mae_count,5,-50.9514184609153,104.9832774363519,3,0,0 1 2 3 4,
+whole_feature,micoda,zero_fill,series_macro_mae_prop,5,-0.0022902802417860526,0.02008316712932643,3,0,0 1 2 3 4,
+whole_feature,micoda,zero_fill,mae_prop_truth_zero,5,0.04114482361634936,0.005067116506904926,0,0,0 1 2 3 4,
+whole_feature,micoda,zero_fill,mae_prop_truth_positive,5,-0.305159726716974,0.0520836798424415,5,0,0 1 2 3 4,
+whole_feature,micoda,zero_fill,mae_prop_model_truth_zero,5,0.11771759279174734,0.011598612242012241,0,0,0 1 2 3 4,
 random_cell,same_day_mean,hron,mae_prop,5,-0.05824699954117837,0.0048913229364946995,5,0,0 1 2 3 4,
 random_cell,same_day_mean,hron,mse_prop,5,-0.05021347895316438,0.003725412289066235,5,0,0 1 2 3 4,
 random_cell,same_day_mean,hron,mae_count,5,-3.928591911501127,3.2595753587580774,5,0,0 1 2 3 4,
