@@ -14,6 +14,7 @@ completed masked run (see cells.py), for scoring outside this runner.
 import argparse
 import csv
 import hashlib
+import inspect
 import json
 from pathlib import Path
 import subprocess
@@ -125,9 +126,16 @@ def build(name, params):
 
 
 def resolve_models(models):
-    """{table: {'model': registered name, 'class': class name, 'params': constructor parameters}}."""
-    return {name: {'model': model_kind(name, params), 'class': MODELS[model_kind(name, params)].__name__,
-                   'params': {k: v for k, v in params.items() if k != 'model'}} for name, params in models.items()}
+    """{table: {'model', 'class', 'params' (as written), 'effective_params' (with constructor defaults)}}."""
+    out = {}
+    for name, params in models.items():
+        cls = MODELS[model_kind(name, params)]
+        given = {k: v for k, v in params.items() if k != 'model'}
+        defaults = {p.name: p.default for p in inspect.signature(cls).parameters.values()
+                    if p.default is not inspect.Parameter.empty}
+        out[name] = {'model': model_kind(name, params), 'class': cls.__name__, 'params': given,
+                     'effective_params': {**defaults, **given}}
+    return out
 
 
 def read_models(path, only=None, construct=True):

@@ -157,9 +157,11 @@ def test_model_key_runs_the_registered_class_under_the_table_name(tmp_path):
         'same_day_mean_completed.csv', 'sdm_no_time_completed.csv', 'mic17_completed.csv'}
     config = json.loads((out / 'config.json').read_text())
     assert config['models']['sdm_no_time']['model'] == 'same_day_mean'
+    given = {'window_days': 31, 'min_obs': 2, 'max_widen': 1, 'use_time': False}
     assert config['resolved_models']['sdm_no_time'] == {
-        'model': 'same_day_mean', 'class': 'SameDayMean',
-        'params': {'window_days': 31, 'min_obs': 2, 'max_widen': 1, 'use_time': False}}
+        'model': 'same_day_mean', 'class': 'SameDayMean', 'params': given,
+        'effective_params': {**given, 'exclude_same_location': False, 'use_group': True, 'weighting': 'n',
+                             'residual_rule': 'cap'}}
     assert config['resolved_models']['mic17']['class'] == 'MICoDaCovid'
     summary = json.loads((out / 'summary.json').read_text())
     masked = summary['masked']['3']['models']
