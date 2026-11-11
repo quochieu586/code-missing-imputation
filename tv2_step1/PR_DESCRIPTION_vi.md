@@ -37,10 +37,47 @@ COVID đầy đủ, mask `whole_feature` 5%, seed 0–4, nhóm ô do model quy�
 | micoda (A17/R1, mặc định) | 0.1406 ± 0.0099 | 0.0823 ± 0.0094 | 236.2 ± 188.5 |
 | zero_fill (sàn) | 0.1693 ± 0.0219 | 0.1525 ± 0.0230 | 287.1 ± 211.3 |
 
-- same_day_mean thắng Hron 5/5 seed (cả MAE và MSE, cả hai mask).
-- Hron thắng Tsagris về MAE 5/5 nhưng thua về MSE 5/5.
+- same_day_mean thắng Hron 5/5 seed về MAE và MSE tỷ lệ, ở cả hai mask.
+- Hron thắng Tsagris về MAE tỷ lệ 5/5; Tsagris thắng Hron về MSE tỷ lệ 5/5 ở cả hai mask, nhưng về MAE count chỉ 2/5 (whole_feature) và 0/5 (random_cell).
 - **MICoDa A17/R1 thua mean_fill** trên whole_feature (MAE thua 4/5 seed, MSE thua 5/5). A18/R2 hơn mean_fill về MAE, còn MSE gần như hòa.
 - Hạn chế: 25.5% ô thiếu thật phải dùng trung bình toàn cục của same_day_mean, trong khi ô bị che chỉ 0.7–9%. Vì vậy điểm masked lạc quan hơn thực tế.
+
+### Thắng/thua theo seed (sinh tự động từ `results_multiseed.csv`)
+
+<!-- auto:pairs:start -->
+**whole_feature** (thắng = sai số nhỏ hơn trên nhóm ô model; Δ = trung bình A − B; × = trung bình tỷ số A / B theo seed)
+
+| A vs B | MAE tỷ lệ | MSE tỷ lệ | MAE count | MSE count |
+|---|---|---|---|---|
+| same_day_mean vs hron | 5/5, Δ -0.05247, ×0.41 | 5/5, Δ -0.0518, ×0.224 | 4/5, Δ -45.16, ×0.637 | 4/5, Δ -4.95e+06, ×0.592 |
+| tsagris vs hron | 0/5, Δ +0.02036, ×1.23 | 5/5, Δ -0.01396, ×0.787 | 2/5, Δ -41.33, ×0.979 | 3/5, Δ -5.229e+06, ×1.11 |
+| micoda_other vs mean_fill | 5/5, Δ -0.02785, ×0.796 | 4/5, Δ -0.001956, ×0.973 | 4/5, Δ -29.55, ×0.815 | 2/5, Δ +1.3e+06, ×0.938 |
+| micoda vs mean_fill | 1/5, Δ +0.005246, ×1.05 | 0/5, Δ +0.01192, ×1.18 | 1/5, Δ +17.94, ×1.33 | 2/5, Δ -6.169e+06, ×1.56 |
+| micoda_other vs micoda | 5/5, Δ -0.03309, ×0.765 | 5/5, Δ -0.01387, ×0.833 | 4/5, Δ -47.49, ×0.708 | 4/5, Δ +7.469e+06, ×1.22 |
+
+**random_cell** (thắng = sai số nhỏ hơn trên nhóm ô model; Δ = trung bình A − B; × = trung bình tỷ số A / B theo seed)
+
+| A vs B | MAE tỷ lệ | MSE tỷ lệ | MAE count | MSE count |
+|---|---|---|---|---|
+| same_day_mean vs hron | 5/5, Δ -0.05825, ×0.348 | 5/5, Δ -0.05021, ×0.181 | 5/5, Δ -3.929, ×0.825 | 1/5, Δ +2.976e+04, ×1.72 |
+| tsagris vs hron | 0/5, Δ +0.0107, ×1.12 | 5/5, Δ -0.01304, ×0.789 | 0/5, Δ +3.633, ×1.17 | 0/5, Δ +1.357e+04, ×1.51 |
+| micoda_other vs mean_fill | 5/5, Δ -0.02931, ×0.786 | 1/5, Δ +0.0003484, ×1.01 | 5/5, Δ -42.84, ×0.709 | 4/5, Δ -8.011e+05, ×0.681 |
+| micoda vs mean_fill | 5/5, Δ -0.005373, ×0.961 | 0/5, Δ +0.01111, ×1.16 | 1/5, Δ +15.33, ×1.11 | 3/5, Δ -7.884e+05, ×0.874 |
+| micoda_other vs micoda | 5/5, Δ -0.02394, ×0.818 | 5/5, Δ -0.01076, ×0.866 | 5/5, Δ -58.17, ×0.644 | 3/5, Δ -1.267e+04, ×1.02 |
+
+Dạng câu:
+
+- whole_feature: same_day_mean thắng hron ở MAE tỷ lệ 5/5, MSE tỷ lệ 5/5, MAE count 4/5, MSE count 4/5 seed.
+- random_cell: same_day_mean thắng hron ở MAE tỷ lệ 5/5, MSE tỷ lệ 5/5, MAE count 5/5, MSE count 1/5 seed.
+- whole_feature: tsagris thắng hron ở MAE tỷ lệ 0/5, MSE tỷ lệ 5/5, MAE count 2/5, MSE count 3/5 seed.
+- random_cell: tsagris thắng hron ở MAE tỷ lệ 0/5, MSE tỷ lệ 5/5, MAE count 0/5, MSE count 0/5 seed.
+- whole_feature: micoda_other thắng mean_fill ở MAE tỷ lệ 5/5, MSE tỷ lệ 4/5, MAE count 4/5, MSE count 2/5 seed.
+- random_cell: micoda_other thắng mean_fill ở MAE tỷ lệ 5/5, MSE tỷ lệ 1/5, MAE count 5/5, MSE count 4/5 seed.
+- whole_feature: micoda thắng mean_fill ở MAE tỷ lệ 1/5, MSE tỷ lệ 0/5, MAE count 1/5, MSE count 2/5 seed.
+- random_cell: micoda thắng mean_fill ở MAE tỷ lệ 5/5, MSE tỷ lệ 0/5, MAE count 1/5, MSE count 3/5 seed.
+- whole_feature: micoda_other thắng micoda ở MAE tỷ lệ 5/5, MSE tỷ lệ 5/5, MAE count 4/5, MSE count 4/5 seed.
+- random_cell: micoda_other thắng micoda ở MAE tỷ lệ 5/5, MSE tỷ lệ 5/5, MAE count 5/5, MSE count 3/5 seed.
+<!-- auto:pairs:end -->
 
 ## Cần reviewer xem
 
