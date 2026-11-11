@@ -298,3 +298,44 @@ def test_same_day_mean_predict_memory_does_not_grow_with_rows_times_days():
             tracemalloc.stop()
         # Before F1: ~185 MiB (exclude=False) and ~370 MiB (True); after: ~0.9 and ~2.7 MiB.
         assert peak < 16 * 2 ** 20, f'peak {peak / 2 ** 20:.1f} MiB'
+
+
+# --- P3 (PR #4 review): extreme totals never give a silent 'completed' ---------------------------
+
+def extreme(totals, counts, days):
+    counts = np.array(counts, float)
+    return Dataset(counts, np.array(totals, float), ('a', 'b'), tuple(f'E{k}' for k in range(len(counts))),
+                   [], [], [], days=np.array(days), week=None, time_kind='date', groups=None)
+
+
+TV1_CASES = {
+    # two donors N = 1e308, a = 5e307: sum N overflows; before P3 the query got a = 0, completed
+    'overflow': extreme([100, 1e308, 1e308], [[np.nan, 0], [5e307, 5e307], [5e307, 5e307]], [0, 0, 0]),
+    # donor outside the window with N = 1e20, in-window donor N = 100, a = 20: the prefix-sum
+    # difference cancels the in-window weight to 0; before P3 this ended in 0/0
+    'cancellation': extreme([100, 100, 1e20], [[np.nan, 0], [20, 80], [5e19, 5e19]], [1000, 1000, 0]),
+}
+
+
+@pytest.mark.parametrize('case', TV1_CASES)
+@pytest.mark.parametrize('warnings_as', ['ignore', 'error'])
+def test_extreme_totals_are_rejected_not_filled(case, warnings_as):
+    import warnings
+    data = TV1_CASES[case]
+    with warnings.catch_warnings():
+        warnings.simplefilter(warnings_as, RuntimeWarning)
+        with pytest.raises(ValueError, match=r'at most 2\*\*53'):
+            run.run_model(data, SameDayMean(min_obs=1), np.zeros(data.counts.shape, bool))
+
+
+@pytest.mark.parametrize('case', TV1_CASES)
+def test_window_sums_that_overflow_or_cancel_raise_numerical_error(case):
+    # Bypass the fit() domain check to exercise the second guard inside predict().
+    from longitudinal_impute.errors import NumericalError
+    data = TV1_CASES[case]
+    values = model_input(data, np.zeros(data.counts.shape, bool))       # proportions are valid
+    model = SameDayMean(min_obs=1).fit(values, {'totals': np.ones(len(values)), 'days': data.days,
+                                                'time_kind': 'date'})
+    model.totals_ = data.totals.copy()
+    with pytest.raises(NumericalError, match='sums are not usable'):
+        model.predict(values)

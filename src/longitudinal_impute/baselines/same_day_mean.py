@@ -23,9 +23,18 @@ The window depends on Dataset.time_kind:
 
 The proposals of a row are scaled down when they exceed its residual R = 1 - sum(observed);
 Other gets the rest (common.fill_within_residual), and restore_counts turns them into counts.
+
+Supported input: the row totals N must sum to at most 2**53 (~9.0e15; COVID: 1.5e7), so the
+prefix sums behind every window are exact for integer counts. fit() rejects larger tables
+(e.g. N = 1e308, which overflows, or one N = 1e20 next to N = 100, which a prefix-sum
+difference cancels to 0); handling such tables would need stable weighted sums and is out of
+scope. As a second guard, a window or global mean whose sums are not finite or whose weight
+is not positive raises NumericalError instead of filling a silent value.
 """
 import numpy as np
-from ..errors import BaselineInputError, InsufficientDataError, NotFittedError
+from ..errors import BaselineInputError, InsufficientDataError, NotFittedError, NumericalError
+
+MAX_TOTAL_SUM = 2. ** 53     # prefix sums of integer counts stay exact below this
 from .common import fill_within_residual, observed_columns
 
 
@@ -35,6 +44,16 @@ def _codes(labels, n):
     if len(labels) != n:
         raise BaselineInputError('context labels must have one entry per row')
     return np.unique(np.asarray(labels, dtype=object).astype(str), return_inverse=True)[1].astype(np.int64)
+
+
+def _check_sums(numerator, denominator, rows, feature, level):
+    """Never turn an overflowed or cancelled window into a silent 0 (P3, PR #4 review)."""
+    bad = ~(np.isfinite(numerator) & np.isfinite(denominator) & (denominator > 0))
+    if bad.any():
+        k = int(np.argmax(bad))
+        raise NumericalError(f'row {int(rows[k])}, feature {feature}: {level} sums are not usable '
+                             f'(sum c = {numerator[k]!r}, sum N = {denominator[k]!r})',
+                             context={'row': int(rows[k]), 'feature': feature, 'level': level})
 
 
 class SameDayMean:
@@ -74,6 +93,12 @@ class SameDayMean:
         totals = np.asarray(totals, float)
         if totals.shape != (n,) or not np.isfinite(totals).all() or (totals <= 0).any():
             raise BaselineInputError('row totals must be finite, positive, one per row')
+        with np.errstate(over='ignore'):
+            grand = totals.sum()
+        if not grand <= MAX_TOTAL_SUM:
+            raise BaselineInputError(f'SameDayMean supports row totals summing to at most 2**53 '
+                                     f'(~9.0e15) so that window sums are exact; got {grand:.3g}',
+                                     context={'total_sum': float(grand)})
         kind, days = context.get('time_kind'), context.get('days')
         if (kind is None) != (days is None):
             raise BaselineInputError('time_kind and days must be given together')
@@ -106,70 +131,74 @@ class SameDayMean:
         position = np.searchsorted(axis, days)
         proposal = np.zeros(self.visible_.shape)
         levels = np.full(self.visible_.shape, -1, dtype=np.int64)
-        for j in range(self.visible_.shape[1]):
-            need = np.flatnonzero(~np.isfinite(x[:, j]))
-            if not len(need):
-                continue
-            seen = np.isfinite(self.visible_[:, j])
-            mass = np.where(seen, self.visible_[:, j] * totals, 0.)
-            weight = np.where(seen, totals, 0.)
-            # Cumulative sums over the sorted time axis, per group and per (group, entity).
-            tables = {}
-            for key, codes in (('group', self.groups_), ('pair', self.pairs_)):
-                if key == 'pair' and not self.exclude_same_location:
+        # Overflow/cancellation in the sums is caught by _check_sums, not left to a warning.
+        with np.errstate(over='ignore', invalid='ignore'):
+            for j in range(self.visible_.shape[1]):
+                need = np.flatnonzero(~np.isfinite(x[:, j]))
+                if not len(need):
                     continue
-                shape = (codes.max() + 1, len(axis) + 1)
-                stack = np.zeros((3, *shape))
-                for k, add in enumerate((seen.astype(float), mass, weight)):
-                    np.add.at(stack[k], (codes, position + 1), add)
-                tables[key] = np.cumsum(stack, axis=2)
-            level = np.full(len(need), -1)
-            reference = np.zeros(len(need))
-            for step, width in enumerate(windows):
+                seen = np.isfinite(self.visible_[:, j])
+                mass = np.where(seen, self.visible_[:, j] * totals, 0.)
+                weight = np.where(seen, totals, 0.)
+                # Cumulative sums over the sorted time axis, per group and per (group, entity).
+                tables = {}
+                for key, codes in (('group', self.groups_), ('pair', self.pairs_)):
+                    if key == 'pair' and not self.exclude_same_location:
+                        continue
+                    shape = (codes.max() + 1, len(axis) + 1)
+                    stack = np.zeros((3, *shape))
+                    for k, add in enumerate((seen.astype(float), mass, weight)):
+                        np.add.at(stack[k], (codes, position + 1), add)
+                    tables[key] = np.cumsum(stack, axis=2)
+                level = np.full(len(need), -1)
+                reference = np.zeros(len(need))
+                for step, width in enumerate(windows):
+                    todo = np.flatnonzero(level < 0)
+                    if not len(todo):
+                        break
+                    rows = need[todo]
+                    if np.isinf(width):
+                        lo, hi = np.zeros(len(rows), np.int64), np.full(len(rows), len(axis))
+                    else:
+                        lo = np.searchsorted(axis, days[rows] - width, side='left')
+                        hi = np.searchsorted(axis, days[rows] + width, side='right')
+                    # Read only the two endpoints per query row (O(rows), not O(rows x time axis)).
+                    group = self.groups_[rows]
+                    table = tables['group']
+                    window = table[:, group, hi] - table[:, group, lo]
+                    if self.exclude_same_location:
+                        pair = self.pairs_[rows]
+                        own = tables['pair']
+                        window -= own[:, pair, hi] - own[:, pair, lo]
+                    cells, numerator, denominator = window
+                    ok = cells >= self.min_obs - .5      # counts are float sums of ones
+                    _check_sums(numerator[ok], denominator[ok], rows[ok], j, names[step])
+                    reference[todo[ok]] = numerator[ok] / denominator[ok]
+                    level[todo[ok]] = step
+                    counts[names[step]] += int(ok.sum())
                 todo = np.flatnonzero(level < 0)
-                if not len(todo):
-                    break
-                rows = need[todo]
-                if np.isinf(width):
-                    lo, hi = np.zeros(len(rows), np.int64), np.full(len(rows), len(axis))
-                else:
-                    lo = np.searchsorted(axis, days[rows] - width, side='left')
-                    hi = np.searchsorted(axis, days[rows] + width, side='right')
-                # Read only the two endpoints per query row (O(rows), not O(rows x time axis)).
-                group = self.groups_[rows]
-                table = tables['group']
-                window = table[:, group, hi] - table[:, group, lo]
-                if self.exclude_same_location:
-                    pair = self.pairs_[rows]
-                    own = tables['pair']
-                    window -= own[:, pair, hi] - own[:, pair, lo]
-                cells, numerator, denominator = window
-                ok = cells >= self.min_obs - .5      # counts are float sums of ones
-                reference[todo[ok]] = numerator[ok] / denominator[ok]
-                level[todo[ok]] = step
-                counts[names[step]] += int(ok.sum())
-            todo = np.flatnonzero(level < 0)
-            if len(todo):
-                rows = need[todo]
-                numerator = np.full(len(rows), mass.sum())
-                denominator = np.full(len(rows), weight.sum())
-                cells = np.full(len(rows), float(seen.sum()))
-                if self.exclude_same_location:
-                    own = self.entities_[rows]
-                    size = self.entities_.max() + 1
-                    numerator -= np.bincount(self.entities_, mass, size)[own]
-                    denominator -= np.bincount(self.entities_, weight, size)[own]
-                    cells -= np.bincount(self.entities_, seen.astype(float), size)[own]
-                if (cells < .5).any():
-                    i = int(rows[np.argmax(cells < .5)])
-                    raise InsufficientDataError(f'row {i}, feature {j}: no visible cell of the target to average',
-                                                context={'row': i, 'feature': j})
-                reference[todo] = numerator / denominator
-                counts['global'] += len(todo)
-            proposal[need, j] = np.clip(reference, 0., 1.)
-            levels[need, j] = np.where(level < 0, len(windows), level)
-            per_target[j] = {name: int((level == k).sum()) if name != 'global' else int((level < 0).sum())
-                             for k, name in enumerate(names)}
+                if len(todo):
+                    rows = need[todo]
+                    numerator = np.full(len(rows), mass.sum())
+                    denominator = np.full(len(rows), weight.sum())
+                    cells = np.full(len(rows), float(seen.sum()))
+                    if self.exclude_same_location:
+                        own = self.entities_[rows]
+                        size = self.entities_.max() + 1
+                        numerator -= np.bincount(self.entities_, mass, size)[own]
+                        denominator -= np.bincount(self.entities_, weight, size)[own]
+                        cells -= np.bincount(self.entities_, seen.astype(float), size)[own]
+                    if (cells < .5).any():
+                        i = int(rows[np.argmax(cells < .5)])
+                        raise InsufficientDataError(f'row {i}, feature {j}: no visible cell of the target to average',
+                                                    context={'row': i, 'feature': j})
+                    _check_sums(numerator, denominator, rows, j, 'global')
+                    reference[todo] = numerator / denominator
+                    counts['global'] += len(todo)
+                proposal[need, j] = np.clip(reference, 0., 1.)
+                levels[need, j] = np.where(level < 0, len(windows), level)
+                per_target[j] = {name: int((level == k).sum()) if name != 'global' else int((level < 0).sum())
+                                 for k, name in enumerate(names)}
         out, scaled = fill_within_residual(x, proposal)
         self.levels_ = levels
         self.info_ = {'method': 'same_day_mean', 'time_kind': self.kind_,
