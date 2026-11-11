@@ -93,3 +93,39 @@ def test_zero_error_sorts_first_and_incomplete_models_last(tmp_path):
     out = []
     summarize_runs.main_table(runs, out)
     assert [line.split('|')[1].strip() for line in out[2:]] == ['perfect', 'worse', 'partly', 'missing']
+
+
+def test_win_counts_come_from_the_csv_per_metric(tmp_path):
+    """F5 (PR #4 review): a low mean must not be reported as a per-seed win; each metric apart."""
+    import csv
+    keys = [f'{k}_model' for k, _ in summarize_runs.PAIR_METRICS]
+    rows = []
+    for mask in summarize_runs.MASKS:
+        for s in summarize_runs.SEEDS:
+            k = int(s)
+            hron = {'mae_proportion': .09, 'mse_proportion': .066, 'mae_count': 20., 'mse_count': 5e4}
+            # tsagris: worse MAE prop every seed, better MSE prop every seed, MAE count better on
+            # seeds 0 and 4 only but with a much lower mean (one huge Hron seed is not a win).
+            tsagris = {'mae_proportion': .1, 'mse_proportion': .05,
+                       'mae_count': 10. if k in (0, 4) else 25., 'mse_count': 5e4}
+            for name, values in (('hron', hron), ('tsagris', tsagris)):
+                rows.append({'mask': mask, 'model': name, 'seed': s, **{f'{m}_model': values[m] for m in values}})
+    path = tmp_path / 'r.csv'
+    with path.open('w', newline='') as stream:
+        writer = csv.DictWriter(stream, fieldnames=['mask', 'model', 'seed', *keys])
+        writer.writeheader()
+        writer.writerows(rows)
+    pairs = {(p['mask'], p['metric']): p for p in summarize_runs.pairs_from_csv(path)
+             if (p['a'], p['b']) == ('tsagris', 'hron')}
+    got = {m: (pairs['whole_feature', m]['wins'], pairs['whole_feature', m]['ties']) for m in
+           ('mae_proportion', 'mse_proportion', 'mae_count', 'mse_count')}
+    assert got == {'mae_proportion': (0, 0), 'mse_proportion': (5, 0), 'mae_count': (2, 0), 'mse_count': (0, 5)}
+    block = summarize_runs.pair_markdown(summarize_runs.pairs_from_csv(path))
+    assert '- whole_feature: tsagris thắng hron ở MAE tỷ lệ 0/5, MSE tỷ lệ 5/5, MAE count 2/5, MSE count 0/5 seed.' in block
+    # The docs get exactly the generated block between the markers, the rest untouched.
+    doc = tmp_path / 'REPORT_vi.md'
+    doc.write_text(f'before\n{summarize_runs.START}\nhand typed 5/5\n{summarize_runs.END}\nafter\n')
+    summarize_runs.update_docs(tmp_path, block)
+    text = doc.read_text()
+    assert 'hand typed' not in text and text.startswith('before\n') and text.endswith('\nafter\n')
+    assert '\n'.join(block).strip() in text

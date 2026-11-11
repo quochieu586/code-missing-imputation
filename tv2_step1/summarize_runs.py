@@ -28,7 +28,13 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 MASKS = ('whole_feature', 'random_cell')
 SEEDS = ('0', '1', '2', '3', '4')
-PAIRS = (('same_day_mean', 'hron'), ('hron', 'tsagris'), ('micoda_other', 'mean_fill'), ('micoda', 'mean_fill'))
+# F5: every paired win/loss number is generated from results_multiseed.csv, never typed by hand.
+PAIRS = (('same_day_mean', 'hron'), ('tsagris', 'hron'), ('micoda_other', 'mean_fill'), ('micoda', 'mean_fill'),
+         ('micoda_other', 'micoda'))
+PAIR_METRICS = (('mae_proportion', 'MAE tỷ lệ'), ('mse_proportion', 'MSE tỷ lệ'),
+                ('mae_count', 'MAE count'), ('mse_count', 'MSE count'))
+DOCS = ('REPORT_vi.md', 'PR_DESCRIPTION_vi.md')
+START, END = '<!-- auto:pairs:start -->', '<!-- auto:pairs:end -->'
 
 
 def digest(value):
@@ -130,21 +136,76 @@ def main_table(runs, out):
             rows.append({'model': m, 'seed': s, 'status': x['status'],
                          **{f'{k}_{g}': metric(x, g, k) for g in ('model', 'truth_zero', 'truth_positive',
                                                                     'model_truth_zero')
-                            for k in ('cells', 'mae_proportion', 'mse_proportion', 'mae_count')}})
+                            for k in ('cells', 'mae_proportion', 'mse_proportion', 'mae_count', 'mse_count')}})
     return rows
 
 
-def pair_table(runs, out):
-    out.append('| Cặp (A vs B) | MAE tỷ lệ: A thắng | hiệu TB (A − B) | MSE tỷ lệ: A thắng | hiệu TB (A − B) |')
-    out.append('|---|---:|---:|---:|---:|')
+def pairs_from_csv(path):
+    """Paired comparisons on the model group, read back from the written CSV.
+
+    For A vs B, mask and metric: wins = seeds where A's error < B's (ties counted apart),
+    mean difference A - B and mean per-seed ratio A / B, over seeds where both are ok.
+    """
+    with Path(path).open(newline='', encoding='utf-8') as stream:
+        table = {}
+        for row in csv.DictReader(stream):
+            table[row['mask'], row['model'], row['seed']] = row
+    result = []
+    for mask in MASKS:
+        for a, b in PAIRS:
+            for key, label in PAIR_METRICS:
+                diffs, ratios = [], []
+                for seed in SEEDS:
+                    x, y = (table.get((mask, m, seed), {}).get(f'{key}_model', '') for m in (a, b))
+                    if x and y:
+                        diffs.append(float(x) - float(y))
+                        ratios.append(float(x) / float(y) if float(y) else np.nan)
+                result.append({'mask': mask, 'a': a, 'b': b, 'metric': key, 'label': label, 'seeds': len(diffs),
+                               'wins': sum(d < 0 for d in diffs), 'ties': sum(d == 0 for d in diffs),
+                               'mean_diff': float(np.mean(diffs)) if diffs else None,
+                               'mean_ratio': float(np.mean(ratios)) if ratios else None})
+    return result
+
+
+def pair_markdown(pairs):
+    """Tables (one per mask) and one sentence per pair and metric."""
+    out = []
+    for mask in MASKS:
+        out += [f'**{mask}** (thắng = sai số nhỏ hơn trên nhóm ô model; Δ = trung bình A − B; '
+                '× = trung bình tỷ số A / B theo seed)', '',
+                '| A vs B | ' + ' | '.join(label for _, label in PAIR_METRICS) + ' |',
+                '|---|' + '---|' * len(PAIR_METRICS)]
+        for a, b in PAIRS:
+            cells = []
+            for key, _ in PAIR_METRICS:
+                r = next(p for p in pairs if (p['mask'], p['a'], p['b'], p['metric']) == (mask, a, b, key))
+                tie = f', hòa {r["ties"]}' if r['ties'] else ''
+                cells.append('-' if r['mean_diff'] is None else
+                             f"{r['wins']}/{r['seeds']}{tie}, Δ {r['mean_diff']:+.4g}, ×{r['mean_ratio']:.3g}")
+            out.append(f'| {a} vs {b} | ' + ' | '.join(cells) + ' |')
+        out.append('')
+    out.append('Dạng câu:')
+    out.append('')
     for a, b in PAIRS:
-        cells = []
-        for key in ('mae_proportion', 'mse_proportion'):
-            diff = [metric(runs[a][s], 'model', key) - metric(runs[b][s], 'model', key)
-                    for s in SEEDS if metric(runs[a][s], 'model', key) is not None
-                    and metric(runs[b][s], 'model', key) is not None]
-            cells += [f'{sum(d < 0 for d in diff)}/{len(diff)} seed', f'{np.mean(diff):+.4f}']
-        out.append(f'| {a} vs {b} | ' + ' | '.join(cells) + ' |')
+        for mask in MASKS:
+            parts = [f"{r['label']} {r['wins']}/{r['seeds']}" for r in pairs
+                     if (r['mask'], r['a'], r['b']) == (mask, a, b)]
+            out.append(f'- {mask}: {a} thắng {b} ở ' + ', '.join(parts) + ' seed.')
+    return out
+
+
+def update_docs(folder, block):
+    """Replace the text between the auto:pairs markers in each doc that has them."""
+    for name in DOCS:
+        path = folder / name
+        if not path.exists():
+            continue
+        text = path.read_text(encoding='utf-8')
+        if text.count(START) != 1 or text.count(END) != 1:
+            continue
+        head, rest = text.split(START)
+        _, tail = rest.split(END)
+        path.write_text(head + START + '\n' + '\n'.join(block).rstrip() + '\n' + END + tail, encoding='utf-8')
 
 
 def truth_table(runs, out):
@@ -197,7 +258,7 @@ def levels_table(root, mask, native, out):
                + f"; toàn cục {levels['global'] / total:.1%} trên {total} ô.")
 
 
-def summarize(root, out_dir, levels=True):
+def summarize(root, out_dir, levels=True, docs=False):
     """Validate every pair first; write the three outputs only when all checks passed."""
     manifest = {mask: validate_pair(root, mask) for mask in MASKS}
     out, rows = ['# Step 1: kết quả nhiều seed (COVID đầy đủ, che 5%, seed 0–4)', '',
@@ -215,8 +276,6 @@ def summarize(root, out_dir, levels=True):
         out.append('')
         out += ['### Nhóm ô model', '']
         rows += [{'mask': mask, **r} for r in main_table(runs, out)]
-        out += ['', '### Thắng/thua theo seed (ghép cặp, cùng mask; thắng = sai số nhỏ hơn)', '']
-        pair_table(runs, out)
         out += ['', '### MAE tỷ lệ theo đáp án', '']
         truth_table(runs, out)
         if levels:
@@ -224,11 +283,15 @@ def summarize(root, out_dir, levels=True):
             levels_table(root, mask, native, out)
         out.append('')
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / 'results_multiseed.md').write_text('\n'.join(out), encoding='utf-8')
     with (out_dir / 'results_multiseed.csv').open('w', newline='', encoding='utf-8') as stream:
         writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
+    block = pair_markdown(pairs_from_csv(out_dir / 'results_multiseed.csv'))
+    out += ['## Thắng/thua theo seed (ghép cặp, cùng mask; sinh từ results_multiseed.csv)', '', *block]
+    (out_dir / 'results_multiseed.md').write_text('\n'.join(out) + '\n', encoding='utf-8')
+    if docs:
+        update_docs(out_dir, block)
     (out_dir / 'results_manifest.json').write_text(json.dumps(manifest, indent=1, sort_keys=True) + '\n',
                                                    encoding='utf-8')
     return out, rows, manifest
@@ -239,7 +302,7 @@ def main(argv=None):
     parser.add_argument('--runs', type=Path, default=HERE / 'runs')
     parser.add_argument('--out', type=Path, default=HERE)
     args = parser.parse_args(argv)
-    summarize(args.runs, args.out)
+    summarize(args.runs, args.out, docs=True)
 
 
 if __name__ == '__main__':
