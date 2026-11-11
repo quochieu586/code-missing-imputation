@@ -81,3 +81,15 @@ def test_main_run_with_other_true_is_refused(tmp_path):
     config_path.write_text(json.dumps(config))
     with pytest.raises(ValueError, match='other = false'):
         summarize_runs.summarize(tmp_path / 'runs', tmp_path / 'out', levels=False)
+
+
+def test_zero_error_sorts_first_and_incomplete_models_last(tmp_path):
+    """F4 (PR #4 review): `metric or inf` used to send an exact 0.0 to the bottom."""
+    runs = {'worse': {s: {'status': 'ok', 'errors': errors(.1)} for s in summarize_runs.SEEDS},
+            'missing': {s: {'status': 'failed', 'errors': None} for s in summarize_runs.SEEDS},
+            'partly': {s: ({'status': 'ok', 'errors': errors(.01)} if s != '3' else
+                           {'status': 'failed', 'errors': None}) for s in summarize_runs.SEEDS},
+            'perfect': {s: {'status': 'ok', 'errors': errors(0.)} for s in summarize_runs.SEEDS}}
+    out = []
+    summarize_runs.main_table(runs, out)
+    assert [line.split('|')[1].strip() for line in out[2:]] == ['perfect', 'worse', 'partly', 'missing']

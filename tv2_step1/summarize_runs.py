@@ -106,9 +106,16 @@ def fmt(values, digits=4):
     return f'{values.mean():.{digits}f} ± {sd:.{digits}f}'
 
 
+def order_key(runs, model, key='mae_proportion'):
+    """F4: complete models by mean error (0.0 first), then models with a missing/failed seed."""
+    values = [metric(runs[model][s], 'model', key) for s in SEEDS]
+    present = [v for v in values if v is not None and np.isfinite(v)]
+    incomplete = len(present) < len(values)
+    return (incomplete, float(np.mean(present)) if present else np.inf, model)
+
+
 def main_table(runs, out):
-    order = sorted(runs, key=lambda m: np.mean([metric(runs[m][s], 'model', 'mae_proportion') or np.inf
-                                                for s in SEEDS]))
+    order = sorted(runs, key=lambda m: order_key(runs, m))
     out.append('| Model | ok/5 | MAE tỷ lệ | MSE tỷ lệ | MAE count | Số ô model (seed 0–4) |')
     out.append('|---|---:|---:|---:|---:|---|')
     rows = []
