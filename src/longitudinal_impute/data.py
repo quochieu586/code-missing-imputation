@@ -1,6 +1,8 @@
 """CSV input for any count table, evaluation masks and count-space output."""
 import csv
 from datetime import datetime
+import hashlib
+import io
 import os
 from dataclasses import dataclass
 import re
@@ -33,6 +35,9 @@ class Dataset:
     week: np.ndarray | None = None
     time_kind: str | None = None
     groups: tuple[str, ...] | None = None    # coarse group of every row (schema group_col); None = one group
+    # Provenance of the external group map actually read (resolved path, sha256 of the bytes
+    # parsed, map entries, rows and groups resolved); None when no map file was used.
+    group_map: dict | None = None
     times: tuple[str, ...] | None = None  # raw schema time, parsed only by the main model
 
 
@@ -107,12 +112,12 @@ def load_csv(path, schema_config):
                 raise ValueError(f'{where}: all targets are 0, the row total must be positive')
     days, week, kind = (None, None, None) if time is None else parse_times(
         [row[time] for row in rows], lines, time, spec.get('time_format'))
-    groups = None
+    groups, group_map = None, None
     if 'group_col' in spec:
-        groups = read_groups(rows, lines, fields, entity, spec['group_col'], spec.get('group_map'),
-                             Path(schema_config).parent)
+        groups, group_map = read_groups(rows, lines, fields, entity, spec['group_col'], spec.get('group_map'),
+                                        Path(schema_config).parent)
     return Dataset(counts, totals, targets, tuple(row[entity] for row in rows), fields, rows, lines,
-                   days, week, kind, groups,
+                   days, week, kind, groups, group_map,
                    times=tuple(row[time] for row in rows) if time is not None else None)
 
 
@@ -153,17 +158,22 @@ def parse_times(texts, lines, column, time_format=None):
 
 
 def read_groups(rows, lines, fields, entity, column, map_path, base):
-    """Group of every row: the CSV column if present, else looked up per entity in group_map."""
+    """(group of every row, map provenance): the CSV column if present, else group_map per entity.
+
+    The map is hashed from the very bytes that are parsed, so the recorded sha256 is the
+    content actually used; provenance is None when the groups come from a CSV column.
+    """
     if column in fields:
         groups = tuple(row[column].strip() for row in rows)
         for group, line in zip(groups, lines):
             if not group:
                 raise ValueError(f'CSV line {line}: empty group in column {column!r}')
-        return groups
+        return groups, None
     if map_path is None:
         raise ValueError(f'group_col {column!r} is not a CSV column and the schema declares no group_map')
-    path = Path(map_path) if Path(map_path).is_absolute() else base / map_path
-    with path.open(encoding='utf-8-sig', newline='') as stream:
+    path = (Path(map_path) if Path(map_path).is_absolute() else base / map_path).resolve()
+    raw = path.read_bytes()
+    with io.StringIO(raw.decode('utf-8-sig'), newline='') as stream:
         reader = csv.DictReader(stream)
         if entity not in (reader.fieldnames or []) or column not in reader.fieldnames:
             raise ValueError(f'{path}: group map needs columns {entity!r} and {column!r}')
@@ -176,7 +186,9 @@ def read_groups(rows, lines, fields, entity, column, map_path, base):
     if unknown:
         raise ValueError(f'{path}: no {column!r} for entities {unknown[:10]}'
                          + (f' and {len(unknown) - 10} more' if len(unknown) > 10 else ''))
-    return tuple(table[row[entity]] for row in rows)
+    groups = tuple(table[row[entity]] for row in rows)
+    return groups, {'path': str(path), 'sha256': hashlib.sha256(raw).hexdigest(), 'entries': len(table),
+                    'rows_resolved': len(groups), 'groups': len(set(groups))}
 
 
 def parse(text, where, column, *, missing_ok):

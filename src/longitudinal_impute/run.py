@@ -436,6 +436,7 @@ def main(argv=None):
               'models_path': str(args.models.resolve()), 'models': models, 'only': args.only,
               'mask': args.mask, 'mask_rate': args.mask_rate if args.mask != 'none' else None,
               'seeds': args.seeds if args.mask != 'none' else None, 'git': git_commit(),
+              'group_map': data.group_map,
               'stage': args.stage, 'pass': args.passes, 'schema_sha256': sha256(args.schema),
               'models_sha256': sha256(args.models),
               'code_sha256': previous.get('code_sha256') if args.stage == 'evaluate' else code_hashes(),

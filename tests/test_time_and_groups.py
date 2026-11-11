@@ -112,3 +112,37 @@ def test_shipped_covid_schema_maps_every_location_to_a_continent():
     data = load_csv(REPO / 'data/covariants.csv', NEXTGEN / 'configs/baselines_covariants.toml')
     assert data.time_kind == 'date' and data.days.min() == 0
     assert set(data.groups) == {'Africa', 'Asia', 'Europe', 'North America', 'Oceania', 'South America'}
+
+
+def test_group_map_provenance_is_the_hash_of_the_file_read(tmp_path):
+    import hashlib
+    text = 'location,continent\nAvalon,North\nBrill,North\nCorin,South\n'
+    write(tmp_path, 'map.csv', text)
+    data = load_csv(FIXTURES / 'covid_small.csv',
+                    write(tmp_path, 's.toml', COVID_SCHEMA + 'group_col="continent"\ngroup_map="map.csv"\n'))
+    assert data.group_map == {'path': str((tmp_path / 'map.csv').resolve()),
+                              'sha256': hashlib.sha256(text.encode()).hexdigest(),
+                              'entries': 3, 'rows_resolved': 24, 'groups': 2}
+    column = small(tmp_path, ['1', '2'], SMALL + 'group_col="grp"\n', extra=',G1')
+    assert column.groups == ('G1', 'G1') and column.group_map is None
+
+
+def test_changing_the_map_changes_the_recorded_provenance(tmp_path):
+    """F3 (PR #4 review): same data/schema/models paths, different map -> different config.json."""
+    import json
+    from longitudinal_impute import run
+    schema = write(tmp_path, 's.toml', COVID_SCHEMA + 'group_col="continent"\ngroup_map="map.csv"\n')
+    models = write(tmp_path, 'm.toml', '[same_day_mean]\nmin_obs = 2\n')
+    recorded = []
+    for k, body in enumerate(('Avalon,North\nBrill,North\nCorin,South\n', 'Avalon,North\nBrill,South\nCorin,South\n')):
+        write(tmp_path, 'map.csv', 'location,continent\n' + body)
+        out = tmp_path / f'out{k}'
+        assert run.main(['--data', str(FIXTURES / 'covid_small.csv'), '--schema', str(schema),
+                         '--models', str(models), '--output', str(out), '--mask', 'none']) == 0
+        recorded.append(json.loads((out / 'config.json').read_text(encoding='utf-8'))['group_map'])
+    assert recorded[0]['path'] == recorded[1]['path']
+    assert recorded[0]['sha256'] != recorded[1]['sha256']
+    out = tmp_path / 'nomap'
+    assert run.main(['--data', str(FIXTURES / 'covid_small.csv'), '--schema', str(write(tmp_path, 'plain.toml', COVID_SCHEMA)),
+                     '--models', str(models), '--output', str(out), '--mask', 'none']) == 0
+    assert json.loads((out / 'config.json').read_text(encoding='utf-8'))['group_map'] is None

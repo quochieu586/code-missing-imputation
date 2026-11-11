@@ -8,6 +8,7 @@ evaluate.masked_errors are used. The same_day_mean fallback levels on the hidden
 are recomputed from the saved masks (same model, same parameters as the run).
 """
 import csv
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -101,6 +102,16 @@ def levels_table(mask, native, out):
     from longitudinal_impute.evaluate import forced_zero
     config = json.loads((HERE / 'runs' / f'main_{mask}' / 'config.json').read_text())
     data = load_csv(config['data'], config['schema_path'])
+    # F3: recompute only from the same data and the same group map the run used.
+    if hashlib.sha256(Path(config['data']).read_bytes()).hexdigest() != config['data_sha256']:
+        raise ValueError(f"main_{mask}: {config['data']} changed since the run (data_sha256 differs)")
+    if 'group_map' not in config:
+        raise ValueError(f'main_{mask}: config.json has no group_map provenance; rerun with the current run.py')
+    recorded, current = config['group_map'], data.group_map
+    if (recorded is None) != (current is None) or (recorded and (
+            recorded['path'], recorded['sha256']) != (current['path'], current['sha256'])):
+        raise ValueError(f'main_{mask}: group map differs from the one the run used: '
+                         f'recorded {recorded}, current {current}')
     params = config['models']['same_day_mean']
     names = ['window', 'widened_1', 'widened_2', 'global']
     out.append('| Seed | Ô che (nhóm model): gốc / nới 1 / nới 2 / toàn cục | Mọi ô che: gốc / nới 1 / nới 2 / toàn cục |')
