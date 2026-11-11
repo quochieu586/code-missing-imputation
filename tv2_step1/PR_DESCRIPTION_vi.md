@@ -16,15 +16,15 @@ Không sửa `evaluate.py`. Hron/Tsagris/MICoDa không đổi: so với `main`, 
   - Thêm khóa schema tùy chọn `group_col`/`group_map`. COVID dùng châu lục qua `configs/covid_location_continent.csv`.
 - **Baseline mới** (mỗi model một file trong `baselines/`):
   - `same_day_mean`: trung bình c/N có trọng số N, cùng nhóm, trong ±28 ngày. Nới cửa sổ ×2 tối đa 2 lần khi có ít hơn 20 ô, sau đó dùng trung bình toàn cục. Số ô ở mỗi mức được ghi trong `info_`. **Bật mặc định.**
-  - `zero_fill`, `mean_fill`, `marginal_sampler`: mức sàn, `enabled = false`.
+  - `zero_fill`, `mean_fill`, `marginal_sampler`: mức sàn, `enabled = false`. marginal_sampler bị co theo phần dư nên không đảm bảo Wasserstein ≈ 0.
 - **`run.py`:** đăng ký 4 model. Model cần ngữ cảnh nhận N, ngày, nhóm, entity (không nhận counts). Thêm khóa `enabled = false` và cờ `--only NAME ...`.
 - **Config:** `models_default.toml` (4 bảng mới); `baselines_covariants.toml` (`time_format`, `group_col`, `group_map`); `models_micoda_other.toml` (MICoDa `other = true` cho lượt so sánh riêng).
-- **Test:** 156 pass (115 cũ + 41 mới). Có test "ô bị che = 1e100 không đổi output", tái lập theo seed, tham chiếu same_day_mean tính tay.
-- **Docs:** README, mục mới trong `THREE_BASELINE_CONTRACT_VI.md`, báo cáo `tv2_step1/REPORT_vi.md`, bảng `tv2_step1/results_multiseed.md`.
+- **Test:** 177 test trong `nextgen/tests` (115 cũ + 62 mới) và 8 test cho `tv2_step1/summarize_runs.py`. Có test "ô bị che = 1e100 không đổi output", tái lập theo seed, tham chiếu same_day_mean tính tay.
+- **Docs:** README, mục mới trong `THREE_BASELINE_CONTRACT_VI.md`, báo cáo `tv2_step1/REPORT_vi.md`, bảng `tv2_step1/results_multiseed.md`, manifest `tv2_step1/results_manifest.json`; sửa theo review: `tv2_step1/FIXES_PR4_vi.md`.
 
 ## Kết quả chính
 
-COVID đầy đủ, mask `whole_feature` 5%, seed 0–4, nhóm ô do model quyết định; mean ± sd:
+COVID đầy đủ, mask `whole_feature` 5%, seed 0–4, nhóm ô do model quyết định. mean ± sd, trong đó sd là độ lệch chuẩn mẫu qua 5 seed, **không phải khoảng tin cậy**. Đây là lượt che giả (masked pilot), không phải đánh giá trên ô thiếu thật:
 
 | Model | MAE tỷ lệ | MSE tỷ lệ | MAE count |
 |---|---:|---:|---:|
@@ -37,10 +37,10 @@ COVID đầy đủ, mask `whole_feature` 5%, seed 0–4, nhóm ô do model quy�
 | micoda (A17/R1, mặc định) | 0.1406 ± 0.0099 | 0.0823 ± 0.0094 | 236.2 ± 188.5 |
 | zero_fill (sàn) | 0.1693 ± 0.0219 | 0.1525 ± 0.0230 | 287.1 ± 211.3 |
 
-- same_day_mean thắng Hron 5/5 seed về MAE và MSE tỷ lệ, ở cả hai mask.
+- same_day_mean thắng Hron 5/5 seed về MAE và MSE tỷ lệ, ở cả hai mask: nó **tốt hơn các baseline trong lượt che giả này**, chưa phải tốt nhất trên ô thiếu thật. Lợi thế đến từ bốn yếu tố cùng lúc: thời gian, châu lục, trung bình có trọng số N và quy tắc co phần dư. Chưa tách được đóng góp của từng yếu tố; ablation để step sau.
 - Hron thắng Tsagris về MAE tỷ lệ 5/5; Tsagris thắng Hron về MSE tỷ lệ 5/5 ở cả hai mask, nhưng về MAE count chỉ 2/5 (whole_feature) và 0/5 (random_cell).
 - **MICoDa A17/R1 thua mean_fill** trên whole_feature (MAE thua 4/5 seed, MSE thua 5/5). A18/R2 hơn mean_fill về MAE, còn MSE gần như hòa.
-- Hạn chế: 25.5% ô thiếu thật phải dùng trung bình toàn cục của same_day_mean, trong khi ô bị che chỉ 0.7–9%. Vì vậy điểm masked lạc quan hơn thực tế.
+- **Hạn chế về support:** 25,5% mọi ô thiếu thật phải dùng trung bình toàn cục của same_day_mean, so với 1,4–9% ô che thuộc nhóm model (whole_feature). Hai tỷ lệ khác mẫu số nên không so trực tiếp; đây là cảnh báo, không phải phép đo độ chính xác trên ô thiếu thật.
 
 ### Thắng/thua theo seed (sinh tự động từ `results_multiseed.csv`)
 
@@ -87,12 +87,13 @@ Dạng câu:
 4. **Map châu lục** theo quy ước Our World in Data (Turkey/Georgia thuộc Asia, Russia thuộc Europe, Caribbean thuộc North America).
 5. **mean_fill** dùng trung bình không trọng số; mức toàn cục của same_day_mean dùng trọng số N và lấy trên mọi nhóm. Khi `exclude_same_location = true` mà không còn ô nào thì báo lỗi, không có fallback ngầm.
 6. **Time không phải ngày:** dạng số xét cùng mốc rồi ±1, ±2; dạng nhãn chỉ xét cùng nhãn.
-7. **MSE count của MICoDa A18** không khớp ghi chú D08 (×1.02 ở random_cell, so với ~×4.5 trong D08). Chưa điều tra.
+7. **MSE count của MICoDa A18** không khớp ghi chú D08 (×1,22 ở whole_feature, ×1,02 ở random_cell, so với ~×4,5 trong D08). **Chưa kiểm chứng độc lập**, chưa điều tra. Số này lấy từ các run đã kiểm tra bằng manifest và nằm trong CSV.
 
 ## Để lại cho step 2
 
 - Tên biến thể trong `run.py` (ví dụ `[same_day_mean_wide]`, `[micoda_other]`).
 - `evaluate.py`: bootstrap cho so sánh ghép cặp, chọn metric chính, thống kê mức cửa sổ trên ô bị che, Wasserstein cho lượt masked.
+- Ablation same_day_mean (thời gian, châu lục, trọng số N, quy tắc co phần dư).
 - Độ nhạy của same_day_mean theo tham số, và cách giảm tỷ lệ rơi về toàn cục trên ô thiếu thật.
 - Điều tra MICoDa: vì sao A17 thua mean_fill, và MSE count của A18.
 - Chạy thử với dữ liệu microbiome thật.

@@ -1,12 +1,13 @@
 """Marginal sampler: a floor ("decoy"), NOT a serious imputation method.
 
 Each missing cell of target j gets ONE proportion c/N drawn with replacement from
-the observed (visible) cells of target j, so the imputed values follow the observed
-marginal distribution of j while being wrong cell by cell. It scores well on
-distribution metrics (Wasserstein) and badly on per-cell errors; a real method must
-beat it on the latter. Draws are scaled down to the row residual R when they exceed
-it, Other gets the rest. Draws are made in row-major order of the missing cells with
-numpy default_rng(seed): same seed and same input, same output.
+the observed (visible) cells of target j, so the draws follow the observed marginal
+distribution of j while being wrong cell by cell; a real method must beat it on per-cell
+errors. Draws are scaled down to the row residual R when they exceed it, Other gets the
+rest. Because of that cap the FINAL imputed values do not follow the observed marginal
+exactly: this is not a positive control that is guaranteed a Wasserstein distance ~ 0.
+Draws are made in row-major order of the missing cells with numpy default_rng(seed):
+same seed and same input, same output.
 """
 import numpy as np
 from ..errors import InsufficientDataError, NotFittedError

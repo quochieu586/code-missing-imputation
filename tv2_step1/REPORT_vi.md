@@ -38,7 +38,7 @@ Phần đầu (đến mục *Quyết định thiết kế*) là lượt kiểm t
 
    - same_day_mean, Hron và Tsagris tốt hơn cả ba mức sàn trên MAE/MSE tỷ lệ. Riêng Tsagris có MAE count thấp hơn same_day_mean.
    - ⚠️ **MICoDa thua mean_fill** trên cả MAE tỷ lệ (0.1454 so với 0.1414), MSE tỷ lệ (0.0880 so với 0.0776) và MAE count. MAE tỷ lệ của MICoDa cũng ngang marginal_sampler. Tôi không chỉnh gì để số đẹp hơn. Đây là MICoDa mặc định A17/R1, vốn đã biết có thiên lệch điền cao (README, D08).
-   - same_day_mean tốt hơn Hron gần 3 lần trên MAE tỷ lệ. Nghĩa là thông tin "cùng thời điểm, cùng châu lục" rất mạnh, mà Hron/Tsagris/MICoDa đều không dùng thời gian.
+   - same_day_mean có MAE tỷ lệ thấp hơn Hron gần 3 lần trong lượt che giả này. Lợi thế đến từ bốn yếu tố cùng lúc: thời gian, châu lục, trung bình có trọng số N và quy tắc co phần dư. Chưa tách được đóng góp của từng yếu tố; ablation để step sau. Không suy ra được rằng riêng thông tin thời gian tạo ra khác biệt.
    - Kết quả chỉ có **một seed**, chưa có độ lệch giữa các seed.
 3. **Hron/Tsagris/MICoDa không đổi:** so với lượt chạy trên `main` cùng cấu hình, các file `*_completed.csv` và mask giống từng byte, `summary.json` (native và masked, trừ `seconds`) bằng nhau.
 4. **Số ô same_day_mean rơi vào từng mức** (`window_days=28`, `min_obs=20`, `max_widen=2`; các cửa sổ ±28/±56/±112 ngày; 6 nhóm):
@@ -66,12 +66,15 @@ Phần đầu (đến mục *Quyết định thiết kế*) là lượt kiểm t
 10. **Chọn model:** dùng `enabled = false` cùng cờ `--only`, không đổi nghĩa của `--models` (vẫn là đường dẫn TOML). Yêu cầu "thêm section trong baselines_covariants.toml" được hiểu là thêm khóa vào `[dataset]`, vì file schema chỉ có bảng đó.
 11. **Seed của marginal_sampler** cố định theo config, không gắn với seed của mask.
 12. Lượt chạy này dùng `/opt/anaconda3` (Python 3.13, numpy 2.1.3), vì `.venv` trong repo là venv Windows.
+13. **marginal_sampler** rút giá trị theo phân phối quan sát, nhưng sau khi co theo phần dư R thì phân phối cuối cùng không còn đảm bảo khớp (review PR #4). Mục đích của nó chỉ là mức sàn cho sai số từng ô.
 
 ## Hoàn thiện step 1: 5 seed, MICoDa `other = true`
 
-COVID đầy đủ, che 5%, seed 0–4, hai kiểu che. Model trong `src/` không đổi giữa các lượt (commit 7b0ccbe và 12fd81d giống nhau ở `nextgen/src`). Tất cả 80 lượt masked và 16 lượt native đều `completed`/`ok`, không có `errors.log`; seed 0 trùng khớp lượt một-seed ở trên. Bảng đầy đủ: [results_multiseed.md](results_multiseed.md) (sinh bởi `summarize_runs.py`).
+COVID đầy đủ, che 5%, seed 0–4, hai kiểu che. Sau các sửa của review PR #4, cả bốn run được chạy lại (commit a5807df và d1e391b): mọi CSV điền và mask giống từng byte bản trước, `summary.json` bằng nhau trừ thời gian chạy. Việc ghép run được kiểm tra tự động (F2) và nguồn gốc từng run nằm trong [results_manifest.json](results_manifest.json). Tất cả 80 lượt masked và 16 lượt native đều `completed`/`ok`, không có `errors.log`; seed 0 trùng khớp lượt một-seed ở trên. Bảng đầy đủ: [results_multiseed.md](results_multiseed.md) (sinh bởi `summarize_runs.py`).
 
 ### whole_feature (chính): nhóm ô model, mean ± sd qua 5 seed
+
+sd là **độ lệch chuẩn mẫu** (ddof = 1) qua 5 seed của mask, **không phải khoảng tin cậy**.
 
 | Model | MAE tỷ lệ | MSE tỷ lệ | MAE count |
 |---|---:|---:|---:|
@@ -142,7 +145,7 @@ Seed 0: 4633 ô đáp án 0 (1603 trong nhóm model, phần còn lại là ô é
 - Chạy bằng `nextgen/configs/models_micoda_other.toml`, lượt riêng, không sửa `run.py`. Mọi lượt đều `completed`, nên đã qua `check_completed`.
 - **Còn thua mean_fill không?** Về MAE tỷ lệ: không, thắng 5/5 seed ở cả hai mask (hiệu ~ −0.028). Về MSE tỷ lệ: gần như **hòa** (whole_feature thắng 4/5, hiệu −0.0020; random_cell thắng 1/5, hiệu +0.0003). Tức là chỉ nhỉnh hơn mức sàn một chút.
 - **So với micoda mặc định (A17/R1):** tốt hơn 5/5 seed ở cả hai mask trên MAE tỷ lệ (whole_feature −0.033, tức ×0.77; random_cell −0.024) và MSE tỷ lệ (−0.014, ×0.83; −0.011). MAE count giảm ~30–35%.
-- ⚠️ **Bất thường cần báo:** MSE count của micoda_other trên whole_feature tốt hơn ở 4/5 seed, nhưng trung bình lại *cao hơn* (+7.5e6, tỷ số trung bình ×1.22), do một seed rất xấu (đuôi nặng ở các dòng N lớn). Trên random_cell tỷ số MSE count chỉ ×1.02. Con số này **không khớp** với ghi chú D08 ("random-cell MSE count ~×4.5"). Tôi chưa điều tra nguyên nhân, có thể khác thiết lập lúc chốt D08. Không sửa gì.
+- ⚠️ **Bất thường cần báo (chưa kiểm chứng độc lập):** MSE count của micoda_other trên whole_feature tốt hơn ở 4/5 seed, nhưng trung bình lại *cao hơn* (+7.5e6, tỷ số trung bình ×1.22), do một seed rất xấu (đuôi nặng ở các dòng N lớn). Trên random_cell tỷ số MSE count chỉ ×1.02. Con số này **không khớp** với ghi chú D08 ("random-cell MSE count ~×4.5"). Tôi chưa điều tra nguyên nhân, có thể khác thiết lập lúc chốt D08. Không sửa gì. Từ PR #4, MSE count được lấy từ chính các run đã kiểm tra bằng manifest và nằm trong `results_multiseed.csv` (cột `mse_count_*`) cùng khối thắng/thua tự sinh. Tuy vậy chưa có ai chạy lại độc lập, nên vẫn coi là chưa kiểm chứng.
 
 ### same_day_mean: tỷ lệ ô dùng trung bình toàn cục
 
@@ -151,20 +154,21 @@ Seed 0: 4633 ô đáp án 0 (1603 trong nhóm model, phần còn lại là ô é
 | Ô che, nhóm model | 1.4% / 4.2% / 4.6% / 5.6% / 9.0% | 0.7–1.0% |
 | Ô thiếu thật (native) | 25.5% (21 946 / 86 050) | như bên trái |
 
-Câu "~1–2%" trong bản nháp contract đã được sửa theo bảng này.
+Hai dòng có **mẫu số khác nhau**: 25,5% tính trên mọi ô thiếu thật, còn 1,4–9% tính trên ô bị che thuộc nhóm model. Vì vậy không so trực tiếp được. Đây là cảnh báo về support, không phải phép đo độ chính xác trên ô thiếu thật. Câu "~1–2%" trong bản nháp contract đã được sửa theo bảng này.
 
 ### Kết luận
 
-1. **same_day_mean là baseline mạnh nhất**, thắng Hron 5/5 seed ở cả hai mask, cả MAE lẫn MSE tỷ lệ (MAE giảm ~60%). Nó đã được bật mặc định; model chính phải thắng nó, không chỉ thắng Hron/Tsagris.
+1. **same_day_mean tốt hơn các baseline trong lượt che giả (masked pilot) này:** thắng Hron 5/5 seed ở cả hai mask, cả MAE lẫn MSE tỷ lệ (MAE giảm ~60%). Đây **không** phải kết luận rằng nó tốt nhất trên ô thiếu thật. Lợi thế đến từ bốn yếu tố cùng lúc: thời gian, châu lục, trung bình có trọng số N và quy tắc co phần dư. Chưa tách được đóng góp của từng yếu tố; ablation để step sau. Nó đã được bật mặc định; model chính phải thắng nó, không chỉ thắng Hron/Tsagris.
 2. **Hron và Tsagris không phân thắng bại:** Hron thắng Tsagris về MAE tỷ lệ 5/5 seed ở cả hai mask; Tsagris thắng Hron về MSE tỷ lệ 5/5 ở cả hai mask, nhưng về MAE count chỉ 2/5 (whole_feature) và 0/5 (random_cell). MAE count trung bình của Tsagris thấp hơn ở whole_feature là do vài seed Hron rất xấu, không phải thắng ổn định theo seed (bản trước ghi sai "5/5"). Chọn metric chính sẽ quyết định thứ hạng, đây là việc của step 2.
 3. **MICoDa sát mức sàn:** bản mặc định A17/R1 thua mean_fill trên whole_feature (MAE thua 4/5 seed, MSE thua 5/5). Bản A18/R2 cải thiện rõ so với A17 nhưng chỉ hơn mean_fill về MAE; MSE gần như bằng.
-4. **Điểm masked của same_day_mean lạc quan hơn thực tế:** ô thiếu thật dùng trung bình toàn cục 25.5%, còn ô bị che chỉ 0.7–9%.
+4. **Support của same_day_mean trên ô thiếu thật kém hơn trên ô che:** 25,5% mọi ô thiếu thật dùng trung bình toàn cục, so với 0,7–9% ô che thuộc nhóm model. Hai tỷ lệ khác mẫu số nên không so trực tiếp, và cũng không đo độ chính xác trên ô thiếu thật. Đây là lý do không nên đọc điểm masked như chất lượng trên NaN tự nhiên.
 5. **MAE count do vài dòng N lớn chi phối** (sd lớn hơn trung bình ở whole_feature), nên xếp hạng nên dựa trên tỷ lệ, còn count chỉ tham khảo.
 
 ## Để lại cho step 2
 
 - **Tên biến thể** kiểu `[same_day_mean_wide]`, `[micoda_other]`: `run.py` map tên bảng thẳng vào class nên chưa hỗ trợ (step 1 phải chạy micoda_other bằng lượt riêng). Có thể thêm khóa `model = "same_day_mean"`.
-- `evaluate.py`: bootstrap/khoảng tin cậy cho so sánh ghép cặp; thống kê mức nới cửa sổ chỉ trên ô bị che trong `summary`; Wasserstein cho lượt masked (marginal_sampler được thiết kế để thắng ở đó); chọn metric chính (MAE hay MSE tỷ lệ) vì Hron/Tsagris đổi thứ hạng theo metric.
+- `evaluate.py`: bootstrap/khoảng tin cậy cho so sánh ghép cặp; thống kê mức nới cửa sổ chỉ trên ô bị che trong `summary`; Wasserstein cho lượt masked (marginal_sampler bị co theo phần dư nên **không** đảm bảo Wasserstein ≈ 0, không dùng làm positive control); chọn metric chính (MAE hay MSE tỷ lệ) vì Hron/Tsagris đổi thứ hạng theo metric.
+- **Ablation same_day_mean** (đóng băng cấu hình/metric trước khi chạy): tách đóng góp của thời gian, châu lục, trọng số N và quy tắc co phần dư.
 - Độ nhạy của same_day_mean theo `window_days`, `min_obs`, `exclude_same_location`, và cách giảm tỷ lệ 25.5% rơi về toàn cục trên ô thiếu thật.
 - Điều tra MSE count của MICoDa A18 (seed xấu ở whole_feature; không khớp D08) và vì sao A17/R1 thua mean_fill.
 - Chạy thử với dữ liệu microbiome thật (time dạng số) và quyết định cách nới cửa sổ cho dạng đó.
