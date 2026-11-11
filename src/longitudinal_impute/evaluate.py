@@ -45,25 +45,49 @@ def wasserstein_scores(data, completed):
     return scores
 
 
-def masked_errors(data, completed, hidden):
-    """Errors on the hidden cells H only, overall and per group, on counts and on c / N."""
-    if hidden.shape != data.counts.shape or (hidden & ~np.isfinite(data.counts)).any():
-        raise ValueError('hidden must be a subset of the observed cells')
-    rows = np.nonzero(hidden)[0]
-    truth, pred, totals = data.counts[hidden], completed[hidden], data.totals[rows]
-    forced = forced_zero(data, hidden)[hidden]
-    groups = {'all': np.ones(len(truth), bool), 'truth_zero': truth == 0, 'truth_positive': truth > 0,
-              'forced_zero': forced, 'model': ~forced, 'model_truth_zero': ~forced & (truth == 0)}
+GROUPS = ('all', 'truth_zero', 'truth_positive', 'forced_zero', 'model', 'model_truth_zero')
+METRICS = ('mse_count', 'mae_count', 'mse_proportion', 'mae_proportion')
+
+
+def cell_groups(truth, forced):
+    """Boolean selector of every scored group, from the truth and forced-zero flag of each hidden cell."""
+    return {'all': np.ones(len(truth), bool), 'truth_zero': truth == 0, 'truth_positive': truth > 0,
+            'forced_zero': forced, 'model': ~forced, 'model_truth_zero': ~forced & (truth == 0)}
+
+
+def cell_errors(truth, pred, totals, forced):
+    """Cell-weighted errors per group on counts and on c / N; an empty group gives None (NA), not 0."""
     errors = {}
-    for group, cells in groups.items():
+    for group, cells in cell_groups(truth, forced).items():
         count = pred[cells] - truth[cells]
         proportion = count / totals[cells]
         errors[group] = {'cells': int(cells.sum()), **({
             'mse_count': float(np.mean(count ** 2)), 'mae_count': float(np.mean(np.abs(count))),
             'mse_proportion': float(np.mean(proportion ** 2)),
-            'mae_proportion': float(np.mean(np.abs(proportion)))} if cells.any() else dict.fromkeys(
-            ('mse_count', 'mae_count', 'mse_proportion', 'mae_proportion')))}
+            'mae_proportion': float(np.mean(np.abs(proportion)))} if cells.any() else dict.fromkeys(METRICS))}
     return errors
+
+
+def masked_errors(data, completed, hidden):
+    """Errors on the hidden cells H only, overall and per group, on counts and on c / N."""
+    if hidden.shape != data.counts.shape or (hidden & ~np.isfinite(data.counts)).any():
+        raise ValueError('hidden must be a subset of the observed cells')
+    rows = np.nonzero(hidden)[0]
+    return cell_errors(data.counts[hidden], completed[hidden], data.totals[rows], forced_zero(data, hidden)[hidden])
+
+
+def series_macro_mae(truth, pred, totals, series, cells):
+    """MAE of c / N within each series (e.g. location x target), then the plain mean over series.
+
+    Only the selected cells count; a series with no selected cell is left out. None (NA)
+    when no cell is selected. Cell-weighted MAE weights a series by its number of cells.
+    """
+    cells = np.asarray(cells, bool)
+    if not cells.any():
+        return None
+    error = np.abs((pred[cells] - truth[cells]) / totals[cells])
+    _, index = np.unique(np.asarray(series)[cells], return_inverse=True)
+    return float(np.mean(np.bincount(index, weights=error) / np.bincount(index)))
 
 
 def summarize(rows):
