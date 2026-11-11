@@ -232,3 +232,69 @@ def test_run_end_to_end_with_the_new_models(tmp_path):
     config = json.loads((out / 'config.json').read_text(encoding='utf-8'))
     assert list(config['models']) == list(names) and config['only'] == list(names)
     assert {p.name for p in out.glob('*_completed.csv')} == {f'{m}_completed.csv' for m in names}
+
+
+# --- F1 (PR #4 review): endpoint lookup, checked against a direct-donor oracle and for memory ----
+
+def oracle_same_day(values, totals, days, groups, entities, model, kind='date'):
+    """Loop over every missing cell and every donor row: the definition, without prefix sums."""
+    targets = values[:, :-1]
+    proposal = np.zeros(targets.shape)
+    levels = np.full(targets.shape, -1)
+    windows = model.windows(kind)
+    for i, j in zip(*np.nonzero(np.isnan(targets))):
+        donors = [k for k in range(len(values)) if k != i and np.isfinite(targets[k, j])
+                  and not (model.exclude_same_location and entities[k] == entities[i])]
+        for step, width in enumerate(windows):
+            inside = [k for k in donors if groups[k] == groups[i] and abs(days[k] - days[i]) <= width]
+            if len(inside) >= model.min_obs:
+                break
+        else:
+            inside, step = donors, len(windows)
+        proposal[i, j] = sum(targets[k, j] * totals[k] for k in inside) / sum(totals[k] for k in inside)
+        levels[i, j] = step
+    return fill_within_residual(values, proposal)[0], levels
+
+
+@pytest.mark.parametrize('seed', range(6))
+@pytest.mark.parametrize('exclude', [False, True])
+def test_same_day_mean_matches_a_direct_donor_oracle(seed, exclude):
+    rng = np.random.default_rng(seed)
+    n, d = 60, 3
+    parts = rng.dirichlet(np.ones(d + 1), n)
+    values = parts.copy()
+    values[:, :-1][rng.random((n, d)) < .3] = np.nan
+    values[np.isnan(values[:, :-1]).any(axis=1), -1] = np.nan
+    totals = rng.integers(1, 500, n).astype(float)
+    days = rng.integers(0, 40, n) * 3
+    groups = [f'G{k}' for k in rng.integers(0, 3, n)]
+    entities = [f'E{k}' for k in rng.integers(0, 8, n)]
+    model = SameDayMean(5, min_obs=3, max_widen=2, exclude_same_location=exclude)
+    model.fit(values, {'totals': totals, 'days': days, 'time_kind': 'date',
+                       'groups': groups, 'entities': entities})
+    out = model.predict(values)
+    expected, levels = oracle_same_day(values, totals, days, groups, entities, model)
+    np.testing.assert_allclose(out, expected, rtol=1e-12, atol=1e-15)
+    np.testing.assert_array_equal(model.levels_, levels)
+    assert len(set(levels[levels >= 0].tolist())) > 1        # several fallback levels exercised
+
+
+def test_same_day_mean_predict_memory_does_not_grow_with_rows_times_days():
+    import tracemalloc
+    n = 4000                                    # 4000 rows, 4000 distinct days, one group
+    rng = np.random.default_rng(0)
+    a, b = rng.uniform(0, .5, n), rng.uniform(0, .5, n)
+    values = np.column_stack((a, b, 1 - a - b))
+    values[::2, 0] = values[::2, 2] = np.nan
+    for exclude in (False, True):
+        model = SameDayMean(28, min_obs=20, exclude_same_location=exclude).fit(values, {
+            'totals': rng.integers(1, 1000, n).astype(float), 'days': np.arange(n), 'time_kind': 'date',
+            'groups': None, 'entities': [f'E{k % 10}' for k in range(n)]})
+        tracemalloc.start()
+        try:
+            model.predict(values)
+            peak = tracemalloc.get_traced_memory()[1]
+        finally:
+            tracemalloc.stop()
+        # Before F1: ~185 MiB (exclude=False) and ~370 MiB (True); after: ~0.9 and ~2.7 MiB.
+        assert peak < 16 * 2 ** 20, f'peak {peak / 2 ** 20:.1f} MiB'

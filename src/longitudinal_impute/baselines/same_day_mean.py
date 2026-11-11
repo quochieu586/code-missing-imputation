@@ -135,11 +135,14 @@ class SameDayMean:
                 else:
                     lo = np.searchsorted(axis, days[rows] - width, side='left')
                     hi = np.searchsorted(axis, days[rows] + width, side='right')
-                table = tables['group'][:, self.groups_[rows]]
-                window = table[:, np.arange(len(rows)), hi] - table[:, np.arange(len(rows)), lo]
+                # Read only the two endpoints per query row (O(rows), not O(rows x time axis)).
+                group = self.groups_[rows]
+                table = tables['group']
+                window = table[:, group, hi] - table[:, group, lo]
                 if self.exclude_same_location:
-                    own = tables['pair'][:, self.pairs_[rows]]
-                    window -= own[:, np.arange(len(rows)), hi] - own[:, np.arange(len(rows)), lo]
+                    pair = self.pairs_[rows]
+                    own = tables['pair']
+                    window -= own[:, pair, hi] - own[:, pair, lo]
                 cells, numerator, denominator = window
                 ok = cells >= self.min_obs - .5      # counts are float sums of ones
                 reference[todo[ok]] = numerator[ok] / denominator[ok]
