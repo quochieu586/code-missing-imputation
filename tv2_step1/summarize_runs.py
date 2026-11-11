@@ -1,12 +1,21 @@
 """Step 1 multi-seed tables from the run outputs in tv2_step1/runs/ (not tracked).
 
-    PYTHONPATH=nextgen/src python tv2_step1/summarize_runs.py > tv2_step1/results_multiseed.md
+    PYTHONPATH=nextgen/src python tv2_step1/summarize_runs.py [--runs DIR] [--out DIR]
 
-Reads summary.json of runs/main_<mask> (7 models) and runs/micoda_other_<mask> (MICoDa
+Reads summary.json of <runs>/main_<mask> (7 models) and <runs>/micoda_other_<mask> (MICoDa
 other = true, reported as micoda_other). Only metric groups already computed by
 evaluate.masked_errors are used. The same_day_mean fallback levels on the hidden cells
 are recomputed from the saved masks (same model, same parameters as the run).
+
+F2 (PR #4 review): before the two runs of a mask are merged, validate_pair() checks that
+they share the data hash, schema, mask kind, rate, seeds and group map, that every saved
+mask is identical, that the main run has MICoDa with other = false and the second run
+MICoDa alone with other = true. Any mismatch raises ValueError and no output file is
+written. Outputs (only after every check passed): results_multiseed.md,
+results_multiseed.csv and results_manifest.json (hashes of data, schema, masks, models
+and group map per run) in --out.
 """
+import argparse
 import csv
 import hashlib
 import json
@@ -22,11 +31,60 @@ SEEDS = ('0', '1', '2', '3', '4')
 PAIRS = (('same_day_mean', 'hron'), ('hron', 'tsagris'), ('micoda_other', 'mean_fill'), ('micoda', 'mean_fill'))
 
 
-def load(mask):
+def digest(value):
+    """sha256 of bytes, of a numpy array (dtype, shape, data) or of a JSON-able object."""
+    if isinstance(value, np.ndarray):
+        value = f'{value.dtype}{value.shape}'.encode() + np.ascontiguousarray(value).tobytes()
+    elif not isinstance(value, bytes):
+        value = json.dumps(value, sort_keys=True).encode()
+    return hashlib.sha256(value).hexdigest()
+
+
+def run_record(folder, mask):
+    """Manifest entry of one run directory, read from its config.json and saved masks."""
+    config = json.loads((folder / 'config.json').read_text(encoding='utf-8'))
+    masks = {}
+    for seed in SEEDS:
+        path = folder / f'mask_{mask}_seed{seed}.npy'
+        if not path.exists():
+            raise ValueError(f'{folder.name}: missing saved mask {path.name}')
+        masks[seed] = np.load(path)
+    return {'dir': folder.name, 'git': config.get('git'), 'data': Path(config['data']).name,
+            'data_sha256': config['data_sha256'], 'schema_sha256': digest(config['schema']),
+            'mask': config['mask'], 'rate': config['mask_rate'],
+            'seeds': [str(s) for s in config['seeds'] or []],
+            'mask_sha256': {seed: digest(m) for seed, m in masks.items()},
+            'models': config['models'], 'models_sha256': digest(config['models']),
+            'group_map': config.get('group_map', 'absent')}, masks
+
+
+def validate_pair(root, mask):
+    """F2: the main and micoda_other runs of one mask may be paired only if these all agree."""
+    main, main_masks = run_record(root / f'main_{mask}', mask)
+    other, other_masks = run_record(root / f'micoda_other_{mask}', mask)
+    problems = []
+    for key in ('data_sha256', 'schema_sha256', 'mask', 'rate', 'seeds', 'group_map'):
+        if main[key] != other[key]:
+            problems.append(f'{key}: main {main[key]!r} != micoda_other {other[key]!r}')
+    if main['mask'] != mask or main['seeds'] != list(SEEDS):
+        problems.append(f'expected mask {mask!r} with seeds {list(SEEDS)}, got {main["mask"]!r} {main["seeds"]}')
+    for seed in SEEDS:
+        if not np.array_equal(main_masks[seed], other_masks[seed]):
+            problems.append(f'seed {seed}: saved masks differ')
+    if 'micoda' not in main['models'] or main['models']['micoda'].get('other', False) is not False:
+        problems.append(f'main run must contain MICoDa with other = false, got {main["models"].get("micoda")}')
+    if set(other['models']) != {'micoda'} or other['models']['micoda'].get('other') is not True:
+        problems.append(f'micoda_other run must contain only MICoDa with other = true, got {other["models"]}')
+    if problems:
+        raise ValueError(f'refusing to pair main_{mask} with micoda_other_{mask}:\n  ' + '\n  '.join(problems))
+    return [main, other]
+
+
+def load(root, mask):
     """{model: {seed: result}} plus the native results, with micoda_other merged in."""
     runs, native = {}, {}
     for prefix, rename in (('main', {}), ('micoda_other', {'micoda': 'micoda_other'})):
-        summary = json.loads((HERE / 'runs' / f'{prefix}_{mask}' / 'summary.json').read_text())
+        summary = json.loads((root / f'{prefix}_{mask}' / 'summary.json').read_text())
         for name, result in summary['native'].items():
             native[rename.get(name, name)] = result
         for seed in SEEDS:
@@ -95,12 +153,12 @@ def truth_table(runs, out):
                    f"{metric(r[0], 'truth_positive', 'cells')} |")
 
 
-def levels_table(mask, native, out):
+def levels_table(root, mask, native, out):
     sys.path.insert(0, str(REPO / 'nextgen/src'))
     from longitudinal_impute import run
     from longitudinal_impute.data import load_csv
     from longitudinal_impute.evaluate import forced_zero
-    config = json.loads((HERE / 'runs' / f'main_{mask}' / 'config.json').read_text())
+    config = json.loads((root / f'main_{mask}' / 'config.json').read_text())
     data = load_csv(config['data'], config['schema_path'])
     # F3: recompute only from the same data and the same group map the run used.
     if hashlib.sha256(Path(config['data']).read_bytes()).hexdigest() != config['data_sha256']:
@@ -117,7 +175,7 @@ def levels_table(mask, native, out):
     out.append('| Seed | Ô che (nhóm model): gốc / nới 1 / nới 2 / toàn cục | Mọi ô che: gốc / nới 1 / nới 2 / toàn cục |')
     out.append('|---|---|---|')
     for seed in SEEDS:
-        hidden = np.load(HERE / 'runs' / f'main_{mask}' / f'mask_{mask}_seed{seed}.npy')
+        hidden = np.load(root / f'main_{mask}' / f'mask_{mask}_seed{seed}.npy')
         model = run.MODELS['same_day_mean'](**params)
         run.run_model(data, model, hidden)
         cells = []
@@ -132,12 +190,15 @@ def levels_table(mask, native, out):
                + f"; toàn cục {levels['global'] / total:.1%} trên {total} ô.")
 
 
-def main():
+def summarize(root, out_dir, levels=True):
+    """Validate every pair first; write the three outputs only when all checks passed."""
+    manifest = {mask: validate_pair(root, mask) for mask in MASKS}
     out, rows = ['# Step 1: kết quả nhiều seed (COVID đầy đủ, che 5%, seed 0–4)', '',
                  'Nhóm `model` = ô bị che mà phần dư của dòng > 0 (evaluate.forced_zero). '
-                 'Sắp theo MAE tỷ lệ trung bình. mean ± sd (ddof=1) qua 5 seed.', ''], []
+                 'Sắp theo MAE tỷ lệ trung bình. mean ± sd (ddof=1) qua 5 seed: độ lệch chuẩn mẫu, '
+                 'không phải khoảng tin cậy. Nguồn: results_manifest.json.', ''], []
     for mask in MASKS:
-        runs, native = load(mask)
+        runs, native = load(root, mask)
         out += [f'## Mask `{mask}`' + (' (chính)' if mask == 'whole_feature' else ' (tham khảo)'), '']
         statuses = {m: [runs[m][s]['status'] for s in SEEDS] for m in runs}
         bad = {m: s for m, s in statuses.items() if set(s) != {'ok'}}
@@ -151,14 +212,27 @@ def main():
         pair_table(runs, out)
         out += ['', '### MAE tỷ lệ theo đáp án', '']
         truth_table(runs, out)
-        out += ['', '### same_day_mean: mức cửa sổ trên ô bị che', '']
-        levels_table(mask, native, out)
+        if levels:
+            out += ['', '### same_day_mean: mức cửa sổ trên ô bị che', '']
+            levels_table(root, mask, native, out)
         out.append('')
-    print('\n'.join(out))
-    with (HERE / 'results_multiseed.csv').open('w', newline='', encoding='utf-8') as stream:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / 'results_multiseed.md').write_text('\n'.join(out), encoding='utf-8')
+    with (out_dir / 'results_multiseed.csv').open('w', newline='', encoding='utf-8') as stream:
         writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
+    (out_dir / 'results_manifest.json').write_text(json.dumps(manifest, indent=1, sort_keys=True) + '\n',
+                                                   encoding='utf-8')
+    return out, rows, manifest
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--runs', type=Path, default=HERE / 'runs')
+    parser.add_argument('--out', type=Path, default=HERE)
+    args = parser.parse_args(argv)
+    summarize(args.runs, args.out)
 
 
 if __name__ == '__main__':
