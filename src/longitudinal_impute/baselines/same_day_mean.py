@@ -24,6 +24,15 @@ The window depends on Dataset.time_kind:
 The proposals of a row are scaled down when they exceed its residual R = 1 - sum(observed);
 Other gets the rest (common.fill_within_residual), and restore_counts turns them into counts.
 
+Ablation switches (step 3; the defaults are the method above, byte for byte):
+  * use_time = false: ignore the time column, i.e. one window over all dates of the group
+    (still min_obs, then the global mean), no widening;
+  * use_group = false: one group for every row;
+  * weighting = 'none': plain mean of c/N (sum of c/N over the count of cells) instead of
+    the N-weighted sum(c) / sum(N), in the windows and in the global mean;
+  * residual_rule = 'rescale': proposals are always scaled to sum to R, Other = 0 (R1-like);
+    a row whose proposals sum to 0 keeps the 'cap' outcome.
+
 Supported input: the row totals N must sum to at most 2**53 (~9.0e15; COVID: 1.5e7), so the
 prefix sums behind every window are exact for integer counts. fit() rejects larger tables
 (e.g. N = 1e308, which overflows, or one N = 1e20 next to N = 100, which a prefix-sum
@@ -60,16 +69,25 @@ class SameDayMean:
     input_domain = 'nonnegative'
     needs_context = True        # run.run_model passes totals, time and groups of the rows
 
-    def __init__(self, window_days=28, *, min_obs=20, max_widen=2, exclude_same_location=False):
+    def __init__(self, window_days=28, *, min_obs=20, max_widen=2, exclude_same_location=False,
+                 use_time=True, use_group=True, weighting='n', residual_rule='cap'):
         for name, value in (('window_days', window_days), ('min_obs', min_obs), ('max_widen', max_widen)):
             if not isinstance(value, int) or isinstance(value, bool) or value < 0:
                 raise ValueError(f'{name} must be a nonnegative integer')
         if min_obs < 1:
             raise ValueError('min_obs must be at least 1')
-        if not isinstance(exclude_same_location, bool):
-            raise ValueError('exclude_same_location must be true or false')
+        for name, value in (('exclude_same_location', exclude_same_location), ('use_time', use_time),
+                            ('use_group', use_group)):
+            if not isinstance(value, bool):
+                raise ValueError(f'{name} must be true or false')
+        if weighting not in ('n', 'none'):
+            raise ValueError(f"weighting must be 'n' or 'none', got {weighting!r}")
+        if residual_rule not in ('cap', 'rescale'):
+            raise ValueError(f"residual_rule must be 'cap' or 'rescale', got {residual_rule!r}")
         self.window_days, self.min_obs, self.max_widen = window_days, min_obs, max_widen
         self.exclude_same_location = exclude_same_location
+        self.use_time, self.use_group = use_time, use_group
+        self.weighting, self.residual_rule = weighting, residual_rule
 
     def windows(self, kind):
         """Half-widths of the successive windows, in the unit of Dataset.days."""
@@ -99,13 +117,13 @@ class SameDayMean:
             raise BaselineInputError(f'SameDayMean supports row totals summing to at most 2**53 '
                                      f'(~9.0e15) so that window sums are exact; got {grand:.3g}',
                                      context={'total_sum': float(grand)})
-        kind, days = context.get('time_kind'), context.get('days')
+        kind, days = (context.get('time_kind'), context.get('days')) if self.use_time else (None, None)
         if (kind is None) != (days is None):
             raise BaselineInputError('time_kind and days must be given together')
         days = np.zeros(n) if days is None else np.asarray(days, float)
         if days.shape != (n,) or not np.isfinite(days).all():
             raise BaselineInputError('days must be finite, one per row')
-        groups = _codes(context.get('groups'), n)
+        groups = _codes(context.get('groups') if self.use_group else None, n)
         entities = _codes(context.get('entities'), n)
         if self.exclude_same_location and context.get('entities') is None:
             raise BaselineInputError('exclude_same_location needs the entity of every row')
@@ -138,8 +156,12 @@ class SameDayMean:
                 if not len(need):
                     continue
                 seen = np.isfinite(self.visible_[:, j])
-                mass = np.where(seen, self.visible_[:, j] * totals, 0.)
-                weight = np.where(seen, totals, 0.)
+                if self.weighting == 'n':
+                    mass = np.where(seen, self.visible_[:, j] * totals, 0.)
+                    weight = np.where(seen, totals, 0.)
+                else:
+                    mass = np.where(seen, self.visible_[:, j], 0.)
+                    weight = seen.astype(float)
                 # Cumulative sums over the sorted time axis, per group and per (group, entity).
                 tables = {}
                 for key, codes in (('group', self.groups_), ('pair', self.pairs_)):
@@ -199,11 +221,13 @@ class SameDayMean:
                 levels[need, j] = np.where(level < 0, len(windows), level)
                 per_target[j] = {name: int((level == k).sum()) if name != 'global' else int((level < 0).sum())
                                  for k, name in enumerate(names)}
-        out, scaled = fill_within_residual(x, proposal)
+        out, scaled = fill_within_residual(x, proposal, self.residual_rule)
         self.levels_ = levels
         self.info_ = {'method': 'same_day_mean', 'time_kind': self.kind_,
                       'window_days': self.window_days, 'min_obs': self.min_obs, 'max_widen': self.max_widen,
-                      'exclude_same_location': self.exclude_same_location,
+                      'exclude_same_location': self.exclude_same_location, 'use_time': self.use_time,
+                      'use_group': self.use_group, 'weighting': self.weighting,
+                      'residual_rule': self.residual_rule,
                       'windows': [None if np.isinf(w) else w for w in windows],
                       'groups': int(self.groups_.max() + 1), 'filled_cells': int(sum(counts.values())),
                       'cells_by_level': counts, 'cells_by_level_per_feature': per_target,
