@@ -72,6 +72,8 @@ Thư mục `--output` phải chưa tồn tại.
 | `summary.json` | Toàn bộ chi tiết: Wasserstein theo target của lượt thật, `info_` của model (với MICoDa gồm δ, reference, hội tụ, warning counts), thống kê mask, sai số theo nhóm, `coverage` của lượt che, `aggregate` (mean ± sd qua seed). |
 | `errors.log` | Chỉ xuất hiện khi có lỗi hoặc có run không `completed` (kèm trạng thái `partial`). |
 
+**Bảng tổng hợp của `run.py` không dùng để xếp hạng.** Bảng in ra màn hình, `aggregate` trong `summary.json` và `evaluate.summarize` lấy mean ± sd trên các seed mà *từng model* chạy xong. Vì vậy hai model có thể được tính trên hai tập seed khác nhau: một model fail ở seed khó sẽ trông tốt hơn thực tế (F07). Để xếp hạng hay so sánh model, dùng [`tv2_step2/tier01.py`](tv2_step2/tier01.py): bảng metric lấy trung bình trên tập seed chung của mọi model, mỗi cặp ghép trên tập seed chung của riêng cặp đó, và run fail vẫn có mặt trong bảng trạng thái.
+
 Ô "bị ép về 0" nằm ở dòng mà tổng các ô nhìn thấy đã bằng N. Phần dư của dòng đó là 0, nên model không quyết định được ô này. Định nghĩa metric nằm trong [`evaluate.py`](src/longitudinal_impute/evaluate.py).
 
 ## MICoDa và ngân sách Other chung

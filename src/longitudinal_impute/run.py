@@ -604,6 +604,8 @@ def main(argv=None):
             artifacts['files'][path.relative_to(output).as_posix()] = sha256(path)
     (output / 'artifacts.json').write_text(json.dumps(artifacts, indent=1), encoding='utf-8')
     print_table(aggregate)
+    print('(mean/sd over the seeds each model completed, so models may be averaged over different '
+          'seeds: not a ranking. Rank with tv2_step2/tier01.py, which uses the seeds common to all models.)')
     if paired['cases']:
         print('\nPaired masked comparison (shared successful seeds, same model space):')
         print_table(paired['aggregate'])
