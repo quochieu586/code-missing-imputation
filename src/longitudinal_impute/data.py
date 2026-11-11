@@ -305,6 +305,42 @@ def restore_counts(data, proposed, hidden):
     return result
 
 
+RESIDUAL_RULES = ('prop_other', 'cap', 'rescale')
+
+
+def apply_residual_rule(data, composition, hidden, rule):
+    """Counts from a predicted composition under one residual rule (step 4). Returns (counts, info).
+
+    composition: N x (D+1) model output, targets then Other; only rows with a missing target
+    are read. Per row, R = N - V (V = visible target counts) and q_j = N * p_j.
+      prop_other: R is shared by the missing targets and Other in proportion to the
+        composition (restore_counts, unchanged; the scale of a row does not matter).
+      cap / rescale: the row is first closed to 1 over its D+1 parts (p), then
+        baselines.common.fill_within_residual applies the rule to the missing p_j against
+        R / N, and restore_counts turns the result into counts. No other tolerance is used.
+    """
+    from .baselines.common import fill_within_residual
+    if rule not in RESIDUAL_RULES:
+        raise ValueError(f'residual rule must be one of {RESIDUAL_RULES}, got {rule!r}')
+    composition = np.asarray(composition, float)
+    if composition.shape != (len(data.counts), len(data.targets) + 1):
+        raise ValueError('Expected a composition over the targets plus Other')
+    rows = ((~np.isfinite(data.counts)) | hidden).any(axis=1)
+    part = composition[rows]
+    if not np.isfinite(part).all() or (part < 0).any() or (part.sum(axis=1) <= 0).any():
+        raise ValueError('The composition must be finite, nonnegative and positive on rows with a missing target')
+    sums = part.sum(axis=1)
+    info = {'rule': rule, 'rows': int(rows.sum()),
+            'composition_row_sum': {'min': float(sums.min()), 'median': float(np.median(sums)),
+                                    'max': float(sums.max())} if len(sums) else None}
+    if rule == 'prop_other':
+        return restore_counts(data, composition * data.totals[:, None], hidden), info
+    closed = np.zeros_like(composition)
+    closed[rows] = part / sums[:, None]
+    filled, info['rows_scaled'] = fill_within_residual(model_input(data, hidden), closed[:, :-1], rule)
+    return restore_counts(data, filled * data.totals[:, None], hidden), info
+
+
 def check_completed(data, completed, hidden):
     """Visible counts unchanged; every cell finite, nonnegative and within the row total."""
     visible = np.isfinite(data.counts) & ~hidden

@@ -436,6 +436,9 @@ class MICoDaCovid:
                   'covariates': 'intercept_only', 'W': 0., 'other_column': self.other,
                   'positive_state_required': True}
         raw = n = prepared = None
+        # Model-space composition of the core (NaN on excluded rows), kept for the runner's
+        # residual_rule path (step 4); it does not change anything computed here.
+        self.proposals_ = None
         try:
             raw, n = _visible_input(counts, totals, hidden)
             prepared = _prepare(raw, n, other=self.other)
@@ -447,6 +450,7 @@ class MICoDaCovid:
             core.fit(core_values, require_positive_state=True)
             proposals = np.full(prepared.values.shape, np.nan)
             proposals[prepared.core_rows] = core.fit_result_.values
+            self.proposals_ = proposals.copy()
             result = restore(prepared, proposals)
             fit = core.fit_result_.diagnostics
             for key in ('reference', 'iterations', 'relative_changes', 'converged',

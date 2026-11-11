@@ -23,7 +23,8 @@ import tomllib
 
 import numpy as np
 
-from .data import load_csv, read_schema, make_mask, validate_mask, model_input, restore_counts, check_completed, write_completed_csv
+from .data import (load_csv, read_schema, make_mask, validate_mask, model_input, restore_counts, check_completed,
+                   write_completed_csv, apply_residual_rule, RESIDUAL_RULES)
 from .evaluate import wasserstein_scores, masked_errors, summarize, paired_summary, forced_zero
 from .cells import prediction_rows, write_predictions
 from .baselines.hron import HronKNN
@@ -46,8 +47,13 @@ MODELS = {'hron': HronKNN, 'micoda': MICoDaCovid, 'tsagris': TsagrisKNN, 'main':
 SPACE = {'micoda': '18_with_other', 'hron': '18_with_other', 'tsagris': '18_with_other', 'main': '18_with_other'}
 
 
-def run_model(data, model, hidden):
-    """Fit on the visible cells and return (values, status, info) with counts checked."""
+def run_model(data, model, hidden, residual_rule=None):
+    """Fit on the visible cells and return (values, status, info) with counts checked.
+
+    residual_rule (step 4, Hron/Tsagris/MICoDa other = true only): restore the model's
+    composition with data.apply_residual_rule instead of the model's own rule. None keeps
+    every model's current path unchanged.
+    """
     if isinstance(model, MainModel):
         completed = model.impute(data, hidden)
         check_completed(data, completed, hidden)
@@ -58,6 +64,12 @@ def run_model(data, model, hidden):
             raise ValueError(f'counts adapter returned no values: {result.status}')
         info = {k: result.diagnostics[k] for k in MICODA_INFO_KEYS if k in result.diagnostics}
         info['unassigned'] = result.unassigned
+        if residual_rule is not None and model.proposals_ is not None:
+            # The adapter's own R2 result is discarded; its core composition is restored again.
+            completed, info['residual_rule'] = apply_residual_rule(data, model.proposals_, hidden, residual_rule)
+            check_completed(data, completed, hidden)
+            info['adapter_status'] = result.status
+            return completed, 'completed', info
         if result.status == 'completed':
             check_completed(data, result.values, hidden)
         return result.values, result.status, info
@@ -68,9 +80,13 @@ def run_model(data, model, hidden):
                                    'groups': data.groups, 'entities': data.entities})
     else:
         model.fit(values)
-    completed = restore_counts(data, model.predict(values) * data.totals[:, None], hidden)
+    if residual_rule is None:
+        completed = restore_counts(data, model.predict(values) * data.totals[:, None], hidden)
+        check_completed(data, completed, hidden)
+        return completed, 'completed', getattr(model, 'info_', None)
+    completed, rule_info = apply_residual_rule(data, model.predict(values), hidden, residual_rule)
     check_completed(data, completed, hidden)
-    return completed, 'completed', getattr(model, 'info_', None)
+    return completed, 'completed', {**(getattr(model, 'info_', None) or {}), 'residual_rule': rule_info}
 
 
 def impute(data, model, hidden):
@@ -120,9 +136,43 @@ def model_kind(name, params):
     return params.get('model', name)
 
 
+# Models whose `residual_rule` key is handled by the runner (step 4). For same_day_mean the key
+# is the model's own parameter (cap / rescale, step 3); other models have no such key.
+RUNNER_RULES = {'hron': RESIDUAL_RULES, 'tsagris': RESIDUAL_RULES, 'micoda': RESIDUAL_RULES}
+
+
+def residual_rule(name, params):
+    """The runner-level residual rule of table [name], or None (model's current rule)."""
+    return params.get('residual_rule') if model_kind(name, params) in RUNNER_RULES else None
+
+
+def constructor_params(name, params):
+    drop = {'model'} | ({'residual_rule'} if model_kind(name, params) in RUNNER_RULES else set())
+    return {k: v for k, v in params.items() if k not in drop}
+
+
+def check_rule(name, params):
+    """Refuse a residual rule a model cannot take, with the reason, before any side effect."""
+    kind, rule = model_kind(name, params), params.get('residual_rule')
+    if rule is None:
+        return
+    if kind == 'same_day_mean' and rule == 'prop_other':
+        raise ValueError(f'[{name}] residual_rule = "prop_other" is not applicable to same_day_mean: '
+                         'it predicts no Other share (use "cap" or "rescale")')
+    if kind == 'same_day_mean':
+        return                                   # its own parameter, checked by the constructor
+    if kind not in RUNNER_RULES:
+        raise ValueError(f'[{name}] residual_rule is not applicable to {kind}')
+    if rule not in RUNNER_RULES[kind]:
+        raise ValueError(f'[{name}] residual_rule must be one of {RESIDUAL_RULES}, got {rule!r}')
+    if kind == 'micoda' and params.get('other', False) is not True:
+        raise ValueError(f'[{name}] residual_rule is not applicable to micoda with other = false (A17): it '
+                         'predicts no Other share, and its R1 restore already is the "rescale" rule')
+
+
 def build(name, params):
-    """A fresh model of table [name]: the class of model_kind, with every parameter but `model`."""
-    return MODELS[model_kind(name, params)](**{k: v for k, v in params.items() if k != 'model'})
+    """A fresh model of table [name]: the class of model_kind, with its constructor parameters."""
+    return MODELS[model_kind(name, params)](**constructor_params(name, params))
 
 
 def resolve_models(models):
@@ -130,11 +180,13 @@ def resolve_models(models):
     out = {}
     for name, params in models.items():
         cls = MODELS[model_kind(name, params)]
-        given = {k: v for k, v in params.items() if k != 'model'}
+        given = constructor_params(name, params)
         defaults = {p.name: p.default for p in inspect.signature(cls).parameters.values()
                     if p.default is not inspect.Parameter.empty}
         out[name] = {'model': model_kind(name, params), 'class': cls.__name__, 'params': given,
                      'effective_params': {**defaults, **given}}
+        if residual_rule(name, params) is not None:
+            out[name]['runner_residual_rule'] = residual_rule(name, params)
     return out
 
 
@@ -161,6 +213,7 @@ def read_models(path, only=None, construct=True):
         if model_kind(name, params) not in MODELS:
             raise ValueError(f'{path}: [{name}] model = {params["model"]!r} is not one of {sorted(MODELS)}')
         try:
+            check_rule(name, params)
             if construct:
                 build(name, params)         # reject bad parameters before any run starts
         except TypeError as exc:
@@ -509,7 +562,7 @@ def main(argv=None):
     detail['native_cells'] = cell_counts(data, nothing)
     artifacts = {'version': 1, 'files': {}, 'predictions': {}, 'initials': {}}
 
-    def execute(name, model, hidden, case):
+    def execute(name, model, hidden, case, rule=None):
         if args.stage == 'evaluate':
             result, values = replay[f'{case}/{name}']
             status = 'completed' if result['status'] == 'ok' else result['status']
@@ -525,7 +578,7 @@ def main(argv=None):
             completed = model.impute(data, hidden, initial=initial_states[case])
             check_completed(data, completed, hidden)
             return completed, 'completed', model.info_
-        return run_model(data, model, hidden)
+        return run_model(data, model, hidden, rule)
 
     def failed(model, run, seed, exc):
         line = f'{model} | {run} | {"-" if seed is None else seed} | {type(exc).__name__} | {describe(exc, data)}'
@@ -539,7 +592,7 @@ def main(argv=None):
         start = time.perf_counter()
         try:
             model = params if args.stage == 'evaluate' else build(name, params)
-            completed, status, info = execute(name, model, nothing, 'native')
+            completed, status, info = execute(name, model, nothing, 'native', residual_rule(name, params))
             seconds = replay[f'native/{name}'][0]['seconds'] if args.stage == 'evaluate' else time.perf_counter() - start
             suffix = '_completed' if status == 'completed' else (
                 '_partial' if status == 'partial' else '')
@@ -583,7 +636,8 @@ def main(argv=None):
             start = time.perf_counter()
             try:
                 model = params if args.stage == 'evaluate' else build(name, params)
-                completed, status, info = execute(name, model, hidden, f'{args.mask}_seed{seed}')
+                completed, status, info = execute(name, model, hidden, f'{args.mask}_seed{seed}',
+                                                  residual_rule(name, params))
                 seconds = (replay[f'{args.mask}_seed{seed}/{name}'][0]['seconds'] if args.stage == 'evaluate'
                            else time.perf_counter() - start)
                 if status in ('completed', 'partial') and completed is not None:
