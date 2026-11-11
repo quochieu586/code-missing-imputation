@@ -72,11 +72,11 @@ def digest(value):
     return hashlib.sha256(value).hexdigest()
 
 
-def run_record(folder, mask):
+def run_record(folder, mask, seeds=SEEDS):
     """Manifest entry of one run directory, read from its config.json and saved masks."""
     config = json.loads((folder / 'config.json').read_text(encoding='utf-8'))
     masks = {}
-    for seed in SEEDS:
+    for seed in seeds:
         path = folder / f'mask_{mask}_seed{seed}.npy'
         if not path.exists():
             raise ValueError(f'{folder.name}: missing saved mask {path.name}')
@@ -90,17 +90,18 @@ def run_record(folder, mask):
             'group_map': config.get('group_map', 'absent')}, masks
 
 
-def validate_pair(root, mask):
+def validate_pair(root, mask, seeds=SEEDS):
     """F2: the main and micoda_other runs of one mask may be paired only if these all agree."""
-    main, main_masks = run_record(root / f'main_{mask}', mask)
-    other, other_masks = run_record(root / f'micoda_other_{mask}', mask)
+    seeds = tuple(str(s) for s in seeds)
+    main, main_masks = run_record(root / f'main_{mask}', mask, seeds)
+    other, other_masks = run_record(root / f'micoda_other_{mask}', mask, seeds)
     problems = []
     for key in ('data_sha256', 'schema_sha256', 'mask', 'rate', 'seeds', 'group_map'):
         if main[key] != other[key]:
             problems.append(f'{key}: main {main[key]!r} != micoda_other {other[key]!r}')
-    if main['mask'] != mask or main['seeds'] != list(SEEDS):
-        problems.append(f'expected mask {mask!r} with seeds {list(SEEDS)}, got {main["mask"]!r} {main["seeds"]}')
-    for seed in SEEDS:
+    if main['mask'] != mask or main['seeds'] != list(seeds):
+        problems.append(f'expected mask {mask!r} with seeds {list(seeds)}, got {main["mask"]!r} {main["seeds"]}')
+    for seed in seeds:
         if not np.array_equal(main_masks[seed], other_masks[seed]):
             problems.append(f'seed {seed}: saved masks differ')
     configs = {name: json.loads((root / f'{name}_{mask}' / 'config.json').read_text(encoding='utf-8'))
