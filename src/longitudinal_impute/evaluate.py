@@ -90,6 +90,29 @@ def series_macro_mae(truth, pred, totals, series, cells):
     return float(np.mean(np.bincount(index, weights=error) / np.bincount(index)))
 
 
+def implied_other_errors(row_ids, truth, pred, totals, entities, complete_rows):
+    """Error of the implied Other share on rows fully observed before masking (step 4).
+
+    Inputs are per hidden cell (e.g. the long file); complete_rows holds the ids of rows whose
+    targets were all observed before masking, so their true Other = (N - sum c) / N is known.
+    The implied Other after filling is (N - sum of filled targets) / N; on such a row every
+    missing cell is hidden, so implied - true = (sum truth - sum pred) / N over its hidden cells.
+    Returns rows and entities used, the MAE and the mean signed error (implied - true) of the
+    proportion; both are None (NA) when no hidden cell lies in such a row.
+    """
+    row_ids = np.asarray(row_ids)
+    keep = np.isin(row_ids, np.asarray(sorted(complete_rows), dtype=int))
+    if not keep.any():
+        return {'rows': 0, 'entities': 0, 'mae_proportion': None, 'mean_signed_proportion': None}
+    ids, index = np.unique(row_ids[keep], return_inverse=True)
+    gap = np.bincount(index, weights=(np.asarray(truth) - np.asarray(pred))[keep])
+    n = np.zeros(len(ids))
+    n[index] = np.asarray(totals)[keep]
+    error = gap / n
+    return {'rows': len(ids), 'entities': len(set(np.asarray(entities)[keep])),
+            'mae_proportion': float(np.mean(np.abs(error))), 'mean_signed_proportion': float(np.mean(error))}
+
+
 def summarize(rows):
     """Group run rows by (model, pass, mask) and give mean / sd over the successful seeds."""
     groups = {}
