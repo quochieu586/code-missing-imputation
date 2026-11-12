@@ -206,17 +206,25 @@ def parse(text, where, column, *, missing_ok):
     return value
 
 
+MASK_KINDS = ('random_cell', 'whole_feature', 'whole_feature_matched')
+
+
 def validate_mask(kind, rate):
     """Pre-flight check shared by make_mask and the runner, before any side effect."""
-    if kind not in ('random_cell', 'whole_feature'):
-        raise ValueError(f"mask kind must be 'random_cell' or 'whole_feature', got {kind!r}")
+    if kind not in MASK_KINDS:
+        raise ValueError(f"mask kind must be one of {MASK_KINDS}, got {kind!r}")
     if not np.isfinite(rate) or not 0 <= rate < 1:
         raise ValueError('mask rate must be in [0, 1)')
 
 
-def make_mask(data, kind, rate, seed):
-    """Hide a reproducible subset H of the observed cells. Returns (H, statistics)."""
+def make_mask(data, kind, rate, seed, target=None):
+    """Hide a reproducible subset H of the observed cells. Returns (H, statistics).
+
+    whole_feature_matched (step 7) needs target = {'n_cuts', 'pi'}: see matched_mask.py.
+    """
     validate_mask(kind, rate)
+    if (kind == 'whole_feature_matched') != (target is not None):
+        raise ValueError('a mask target is needed for whole_feature_matched and only for it')
     observed = np.isfinite(data.counts)
     rng = np.random.default_rng(seed)
     stats = {'kind': kind, 'rate': rate, 'seed': seed}
@@ -225,17 +233,25 @@ def make_mask(data, kind, rate, seed):
         hidden = (rng.random(observed.shape) < rate) & observed
         for i in np.flatnonzero(observed.any(axis=1) & ~(observed & ~hidden).any(axis=1)):
             hidden[i, rng.choice(np.flatnonzero(observed[i]))] = False
-    elif kind == 'whole_feature':
-        # Hide the whole observed series of random (entity, target) pairs until about
-        # rate x observed cells are hidden. A pair that would leave a row with no visible
-        # target is skipped.
+    else:
+        # Hide the whole observed series of (entity, target) pairs until about rate x observed
+        # cells are hidden: in random order (whole_feature), or in a weighted draw towards the
+        # native strata distribution (whole_feature_matched). A pair that would leave a row with
+        # no visible target is skipped.
         hidden = np.zeros_like(observed)
         entities = np.asarray(data.entities)
         r, c = np.nonzero(observed)
         pairs = sorted(set(zip(entities[r], c)))
         visible = observed.sum(axis=1)
         goal, count, used, skipped = rate * observed.sum(), 0, 0, 0
-        for p in rng.permutation(len(pairs)):
+        if kind == 'whole_feature':
+            order = rng.permutation(len(pairs))
+        else:
+            from .matched_mask import weights, draw_order
+            w, info = weights(data, entities, observed, pairs, target)
+            order = draw_order(rng, w)
+            stats.update(info)
+        for p in order:
             if count >= goal:
                 break
             e, j = pairs[p]
@@ -248,6 +264,8 @@ def make_mask(data, kind, rate, seed):
             count += len(series)
             used += 1
         stats.update(pairs_with_observed_cells=len(pairs), pairs_hidden=used, pairs_skipped=skipped)
+        if kind == 'whole_feature_matched':
+            stats['reached_goal'] = bool(count >= goal)
     complete = observed.all(axis=1)
     stats.update(observed_cells=int(observed.sum()), hidden_cells=int(hidden.sum()),
                  actual_rate=float(hidden.sum() / max(observed.sum(), 1)),
