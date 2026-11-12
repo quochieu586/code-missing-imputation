@@ -49,5 +49,5 @@ def test_u4_counts_only_cases_with_a_value():
                 'u4_scores': {k: {} for k in tier3.U4_LABELS}}
     table = tier3.u4_table({m: [toy(s, s < 3) for s in range(5)] for m in tier3.MASKS})
     row = next(line for line in table if line.startswith('| zero_fill | whole_feature |'))
-    assert row == '| zero_fill | whole_feature | 3/5 | 3/5 | NA | 3/5 | 3/5 |'
+    assert row == '| zero_fill | whole_feature | 3/5 | 3/5 | NA | 3/5 | 3/5 | 3/5 |'
     assert tier3.ms([.1, None, .3]) == '0.2000 ± 0.1414 (n = 2)'

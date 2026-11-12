@@ -167,6 +167,7 @@ def one_case(data, facts, hidden, preds, runs, seed):
                   m: None if v is None else abs(v) for m, v in local['d2']['dist'].items()},
               'd2_raw': local['d2']['raw'], 'd3_rate': {m: f[1].sum() / cells['eval'].sum()
                                                         for m, f in flagged.items()}}
+    scores['tier1_mae'] = {m: runs[m][seed]['mae_prop'] for m in ok}     # reference row, not a diagnostic
     out['u4'] = {name: {d: t3.decoy_worse(s, d) for d in t3.DECOYS} for name, s in scores.items()}
     out['u4_scores'] = {name: {m: None if v is None else float(v) for m, v in s.items()} for name, s in scores.items()}
     return out, cells, support
@@ -175,7 +176,7 @@ def one_case(data, facts, hidden, preds, runs, seed):
 # ---------- 3. tables ----------
 
 U4_LABELS = {'d1_dist': '\\|D1 − D1_truth\\|', 'd1_abs_raw': '\\|D1\\| thô', 'd2_dist': '\\|D2 − D2_truth\\|',
-             'd2_raw': 'D2 thô', 'd3_rate': 'D3: ô cờ / ô E'}
+             'd2_raw': 'D2 thô', 'd3_rate': 'D3: ô cờ / ô E', 'tier1_mae': '*tham chiếu: MAE Tầng 1, toàn ô model*'}
 
 
 def ms(values, digits=4, fmt=None):
