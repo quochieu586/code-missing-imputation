@@ -288,7 +288,8 @@ def exploratory_runs():
 
 def exploratory_lines(config, runs, seeds, verdicts):
     old = exploratory_runs()
-    pairs = [(h['a'], b, h['metric']) for h in config['hypotheses'] if h['kind'] != 'tier3' for b in h['b']]
+    pairs = list(dict.fromkeys((h['a'], b, h['metric']) for h in config['hypotheses'] if h['kind'] != 'tier3'
+                               for b in h['b']))
     out = ['Exploratory: seed 0–4 (đã nhìn ở step 2–7). Xác nhận: seed 200–209. Δ = A − B, thắng = A nhỏ hơn.', '',
            '| A vs B | metric | ' + ' | '.join(f'{SHORT[m]} 0–4 | {SHORT[m]} 200–209' for m in masks_of(config)) + ' |',
            '|---|---|' + '---|---|' * len(masks_of(config))]
@@ -299,14 +300,16 @@ def exploratory_lines(config, runs, seeds, verdicts):
                 p = tier01.pair(source, a, b, use, metric)
                 cols.append('NA' if p['mean_diff'] is None else f"{p['mean_diff']:+.4f} ({p['wins']}/{p['n']})")
         out.append(f'| {a} vs {b} | {metric} | ' + ' | '.join(cols) + ' |')
-    out += ['', '| Model | ' + ' | '.join(f'{SHORT[m]} MAE 0–4 | {SHORT[m]} MAE 200–209' for m in masks_of(config)) + ' |',
+    out += ['', 'MAE tỷ lệ trên seed chung của mọi model trong từng mask và dải seed (F07).', '',
+            '| Model | ' + ' | '.join(f'{SHORT[m]} MAE 0–4 | {SHORT[m]} MAE 200–209' for m in masks_of(config)) + ' |',
             '|---|' + '---:|---:|' * len(masks_of(config))]
     models = [*config['models']['real'], *config['models']['decoys'], *config['models']['tier1_only']]
     for m in models:
         cols = []
         for mask in masks_of(config):
             for source, use in ((old[mask], ('0', '1', '2', '3', '4')), (runs[mask], seeds)):
-                cols.append(ms([source[m][s]['mae_prop'] for s in use if source.get(m, {}).get(s, {}).get('eligible')]))
+                common = tier01.common_seeds(source, models, use)[0]
+                cols.append(ms([source[m][s]['mae_prop'] for s in common]) + f' ({len(common)})')
         out.append(f'| {m} | ' + ' | '.join(cols) + ' |')
     step6 = json.loads((REPO / 'tv2_step6/tier3_manifest.json').read_text(encoding='utf-8'))['verdicts']
     step7 = json.loads((REPO / 'tv2_step7/matched_manifest.json').read_text(encoding='utf-8'))['verdicts']
