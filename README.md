@@ -79,6 +79,8 @@ Thư mục `--output` phải chưa tồn tại.
 
 Ô "bị ép về 0" nằm ở dòng mà tổng các ô nhìn thấy đã bằng N. Phần dư của dòng đó là 0, nên model không quyết định được ô này. Định nghĩa metric nằm trong [`evaluate.py`](src/longitudinal_impute/evaluate.py).
 
+**Diagnostic Tầng 2** ([`tier2_diagnostics.py`](src/longitudinal_impute/tier2_diagnostics.py), step 5) mô tả giá trị điền trên ô không có đáp án. Đây không phải độ chính xác và không dùng để xếp hạng. Có ba diagnostic: D1 (chênh tỷ lệ zero), D2 (W1 trên phần dương) và D3 (cờ ngoài support thời gian quan sát). Mỗi hàm nhận hai mask tường minh: tập ô được mô tả E và tập ô reference V. Hàm không tự đọc NaN. Với lượt native, `native_cells` cho E = ô thiếu thật không bị ép về 0 và V = ô quan sát. Với lượt masked, `calibration_cells` cho E = ô che thuộc nhóm model và V = ô quan sát còn thấy, dành cho Tầng 3. Bảng COVID do [`tv2_step5/tier2.py`](tv2_step5/tier2.py) sinh.
+
 ## MICoDa và ngân sách Other chung
 
 Từ quyết định người dùng ngày 2026-11-12, `[micoda]` chạy qua `MICoDaCovid` trên **D target + Other**, giống không gian ngân sách của Hron/Tsagris. Constructor và `configs/models_default.toml` đều mặc định `other = true`.
