@@ -1,0 +1,151 @@
+# Evaluation v1 (step 8). Frozen, with the hypotheses below, before any confirmation mask is drawn.
+# Read by tv2_step8/evaluate_v1.py (checked by v1.read_config: unknown or missing keys stop it before
+# any side effect). Every score is computed by the existing code (tier01, tier2, tier3, matched_mask).
+
+version = "v1"
+
+[data]
+data = "data/covariants.csv"
+schema = "nextgen/configs/baselines_covariants.toml"
+group_map = "nextgen/configs/covid_location_continent.csv"
+rate = 0.05
+
+[masks]
+primary = "whole_feature"
+sensitivity = ["whole_feature_matched", "random_cell"]
+seeds = [200, 201, 202, 203, 204, 205, 206, 207, 208, 209]
+target = "nextgen/configs/mask_target_covid.json"        # pi of whole_feature_matched, frozen in step 7
+# The script refuses to run if a seed above appears in a config or manifest of steps 1-7.
+previous = ["tv2_step[1-7]/**/config.json", "tv2_step[1-7]/*manifest*.json"]
+
+[models]
+real = ["hron", "hron_cap", "tsagris", "micoda", "micoda_other", "same_day_mean"]
+decoys = ["mean_fill", "zero_fill", "marginal_sampler"]
+tier1_only = ["tsagris_cap", "micoda_other_cap"]
+
+# Run passes (as steps 2-7). Directory: tv2_step8/runs/<pass>_<mask>.
+[runs.main]
+models_file = "nextgen/configs/models_default.toml"
+tables = ["hron", "tsagris", "micoda", "same_day_mean", "mean_fill", "marginal_sampler", "zero_fill"]
+rename = {}
+
+[runs.micoda_other]
+models_file = "nextgen/configs/models_micoda_other.toml"
+tables = ["micoda"]
+rename = { micoda = "micoda_other" }
+
+[runs.residual]
+models_file = "nextgen/configs/models_residual_rule.toml"
+tables = ["hron_cap", "tsagris_cap", "micoda_other_cap"]
+rename = {}
+
+[tier0]
+# A model that fails (not completed with coverage 1) in more than this many seeds of a mask makes
+# every hypothesis about it on that mask "insufficient support", not "not confirmed".
+max_failed_seeds = 2
+# Pairs use the seeds where both models count, labelled "conditional".
+
+[tier1]
+primary = "mae_prop"                     # MAE of c / N on model_cell, cell-weighted within a seed
+secondary = ["mse_prop", "mae_count", "series_macro_mae_prop", "mae_prop_truth_zero",
+             "mae_prop_truth_positive", "mae_prop_model_truth_zero"]
+strata = ["continent", "n"]              # N cut points of step 5, read from n_cuts_from
+n_cuts_from = "tv2_step5/tier2_results.md"
+min_stratum_cells = 30
+# Pairs: A - B per seed; mean, sd (ddof = 1), wins, exact two-sided sign test (ties dropped), as a
+# description of mask variation on a fixed table: not a CI over countries, no bootstrap.
+pairs = [["same_day_mean", "hron"], ["same_day_mean", "hron_cap"], ["same_day_mean", "tsagris"],
+         ["same_day_mean", "micoda"], ["same_day_mean", "micoda_other"], ["hron", "tsagris"],
+         ["micoda", "mean_fill"], ["micoda_other", "micoda"], ["micoda_other", "mean_fill"],
+         ["hron", "mean_fill"]]
+
+[tier2]
+references = ["local", "pooled"]         # R-local main, R-pooled secondary (step 5 definitions)
+compare_with = "tv2_step5"               # native outputs must be byte-identical to step 5
+
+[tier3]
+spec = "nextgen/src/longitudinal_impute/tier3_calibration.py"   # step 6, unchanged
+# Ten cases per mask; pass / fail / insufficient per mask with the step 6 functions, and over the
+# three masks: pass if all three pass, fail if any fails, otherwise insufficient.
+
+[diagnostics]                            # how v1 uses the diagnostics: labels, not logic
+D1 = "only a warning of over-filling, read against the truth row"
+D2 = "description only, never used to rank models"
+D3 = "flag"
+
+# Hypotheses: decided on the primary mask; the two sensitivity masks are reported beside them.
+# Outcome: confirmed / not confirmed / insufficient support.
+[[hypotheses]]
+id = "H1"
+text = "same_day_mean has a lower MAE of c / N than hron"
+kind = "pair_better"
+metric = "mae_prop"
+a = "same_day_mean"
+b = ["hron"]
+min_wins = 8
+
+[[hypotheses]]
+id = "H2"
+text = "same_day_mean has a lower MAE of c / N than every other real model"
+kind = "pair_better"
+metric = "mae_prop"
+a = "same_day_mean"
+b = ["hron", "hron_cap", "tsagris", "micoda", "micoda_other"]
+min_wins = 8
+
+[[hypotheses]]
+id = "H3"
+text = "hron has a lower MAE of c / N than tsagris"
+kind = "pair_better"
+metric = "mae_prop"
+a = "hron"
+b = ["tsagris"]
+min_wins = 8
+
+[[hypotheses]]
+id = "H4"
+text = "tsagris has a lower MSE of c / N than hron"
+kind = "pair_better"
+metric = "mse_prop"
+a = "tsagris"
+b = ["hron"]
+min_wins = 8
+
+[[hypotheses]]
+id = "H5"
+text = "micoda (A17) does not have a lower MAE of c / N than mean_fill"
+kind = "pair_not_better"
+metric = "mae_prop"
+a = "micoda"
+b = ["mean_fill"]
+max_wins = 5
+
+[[hypotheses]]
+id = "H6"
+text = "micoda_other has a lower MAE of c / N than micoda"
+kind = "pair_better"
+metric = "mae_prop"
+a = "micoda_other"
+b = ["micoda"]
+min_wins = 8
+
+[[hypotheses]]
+id = "H7"
+text = "tier 3: D3 passes U3"
+kind = "tier3"
+use_case = "u3"
+expect = "pass"
+
+[[hypotheses]]
+id = "H8"
+text = "tier 3: D1 passes U1, over-filling direction"
+kind = "tier3"
+use_case = "u1_over"
+expect = "pass"
+
+[[hypotheses]]
+id = "H9"
+text = "tier 3: D1 does not pass U1, under-filling direction"
+kind = "tier3"
+use_case = "u1_under"
+expect = "fail"
