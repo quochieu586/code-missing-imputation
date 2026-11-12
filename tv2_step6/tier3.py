@@ -39,6 +39,7 @@ def module(name, path):
 tier01 = module('tier01', 'tv2_step2/tier01.py')
 tier2 = module('tier2', 'tv2_step5/tier2.py')
 MASKS, SEEDS, RATE = ('whole_feature', 'random_cell'), ('0', '1', '2', '3', '4'), .05
+SHORT = {'whole_feature': 'wf', 'random_cell': 'rc', 'whole_feature_matched': 'wfm'}
 MODELS = t3.REAL + t3.DECOYS
 # run directory prefix: (rename of tables, models file, tables used)
 RUNS = {tier2.MAIN: ({}, 'models_default.toml', ('hron', 'tsagris', 'micoda', 'same_day_mean', *t3.DECOYS)),
@@ -52,12 +53,14 @@ na, signed = tier01.na, tier2.signed
 
 # ---------- 1. reuse checks ----------
 
-def load_mask(data, mask):
-    """Hidden masks, prediction tables {(model, seed): N x D}, tier 1 runs and provenance of one mask."""
+def load_mask(data, mask, runs_of=None, pair_root=None, seeds=None, target=None):
+    """Hidden masks, prediction tables {(model, seed): N x D}, tier 1 runs and provenance of one mask.
+
+    runs_of / pair_root / seeds / target default to the step 2-4 runs (step 7 passes its own)."""
     hidden, preds, runs, records, checked = {}, {}, {}, [], 0
-    tier01.step1.validate_pair(REPO / 'tv2_step2/runs', mask, tier01.SEEDS[mask])      # F2
+    tier01.step1.validate_pair(pair_root or REPO / 'tv2_step2/runs', mask, seeds or tier01.SEEDS[mask])   # F2
     col = {t: j for j, t in enumerate(data.targets)}
-    for prefix, (rename, models_file, tables) in RUNS.items():
+    for prefix, (rename, models_file, tables) in (runs_of or RUNS).items():
         folder = REPO / f'{prefix}_{mask}'
         config = json.loads((folder / 'config.json').read_text(encoding='utf-8'))
         expected = read_models(tier2.CONFIGS / models_file, list(tables))
@@ -72,7 +75,7 @@ def load_mask(data, mask):
             saved = np.load(folder / f'mask_{mask}_seed{seed}.npy')
             hidden.setdefault(seed, saved)
             if not np.array_equal(saved, hidden[seed]) or not np.array_equal(saved, make_mask(data, mask, RATE,
-                                                                                             int(seed))[0]):
+                                                                                             int(seed), target)[0]):
                 problems.append(f'mask seed {seed}')
         if problems:
             raise ValueError(f'{folder.relative_to(REPO)}: ' + ', '.join(problems) + ' differ')
@@ -195,7 +198,7 @@ def rate_cell(p):
 
 def verdict_lines(cases, key, ref='local'):
     rates = {mask: [c['u'][ref][key]['rate'] if key in c['u'].get(ref, {}) else None for c in cases[mask]]
-             for mask in MASKS}
+             for mask in cases}
     per, verdict = t3.rate_verdict(rates)
     text = '; '.join(f"{mask}: TB {na(v['mean'], 2)}, min {na(v['min'], 2)} ({v['cases']} ca)" for mask, v in per.items())
     return text, verdict
@@ -204,7 +207,7 @@ def verdict_lines(cases, key, ref='local'):
 def support_table(cases):
     out = ['| Mask | Seed | ô H | ô E (model) | ô E có support R-local | coverage | target chung D1 / D2 (R-local) | '
            'ô chấm D1 / D2 |', '|---|---:|---:|---:|---:|---:|---|---|']
-    for mask in MASKS:
+    for mask in cases:
         for c in cases[mask]:
             u = c['u']['local']
             out.append(f"| {mask} | {c['seed']} | {c['H']} | {c['E']} | {c['supported']} | {c['supported'] / c['E']:.3f} | "
@@ -214,7 +217,7 @@ def support_table(cases):
 
 def diag_table(cases):
     out = []
-    for mask in MASKS:
+    for mask in cases:
         out += [f'**{mask}** (mean ± sd qua 5 seed; D1, D2 = TB trọng số qua target; khoảng cách = trên target chung)',
                 '', '| Model | D1 local | D2 local | D1 pooled | D2 pooled | D3 ô | D1 − D1_truth (local) | '
                 '\\|D2 − D2_truth\\| (local) |', '|---|' + '---:|' * 7]
@@ -238,7 +241,7 @@ def truth_table(truth_rows, targets):
                'D1t local', 'D2t local', 'D1t pooled', 'D2t pooled')) + ' |', '|---|' + '---:|' * 8]
     for t in targets:
         cols = []
-        for mask in MASKS:
+        for mask in truth_rows:
             for ref, key in (('local', 'd1'), ('local', 'd2'), ('pooled', 'd1'), ('pooled', 'd2')):
                 v = [r[t][ref][key] for r in truth_rows[mask] if r[t][ref][key] is not None]
                 cols.append(f'NA' if not v else (signed(np.mean(v)) if key == 'd1' else na(np.mean(v))))
@@ -249,7 +252,7 @@ def truth_table(truth_rows, targets):
 def u1_table(cases, ref='local', block='u1'):
     keys = ('u1_under', 'u1_over')
     out = ['| Mask | Seed | thiếu: khớp (khớp/quyết định) | thừa: khớp |', '|---|---:|---|---|']
-    for mask in MASKS:
+    for mask in cases:
         for c in cases[mask]:
             u = c['u'].get(ref, {})
             out.append(f"| {mask} | {c['seed']} | " + ' | '.join(rate_cell(u[k]) if k in u else 'NA' for k in keys) + ' |')
@@ -264,7 +267,7 @@ def u2_table(cases, ref='local'):
     out = ['| Mask | Seed | khớp \\|D2 − D2t\\| | chọn → regret | khớp D2 thô | regret thô | khớp, MAE toàn ô model | '
            'regret, MAE toàn ô model |', '|---|---:|---|---|---|---:|---|---:|']
     regrets = []
-    for mask in MASKS:
+    for mask in cases:
         for c in cases[mask]:
             u = c['u'][ref]
             regrets.append(u['regret'][1])
@@ -282,7 +285,7 @@ def u3_table(cases):
     out = ['| Mask | Seed | ô dương bị cờ | tỷ lệ đáp án 0 khi bị cờ | ô dương không cờ | khi không cờ | chênh |',
            '|---|---:|---:|---:|---:|---:|---:|']
     gaps = []
-    for mask in MASKS:
+    for mask in cases:
         for c in cases[mask]:
             u = c['u3']
             gaps.append(u['gap'])
@@ -294,11 +297,11 @@ def u3_table(cases):
 
 
 def u4_table(cases):
-    names = list(cases[MASKS[0]][0]['u4'])
+    names = list(next(iter(cases.values()))[0]['u4'])
     out = ['Số ca diagnostic xếp đối thủ giả kém hơn **mọi** model thật (trên số ca có giá trị), R-local.', '',
            '| Đối thủ giả | Mask | ' + ' | '.join(U4_LABELS[n] for n in names) + ' |', '|---|---|' + ':---:|' * len(names)]
     for d in t3.DECOYS:
-        for mask in MASKS:
+        for mask in cases:
             cells = []
             for n in names:
                 got = [c['u4'][n][d] for c in cases[mask] if c['u4'][n][d] is not None]
@@ -307,7 +310,7 @@ def u4_table(cases):
     out += ['', 'Giá trị trung bình qua 5 seed (R-local, trên target chung của model thật):', '',
             '| Model | Mask | ' + ' | '.join(U4_LABELS[n] for n in names) + ' |', '|---|---|' + '---:|' * len(names)]
     for m in MODELS:
-        for mask in MASKS:
+        for mask in cases:
             out.append(f'| {m} | {mask} | ' + ' | '.join(
                 ms([c['u4_scores'][n].get(m) for c in cases[mask]], 4) for n in names) + ' |')
     return out
@@ -330,15 +333,16 @@ def transfer_table(data, facts, cases, masked_cells):
     out = ['| Tập ô | ' + ' | '.join(head) + ' |', '|---|' + '---:|' * len(head)]
     nat, _ = profile(native['eval'], native_support)
     out.append('| native M_m | ' + ' | '.join(f'{v:.3f}' for v in nat) + ' |')
-    for mask in MASKS:
+    for mask in masked_cells:
         prof = [profile(e, s)[0] for e, s in masked_cells[mask]]
         out.append(f'| masked E, {mask} (TB 5 seed) | ' + ' | '.join(f'{v:.3f}' for v in np.mean(prof, axis=0)) + ' |')
     out += ['', 'Tỷ lệ 0 theo target: native = tỷ lệ zero quan sát (ô O); masked = tỷ lệ đáp án 0 trên E (TB 5 seed).',
-            '', '| Target | native O | wf E | rc E |', '|---|---:|---:|---:|']
+            '', '| Target | native O | ' + ' | '.join(f'{SHORT[m]} E' for m in masked_cells) + ' |',
+            '|---|---:|' + '---:|' * len(masked_cells)]
     for j, t in enumerate(data.targets):
         obs = data.counts[native['ref'][:, j], j]
         cols = [f'{np.mean(obs == 0):.3f}']
-        for mask in MASKS:
+        for mask in masked_cells:
             v = [np.mean(data.counts[e[:, j], j] == 0) for e, _ in masked_cells[mask] if e[:, j].any()]
             cols.append(f'{np.mean(v):.3f}' if v else 'NA')
         out.append(f'| {t} | ' + ' | '.join(cols) + ' |')
