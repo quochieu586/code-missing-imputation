@@ -81,6 +81,8 @@ Thư mục `--output` phải chưa tồn tại.
 
 **Diagnostic Tầng 2** ([`tier2_diagnostics.py`](src/longitudinal_impute/tier2_diagnostics.py), step 5) mô tả giá trị điền trên ô không có đáp án. Đây không phải độ chính xác và không dùng để xếp hạng. Có ba diagnostic: D1 (chênh tỷ lệ zero), D2 (W1 trên phần dương) và D3 (cờ ngoài support thời gian quan sát). Mỗi hàm nhận hai mask tường minh: tập ô được mô tả E và tập ô reference V. Hàm không tự đọc NaN. Với lượt native, `native_cells` cho E = ô thiếu thật không bị ép về 0 và V = ô quan sát. Với lượt masked, `calibration_cells` cho E = ô che thuộc nhóm model và V = ô quan sát còn thấy, dành cho Tầng 3. Bảng COVID do [`tv2_step5/tier2.py`](tv2_step5/tier2.py) sinh.
 
+**Tầng 3** ([`tier3_calibration.py`](src/longitudinal_impute/tier3_calibration.py), step 6) kiểm các diagnostic đó trên ô che giả có đáp án. Có bốn use case (U1–U4) với ngưỡng đạt khai báo trước. Phép so sánh luôn nằm trong cùng một ca (mask, seed), không pooling qua ca. Bảng COVID do [`tv2_step6/tier3.py`](tv2_step6/tier3.py) sinh. Kết quả chỉ áp dụng cho các mask và support đã kiểm, không phải độ chính xác trên ô thiếu thật.
+
 ## MICoDa và ngân sách Other chung
 
 Từ quyết định người dùng ngày 2026-11-12, `[micoda]` chạy qua `MICoDaCovid` trên **D target + Other**, giống không gian ngân sách của Hron/Tsagris. Constructor và `configs/models_default.toml` đều mặc định `other = true`.
