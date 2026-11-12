@@ -84,6 +84,15 @@ Phân bố theo target (chỉ báo, không khớp): tỷ lệ ô của từng ta
 | micoda_other_cap | masked | whole_feature_matched | 5 | 5 | 0 | 0 | 0 | - |
 
 Seed 0 (whole_feature_matched): 5692 ô che, 2915 ép về 0, 2777 ô model; 298 dòng đầy đủ sau khi che.
+Seed 1 (whole_feature_matched): 5695 ô che, 2813 ép về 0, 2882 ô model; 189 dòng đầy đủ sau khi che.
+Seed 2 (whole_feature_matched): 5701 ô che, 2812 ép về 0, 2889 ô model; 327 dòng đầy đủ sau khi che.
+Seed 3 (whole_feature_matched): 5643 ô che, 2317 ép về 0, 3326 ô model; 298 dòng đầy đủ sau khi che.
+Seed 4 (whole_feature_matched): 5622 ô che, 2949 ép về 0, 2673 ô model; 407 dòng đầy đủ sau khi che.
+
+## 2b. Tầng 0 theo seed
+
+
+Seed 0 (whole_feature_matched): 5692 ô che, 2915 ép về 0, 2777 ô model; 298 dòng đầy đủ sau khi che.
 
 | Model | status | coverage | mã lỗi | thông điệp | hội tụ (MICoDa) |
 |---|---|---:|---|---|---|

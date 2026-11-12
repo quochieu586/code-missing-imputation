@@ -258,9 +258,9 @@ def summarize(out_dir):
     for mask in (WF, MASK):
         status[mask], runs[mask], rows = tier1(mask)
         scores[mask] = stratum_scores(rows, target['n_cuts'])
-    blocks['status'] = tier01.status_markdown(status[MASK], tier01.reliability(status[MASK]))
-    for s in SEEDS:
-        blocks['status'] += [''] + tier01.seed_markdown(status[MASK], s)
+    blocks['status'] = tier01.status_markdown(status[MASK], tier01.reliability(status[MASK])) + [''] + [
+        tier01.seed_markdown(status[MASK], s)[0] for s in SEEDS]
+    blocks['status_seeds'] = [line for s in SEEDS for line in [''] + tier01.seed_markdown(status[MASK], s)]
     blocks['tier1'], orders = ranking_lines(runs)
     strata = {'continent': sorted(set(data.groups)), 'n': list(mm.N_LABELS)}
     blocks['strata'] = strata_lines(scores, strata)
@@ -299,7 +299,7 @@ def summarize(out_dir):
     (out_dir / 'matched_manifest.json').write_text(json.dumps(manifest, indent=1, sort_keys=True, default=str) + '\n',
                                                    encoding='utf-8')
     md = ['# Step 7: mask khớp support của ô thiếu thật — **exploratory**', '', 'Sinh bởi `matched.py`; không sửa tay.', '']
-    for name, title in (('match', '1. Khớp phân bố'), ('status', '2. Tầng 0'), ('tier1', '3. Tầng 1'),
+    for name, title in (('match', '1. Khớp phân bố'), ('status', '2. Tầng 0'), ('status_seeds', '2b. Tầng 0 theo seed'), ('tier1', '3. Tầng 1'),
                         ('strata', '4. Tầng 1 theo tầng'), ('tier3', '5. Tầng 3'), ('tier3_detail', '5b. Tầng 3 chi tiết'),
                         ('tier3_sens', '5c. Tầng 3 sensitivity'), ('transfer', '6. Chuyển giao')):
         md += [f'## {title}', '', *blocks[name], '']
