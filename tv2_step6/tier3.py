@@ -58,6 +58,7 @@ def load_mask(data, mask, runs_of=None, pair_root=None, seeds=None, target=None)
 
     runs_of / pair_root / seeds / target default to the step 2-4 runs (step 7 passes its own)."""
     hidden, preds, runs, records, checked = {}, {}, {}, [], 0
+    use = tuple(str(s) for s in seeds) if seeds else SEEDS       # case seeds
     tier01.step1.validate_pair(pair_root or REPO / 'tv2_step2/runs', mask, seeds or tier01.SEEDS[mask])   # F2
     col = {t: j for j, t in enumerate(data.targets)}
     for prefix, (rename, models_file, tables) in (runs_of or RUNS).items():
@@ -71,7 +72,7 @@ def load_mask(data, mask, runs_of=None, pair_root=None, seeds=None, target=None)
             ((config.get('git') or {}).get('uncommitted_changes') is not False, 'unclean tree'),
             (any(config['models'].get(t) != expected[t] for t in tables), f'model tables vs {models_file}'),
             (config['mask'] != mask or config['mask_rate'] != RATE, 'mask kind or rate')) if bad]
-        for seed in SEEDS:
+        for seed in use:
             saved = np.load(folder / f'mask_{mask}_seed{seed}.npy')
             hidden.setdefault(seed, saved)
             if not np.array_equal(saved, hidden[seed]) or not np.array_equal(saved, make_mask(data, mask, RATE,
@@ -81,12 +82,12 @@ def load_mask(data, mask, runs_of=None, pair_root=None, seeds=None, target=None)
             raise ValueError(f'{folder.relative_to(REPO)}: ' + ', '.join(problems) + ' differ')
         status, scores, record, (values, _) = tier01.load_run(folder, rename, mask)
         checked += values
-        for model, seeds in tier01.table_runs(status, scores).items():
+        for model, by_seed in tier01.table_runs(status, scores).items():
             if model in MODELS:
-                runs[model] = {s: seeds[s] for s in SEEDS}
+                runs[model] = {s: by_seed[s] for s in use}
         for row in read_predictions(folder / f'predictions_{mask}.csv.gz'):
             name, seed = rename.get(row['model'], row['model']), str(row['seed'])
-            if name in MODELS and seed in SEEDS:
+            if name in MODELS and seed in use:
                 table = preds.setdefault((name, seed), np.full(data.counts.shape, np.nan))
                 table[row['row_id'], col[row['target']]] = row['pred_count']
         records.append({'dir': folder.relative_to(REPO).as_posix(), 'config_sha256': record['config_sha256'],
