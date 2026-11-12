@@ -104,7 +104,8 @@ def load_mask(data, mask, runs_of=None, pair_root=None, seeds=None, target=None)
 
 def scalars(diags, ref, key, models, data, support, cells, values, truth_key='truth'):
     """Common targets, scored cells, per-model distance / raw values and tier 1 errors on those cells."""
-    common = t3.common_targets(diags, ref, key, [truth_key, *t3.REAL])
+    # Real models that failed in this case are absent: their pairs become NA (step 6 rule), not an error.
+    common = t3.common_targets(diags, ref, key, [truth_key, *(m for m in t3.REAL if m in diags)])
     scored = t3.scored_cells(support, cells['eval'], ref, [data.targets.index(t) for t in common])
     out = {'targets': len(common), 'cells': int(scored.sum()), 'dist': {}, 'raw': {}, 'abs_raw': {}, 'err': {}}
     for m in models:
@@ -156,8 +157,9 @@ def one_case(data, facts, hidden, preds, runs, seed):
         out['u'][ref] = u
     prop = {m: t3.d1_proportion(values[m], facts, cells['eval'], cells['ref'], support, targets)
             for m in [*t3.REAL, 'truth'] if m in values}
-    if all(m in prop for m in t3.REAL):
-        out['u']['prop'] = {'d1': (p := scalars(prop, 'local', 'd1', t3.REAL, data, support, cells, values))}
+    if any(m in prop for m in t3.REAL):
+        present = [m for m in t3.REAL if m in prop]
+        out['u']['prop'] = {'d1': (p := scalars(prop, 'local', 'd1', present, data, support, cells, values))}
         out['u']['prop'].update(u1_under=u_pair(p, 1, 'truth_positive'), u1_over=u_pair(p, -1, 'truth_zero'))
     flagged = {m: t3.flags(values[m], facts, cells['eval'], cells['ref']) for m in ok}
     real = [m for m in t3.REAL if m in flagged]

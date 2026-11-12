@@ -51,3 +51,28 @@ def test_u4_counts_only_cases_with_a_value():
     row = next(line for line in table if line.startswith('| zero_fill | whole_feature |'))
     assert row == '| zero_fill | whole_feature | 3/5 | 3/5 | NA | 3/5 | 3/5 | 3/5 |'
     assert tier3.ms([.1, None, .3]) == '0.2000 ± 0.1414 (n = 2)'
+
+
+def test_one_case_with_a_failed_real_model_marks_its_pairs_na():
+    """Step 8 bug: a real model that failed in a case is absent, its pairs are NA (not a KeyError)."""
+    import numpy as np
+    import sys
+    sys.path.insert(0, str(tier3.REPO / 'nextgen/tests'))
+    from test_tier2_diagnostics import panel
+    data = panel(seed=3)
+    rng = np.random.default_rng(0)
+    hidden = np.isfinite(data.counts) & (rng.random(data.counts.shape) < .15)
+    facts = tier3.t2.row_facts(data)
+    preds, runs = {}, {}
+    for k, m in enumerate(tier3.MODELS):
+        ok = m != 'hron'
+        runs[m] = {'0': {'eligible': ok, 'mae_prop': .1 + .01 * k if ok else None}}
+        if ok:
+            preds[m, '0'] = np.where(hidden, rng.integers(0, 4, data.counts.shape), np.nan)
+    case = tier3.one_case(data, facts, hidden, preds, runs, '0')[0]
+    assert 'hron' not in case['models_ok']
+    pairs = case['u']['local']['u2']['pairs']
+    assert all(s == 'na' for a, b, s in pairs if 'hron' in (a, b))
+    assert case['u']['local']['u2']['na'] == 5 and case['u']['local']['u2']['match'] + case['u']['local']['u2'][
+        'mismatch'] + case['u']['local']['u2']['tie'] == 10
+    assert all(v is None for v in (case['u4']['d1_dist'][d] for d in tier3.t3.DECOYS))   # a real model is missing
