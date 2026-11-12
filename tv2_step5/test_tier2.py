@@ -32,7 +32,7 @@ def test_shift_table_marks_sign_flips_and_large_changes():
 def test_zero_fill_check_uses_one_minus_the_reference_zero_share():
     results = {'zero_fill': result(.5, .4, pr_ref=.6), 'other': result(.1, .2)}
     line = tier2.decoy_lines(results, ['t'])[0]
-    assert 'D1 pooled = 1 − Pr_ref(zero) ở 1/1 target' in line
+    assert 'D1 pooled = 1 − Pr_ref(zero) ở 1/1 target có D1' in line
     assert 'ở 1/1 target (R-local), 1/1 (R-pooled)' in line and 'D2 = NA ở 1/1 (R-local)' in line
     results['other'] = result(.6, .2)
     assert 'ở 0/1 target (R-local)' in tier2.decoy_lines(results, ['t'])[0]

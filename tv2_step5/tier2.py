@@ -88,17 +88,30 @@ def load_source(name, data, rerun=None):
     ) if bad]
     if problems:
         raise ValueError(f'{name} ({folder.relative_to(REPO)}): ' + '; '.join(problems))
-    completed = load_csv(path, SCHEMA)
-    if completed.entities != data.entities or not np.array_equal(completed.days, data.days):
-        raise ValueError(f'{name}: rows of {path.name} do not match the data')
-    check_completed(data, completed.counts, np.zeros(data.counts.shape, bool))
+    counts = read_completed(path, data)
+    check_completed(data, counts, np.zeros(data.counts.shape, bool))
     record = {'dir': folder.relative_to(REPO).as_posix(), 'table': table, 'models_file': models_file,
               'config_sha256': sha256(folder / 'config.json'), 'csv': path.name, 'csv_sha256': sha256(path),
               'git_commit': (config.get('git') or {}).get('commit'), f'same_csv_in_{MASKS[1]}': True}
     if rerun is not None:
         again = rerun / rerun_dir / path.name
         record['rerun_identical'] = again.exists() and sha256(again) == sha256(path)
-    return completed.counts, record
+    return counts, record
+
+
+def read_completed(path, data):
+    """Target columns of a completed CSV, row by row equal to the data apart from the filled targets.
+
+    Not load_csv: it refuses a row whose filled sum exceeds N by a rounding error, which
+    check_completed accepts (1e-10 relative), so the checks are done by check_completed."""
+    with path.open(encoding='utf-8', newline='') as stream:
+        rows = list(csv.DictReader(stream))
+    if len(rows) != len(data.rows):
+        raise ValueError(f'{path.name}: {len(rows)} rows, the data has {len(data.rows)}')
+    fixed = [c for c in data.fields if c not in data.targets]
+    if any(row[c] != source[c] for row, source in zip(rows, data.rows) for c in fixed):
+        raise ValueError(f'{path.name}: non-target columns differ from the data')
+    return np.array([[float(row[t]) for t in data.targets] for row in rows])
 
 
 # ---------- tables ----------
@@ -238,24 +251,28 @@ def decoy_lines(results, targets):
     out = []
     if 'zero_fill' in results:
         z = results['zero_fill']['targets']
-        exact = sum(z[t]['pooled']['d1'] == 1 - z[t]['pooled']['pr_zero_ref'] for t in targets)
-        top = {ref: sum(z[t][ref]['d1'] is not None and all(
-            r['targets'][t][ref]['d1'] is None or r['targets'][t][ref]['d1'] <= z[t][ref]['d1']
-            for r in results.values()) for t in targets) for ref in ('local', 'pooled')}
-        d2na = {ref: sum(z[t][ref]['d2'] is None for t in targets) for ref in ('local', 'pooled')}
+        has = {ref: [t for t in targets if z[t][ref]['d1'] is not None] for ref in ('local', 'pooled')}
+        exact = sum(z[t]['pooled']['d1'] == 1 - z[t]['pooled']['pr_zero_ref'] for t in has['pooled'])
+        top = {ref: sum(all(r['targets'][t][ref]['d1'] is None or r['targets'][t][ref]['d1'] <= z[t][ref]['d1']
+                            for r in results.values()) for t in has[ref]) for ref in has}
+        d2na = {ref: sum(z[t][ref]['d2'] is None for t in has[ref]) for ref in has}
         s = results['zero_fill']['summary']
-        out += [f"- zero_fill: D1 pooled = 1 − Pr_ref(zero) ở {exact}/{len(targets)} target (mọi ô M_m điền 0). "
-                f"D1 TB đều R-local {signed(s['local_d1']['equal'])}, R-pooled {signed(s['pooled_d1']['equal'])}. "
-                f"D1 lớn nhất (hoặc bằng) trong các model ở {top['local']}/{len(targets)} target (R-local), "
-                f"{top['pooled']}/{len(targets)} (R-pooled). D2 = NA ở {d2na['local']}/{len(targets)} (R-local), "
-                f"{d2na['pooled']}/{len(targets)} (R-pooled) target."]
+        n = {ref: len(v) for ref, v in has.items()}
+        out += [f"- zero_fill: D1 pooled = 1 − Pr_ref(zero) ở {exact}/{n['pooled']} target có D1 (mọi ô M_m "
+                f"điền 0). D1 TB đều R-local {signed(s['local_d1']['equal'])}, R-pooled "
+                f"{signed(s['pooled_d1']['equal'])}. D1 lớn nhất (hoặc bằng) trong các model ở "
+                f"{top['local']}/{n['local']} target (R-local), {top['pooled']}/{n['pooled']} (R-pooled). D2 = NA ở "
+                f"{d2na['local']}/{n['local']} (R-local), {d2na['pooled']}/{n['pooled']} (R-pooled) target có D1. "
+                f"Target không có D1 (không có ô M_m, hoặc không ô nào có support): "
+                f"{', '.join(t for t in targets if t not in has['local']) or 'không'} (R-local); "
+                f"{', '.join(t for t in targets if t not in has['pooled']) or 'không'} (R-pooled)."]
     if 'marginal_sampler' in results:
         r = results['marginal_sampler']
         s = r['summary']
-        small = sum(abs(r['targets'][t]['pooled']['d1']) <= .05 for t in targets
-                    if r['targets'][t]['pooled']['d1'] is not None)
+        has = [t for t in targets if r['targets'][t]['pooled']['d1'] is not None]
+        small = sum(abs(r['targets'][t]['pooled']['d1']) <= .05 for t in has)
         out += [f"- marginal_sampler: D1 R-pooled TB đều {signed(s['pooled_d1']['equal'])}, trọng số "
-                f"{signed(s['pooled_d1']['weighted'])}; |D1 pooled| ≤ 0.05 ở {small}/{len(targets)} target. "
+                f"{signed(s['pooled_d1']['weighted'])}; |D1 pooled| ≤ 0.05 ở {small}/{len(has)} target có D1. "
                 f"D2 R-pooled TB đều {na(s['pooled_d2']['equal'])}, trọng số {na(s['pooled_d2']['weighted'])}. "
                 f"R-local: D1 {signed(s['local_d1']['equal'])} / {signed(s['local_d1']['weighted'])}, "
                 f"D2 {na(s['local_d2']['equal'])} / {na(s['local_d2']['weighted'])} (đều / trọng số)."]
