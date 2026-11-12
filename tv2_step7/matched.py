@@ -175,7 +175,7 @@ def match_lines(data, facts, target, masks, stats):
            'Phân bố đạt được: trên ô che thuộc nhóm model, TB 5 seed.', '',
            '| Tầng | π | wf | wfm | p_k (ô ứng viên) |', '|---|---:|---:|---:|---:|']
     for k in keys:
-        out.append(f"| {k} | {target['pi'].get(k, 0.):.3f} | {shares[WF][k]:.3f} | {shares[MASK][k]:.3f} | "
+        out.append(f"| {k.replace('|', ' · ')} | {target['pi'].get(k, 0.):.3f} | {shares[WF][k]:.3f} | {shares[MASK][k]:.3f} | "
                    f"{info[0]['p'].get(k, float('nan')) if k in target['pi'] else float('nan'):.3f} |")
     out += ['', '| Mask | TV tới π (mean ± sd) | coverage R-local trên E | ứng viên bị guard bỏ / seed | '
             'cặp được che / seed | đạt rate |', '|---|---|---|---|---|---|']
@@ -203,10 +203,10 @@ def mask_stats(mask):
 # ---------- tier 3 ----------
 
 def tier3_cases(data, facts, target):
-    cases, cells = {}, {}
+    cases, cells, records = {}, {}, {}
     for mask, kwargs in ((MASK, {'runs_of': RUNS7, 'pair_root': REPO / 'tv2_step7/runs', 'seeds': SEEDS,
                                  'target': target}), (RC, {})):
-        hidden, preds, runs, _ = tier3.load_mask(data, mask, **kwargs)
+        hidden, preds, runs, records[mask] = tier3.load_mask(data, mask, **kwargs)
         cases[mask], cells[mask] = [], []
         for s in SEEDS:
             case, c, support = tier3.one_case(data, facts, hidden[s], preds, runs, s)
@@ -216,7 +216,7 @@ def tier3_cases(data, facts, target):
     if json.loads(json.dumps(cases[RC], sort_keys=True, default=lambda x: x.tolist() if hasattr(x, 'tolist')
                              else str(x))) != old:
         raise ValueError('random_cell cases differ from tv2_step6/tier3_cases.json')
-    return cases, cells
+    return cases, cells, records[MASK]
 
 
 def tier3_lines(cases):
@@ -264,7 +264,7 @@ def summarize(out_dir):
     blocks['tier1'], orders = ranking_lines(runs)
     strata = {'continent': sorted(set(data.groups)), 'n': list(mm.N_LABELS)}
     blocks['strata'] = strata_lines(scores, strata)
-    cases, cells = tier3_cases(data, facts, target)
+    cases, cells, manifest['runs'] = tier3_cases(data, facts, target)
     t3_blocks, verdicts = tier3_lines(cases)
     blocks['tier3'] = t3_blocks['summary']
     blocks['tier3_detail'] = t3_blocks['u1'] + [''] + t3_blocks['u2'] + [''] + t3_blocks['u3'] + [''] + t3_blocks['u4']
