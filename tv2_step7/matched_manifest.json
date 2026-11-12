@@ -1,0 +1,361 @@
+{
+ "cases_sha256": "c4aa8e53cc8ddf08ce835aceb13bb479ff807b5dd76eaf9252993c9b68f3395c",
+ "mask_stats": [
+  {
+   "actual_rate": 0.050659949980864566,
+   "candidate_cells": 112357,
+   "candidate_pairs": 1298,
+   "complete_rows_after": 298,
+   "complete_rows_before": 516,
+   "forced_zero_cells": 2915,
+   "hidden_cells": 5692,
+   "kind": "whole_feature_matched",
+   "missing_forced_zero_cells": 59239,
+   "missing_model_cells": 32503,
+   "model_cells": 2777,
+   "observed_cells": 112357,
+   "p": {
+    "Africa|N1": 0.0731863613304022,
+    "Africa|N2": 0.04172414713814004,
+    "Africa|N3": 0.009416413752592183,
+    "Asia|N1": 0.05494094715950052,
+    "Asia|N2": 0.06445526313447315,
+    "Asia|N3": 0.08912662317434605,
+    "Europe|N1": 0.05560846231209449,
+    "Europe|N2": 0.08931352741707237,
+    "Europe|N3": 0.25265003515579804,
+    "North America|N1": 0.0507667524052796,
+    "North America|N2": 0.04731347401586016,
+    "North America|N3": 0.04854170189663305,
+    "Oceania|N1": 0.002848064651067579,
+    "Oceania|N2": 0.005357921624820883,
+    "Oceania|N3": 0.019776248920850503,
+    "South America|N1": 0.027003212972934485,
+    "South America|N2": 0.030732397625426098,
+    "South America|N3": 0.0372384453127086
+   },
+   "pairs_hidden": 66,
+   "pairs_skipped": 0,
+   "pairs_with_observed_cells": 1298,
+   "rate": 0.05,
+   "reached_goal": true,
+   "rows_affected": 4491,
+   "seed": 0,
+   "unreachable_mass": 0.0,
+   "unreachable_strata": [],
+   "zero_weight_pairs": 0
+  },
+  {
+   "actual_rate": 0.05068665058696832,
+   "candidate_cells": 112357,
+   "candidate_pairs": 1298,
+   "complete_rows_after": 189,
+   "complete_rows_before": 516,
+   "forced_zero_cells": 2813,
+   "hidden_cells": 5695,
+   "kind": "whole_feature_matched",
+   "missing_forced_zero_cells": 57525,
+   "missing_model_cells": 34220,
+   "model_cells": 2882,
+   "observed_cells": 112357,
+   "p": {
+    "Africa|N1": 0.0731863613304022,
+    "Africa|N2": 0.04172414713814004,
+    "Africa|N3": 0.009416413752592183,
+    "Asia|N1": 0.05494094715950052,
+    "Asia|N2": 0.06445526313447315,
+    "Asia|N3": 0.08912662317434605,
+    "Europe|N1": 0.05560846231209449,
+    "Europe|N2": 0.08931352741707237,
+    "Europe|N3": 0.25265003515579804,
+    "North America|N1": 0.0507667524052796,
+    "North America|N2": 0.04731347401586016,
+    "North America|N3": 0.04854170189663305,
+    "Oceania|N1": 0.002848064651067579,
+    "Oceania|N2": 0.005357921624820883,
+    "Oceania|N3": 0.019776248920850503,
+    "South America|N1": 0.027003212972934485,
+    "South America|N2": 0.030732397625426098,
+    "South America|N3": 0.0372384453127086
+   },
+   "pairs_hidden": 64,
+   "pairs_skipped": 0,
+   "pairs_with_observed_cells": 1298,
+   "rate": 0.05,
+   "reached_goal": true,
+   "rows_affected": 4690,
+   "seed": 1,
+   "unreachable_mass": 0.0,
+   "unreachable_strata": [],
+   "zero_weight_pairs": 0
+  },
+  {
+   "actual_rate": 0.05074005179917584,
+   "candidate_cells": 112357,
+   "candidate_pairs": 1298,
+   "complete_rows_after": 327,
+   "complete_rows_before": 516,
+   "forced_zero_cells": 2812,
+   "hidden_cells": 5701,
+   "kind": "whole_feature_matched",
+   "missing_forced_zero_cells": 57405,
+   "missing_model_cells": 34346,
+   "model_cells": 2889,
+   "observed_cells": 112357,
+   "p": {
+    "Africa|N1": 0.0731863613304022,
+    "Africa|N2": 0.04172414713814004,
+    "Africa|N3": 0.009416413752592183,
+    "Asia|N1": 0.05494094715950052,
+    "Asia|N2": 0.06445526313447315,
+    "Asia|N3": 0.08912662317434605,
+    "Europe|N1": 0.05560846231209449,
+    "Europe|N2": 0.08931352741707237,
+    "Europe|N3": 0.25265003515579804,
+    "North America|N1": 0.0507667524052796,
+    "North America|N2": 0.04731347401586016,
+    "North America|N3": 0.04854170189663305,
+    "Oceania|N1": 0.002848064651067579,
+    "Oceania|N2": 0.005357921624820883,
+    "Oceania|N3": 0.019776248920850503,
+    "South America|N1": 0.027003212972934485,
+    "South America|N2": 0.030732397625426098,
+    "South America|N3": 0.0372384453127086
+   },
+   "pairs_hidden": 65,
+   "pairs_skipped": 0,
+   "pairs_with_observed_cells": 1298,
+   "rate": 0.05,
+   "reached_goal": true,
+   "rows_affected": 4521,
+   "seed": 2,
+   "unreachable_mass": 0.0,
+   "unreachable_strata": [],
+   "zero_weight_pairs": 0
+  },
+  {
+   "actual_rate": 0.05022384008116984,
+   "candidate_cells": 112357,
+   "candidate_pairs": 1298,
+   "complete_rows_after": 298,
+   "complete_rows_before": 516,
+   "forced_zero_cells": 2317,
+   "hidden_cells": 5643,
+   "kind": "whole_feature_matched",
+   "missing_forced_zero_cells": 55143,
+   "missing_model_cells": 36550,
+   "model_cells": 3326,
+   "observed_cells": 112357,
+   "p": {
+    "Africa|N1": 0.0731863613304022,
+    "Africa|N2": 0.04172414713814004,
+    "Africa|N3": 0.009416413752592183,
+    "Asia|N1": 0.05494094715950052,
+    "Asia|N2": 0.06445526313447315,
+    "Asia|N3": 0.08912662317434605,
+    "Europe|N1": 0.05560846231209449,
+    "Europe|N2": 0.08931352741707237,
+    "Europe|N3": 0.25265003515579804,
+    "North America|N1": 0.0507667524052796,
+    "North America|N2": 0.04731347401586016,
+    "North America|N3": 0.04854170189663305,
+    "Oceania|N1": 0.002848064651067579,
+    "Oceania|N2": 0.005357921624820883,
+    "Oceania|N3": 0.019776248920850503,
+    "South America|N1": 0.027003212972934485,
+    "South America|N2": 0.030732397625426098,
+    "South America|N3": 0.0372384453127086
+   },
+   "pairs_hidden": 65,
+   "pairs_skipped": 0,
+   "pairs_with_observed_cells": 1298,
+   "rate": 0.05,
+   "reached_goal": true,
+   "rows_affected": 4585,
+   "seed": 3,
+   "unreachable_mass": 0.0,
+   "unreachable_strata": [],
+   "zero_weight_pairs": 0
+  },
+  {
+   "actual_rate": 0.050036935838443534,
+   "candidate_cells": 112357,
+   "candidate_pairs": 1298,
+   "complete_rows_after": 407,
+   "complete_rows_before": 516,
+   "forced_zero_cells": 2949,
+   "hidden_cells": 5622,
+   "kind": "whole_feature_matched",
+   "missing_forced_zero_cells": 59657,
+   "missing_model_cells": 32015,
+   "model_cells": 2673,
+   "observed_cells": 112357,
+   "p": {
+    "Africa|N1": 0.0731863613304022,
+    "Africa|N2": 0.04172414713814004,
+    "Africa|N3": 0.009416413752592183,
+    "Asia|N1": 0.05494094715950052,
+    "Asia|N2": 0.06445526313447315,
+    "Asia|N3": 0.08912662317434605,
+    "Europe|N1": 0.05560846231209449,
+    "Europe|N2": 0.08931352741707237,
+    "Europe|N3": 0.25265003515579804,
+    "North America|N1": 0.0507667524052796,
+    "North America|N2": 0.04731347401586016,
+    "North America|N3": 0.04854170189663305,
+    "Oceania|N1": 0.002848064651067579,
+    "Oceania|N2": 0.005357921624820883,
+    "Oceania|N3": 0.019776248920850503,
+    "South America|N1": 0.027003212972934485,
+    "South America|N2": 0.030732397625426098,
+    "South America|N3": 0.0372384453127086
+   },
+   "pairs_hidden": 64,
+   "pairs_skipped": 0,
+   "pairs_with_observed_cells": 1298,
+   "rate": 0.05,
+   "reached_goal": true,
+   "rows_affected": 4694,
+   "seed": 4,
+   "unreachable_mass": 0.0,
+   "unreachable_strata": [],
+   "zero_weight_pairs": 0
+  }
+ ],
+ "mask_target_sha256": "00b23723395265bda76871726463642bfb9cf253d4a230463630eaa75191cfb0",
+ "match": {
+  "whole_feature": {
+   "coverage": [
+    0.9834296724470135,
+    0.8790765848296079,
+    0.8909595559080096,
+    0.8857827476038339,
+    0.8902743142144638
+   ],
+   "tv": [
+    0.29867850212831665,
+    0.3076419858465989,
+    0.30024472911799854,
+    0.32488810674478485,
+    0.3331826101609069
+   ]
+  },
+  "whole_feature_matched": {
+   "coverage": [
+    0.8912495498739648,
+    0.8632893823733518,
+    0.9106957424714434,
+    0.9088995790739627,
+    0.936026936026936
+   ],
+   "tv": [
+    0.2301855597941024,
+    0.20791156810040606,
+    0.1303508135322387,
+    0.22221367857843533,
+    0.23747605036153455
+   ]
+  }
+ },
+ "orders": {
+  "whole_feature": [
+   "same_day_mean",
+   "hron_cap",
+   "hron",
+   "micoda_other",
+   "micoda_other_cap",
+   "tsagris_cap",
+   "tsagris",
+   "mean_fill",
+   "marginal_sampler",
+   "micoda",
+   "zero_fill"
+  ],
+  "whole_feature_matched": [
+   "same_day_mean",
+   "hron_cap",
+   "hron",
+   "micoda_other",
+   "micoda_other_cap",
+   "tsagris",
+   "tsagris_cap",
+   "micoda",
+   "mean_fill",
+   "marginal_sampler",
+   "zero_fill"
+  ]
+ },
+ "runs": {
+  "mask_sha256": {
+   "0": "8d5f42a738bc454413a6d3cfbcc1c2affeb1f86ff67a9401c8cd3bd4d1d3a20b",
+   "1": "013f55cd298cda256a815bfebdcfcdf7d194252217cf2b68744f3cdaee676822",
+   "2": "cd0cd9161e0fba1ef8f67459f1cf18fdc6c89ac1c330500eb9c812d474c54959",
+   "3": "c21e7f672fa00235f8929141a7eb336dcfcdcbff41169a930b2726d29ccdeb0a",
+   "4": "a8c3915f5603b72e84ff8347d896c313d1d8f25d48e02c4b4b5d2a1cbca394f9"
+  },
+  "regression_values_checked": 1650,
+  "runs": [
+   {
+    "config_sha256": "2a7a83dbd6a3969ac35d6b32986d412d1b8d155902c31972562267bf51469f91",
+    "dir": "tv2_step7/runs/main_whole_feature_matched",
+    "git": "a9d7e90e7cb0e861bc683225eb15187db347f103",
+    "predictions_sha256": "e2630d9dd66a32381d266ff0cc1e69b278ba6983a7a5b55c82b7a7fac32899eb"
+   },
+   {
+    "config_sha256": "293116e887906afaa1458cf7e73e98010121cb3f603c2f6da2b880966f1516df",
+    "dir": "tv2_step7/runs/micoda_other_whole_feature_matched",
+    "git": "a9d7e90e7cb0e861bc683225eb15187db347f103",
+    "predictions_sha256": "48e533807d432faa169ee90c6a3a86695e32b2eb924885cea9230484ac005e2f"
+   },
+   {
+    "config_sha256": "9ef752e61b8938096f8aeedf0f7d3fc1ec772b068d62cded3f1ff52a6ddcd94f",
+    "dir": "tv2_step7/runs/residual_whole_feature_matched",
+    "git": "a9d7e90e7cb0e861bc683225eb15187db347f103",
+    "predictions_sha256": "c2d2224e46b097b4321e9f245a8fad164e56e75d6d0484d2b4ae8ab31acb77a4"
+   }
+  ]
+ },
+ "target": {
+  "n_cuts": [
+   17.0,
+   149.0
+  ],
+  "pi": {
+   "Africa|N1": 0.16782557454331173,
+   "Africa|N2": 0.12080141426045964,
+   "Africa|N3": 0.028874484384207425,
+   "Asia|N1": 0.11278727165586329,
+   "Asia|N2": 0.10265173836181497,
+   "Asia|N3": 0.05806324887055588,
+   "Europe|N1": 0.07020231781575328,
+   "Europe|N2": 0.050952661559615,
+   "Europe|N3": 0.07605578471813003,
+   "North America|N1": 0.04985268120212139,
+   "North America|N2": 0.030367314869377333,
+   "North America|N3": 0.004282066391671577,
+   "Oceania|N1": 0.01386760950697309,
+   "Oceania|N2": 0.010331958357886466,
+   "Oceania|N3": 0.004949911608721273,
+   "South America|N1": 0.040502848163425656,
+   "South America|N2": 0.032017285405617754,
+   "South America|N3": 0.025613828324494204
+  }
+ },
+ "verdicts": {
+  "pooled_u1": {
+   "u1_over": "pass",
+   "u1_under": "fail"
+  },
+  "pooled_u2": "pass",
+  "prop": {
+   "u1_over": "pass",
+   "u1_under": "fail"
+  },
+  "u1": {
+   "u1_over": "pass",
+   "u1_under": "fail"
+  },
+  "u2": "fail",
+  "u3": "pass"
+ }
+}
