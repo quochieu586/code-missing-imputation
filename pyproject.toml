@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "longitudinal-impute"
+version = "0.0.1"
+description = "Full-table count imputation with Hron, MICoDa and Tsagris baselines"
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26,<3"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+main = ["torch>=2.15,<3"]
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", extra = "main" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[project.scripts]
+longitudinal-impute = "longitudinal_impute.run:main"
+general-impute = "longitudinal_impute.run:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+norecursedirs = ["archive", ".*", "build", "dist"]
