@@ -1,0 +1,27 @@
+# Same baseline parameters as models_default.toml, plus the main.toml CPU recipe.
+[hron]
+k = 3
+ties = "group"
+adjustment = "median"
+
+[tsagris]
+k = 3
+alpha = 1.0
+tune = false
+zero_anchor = "global"
+zero_missing_mass = "uniform"
+
+[micoda]
+other = true
+max_iter = 120
+tol = 1e-8
+
+[main]
+outer_iters = 5
+epochs_per_iter = 10
+batch_size = 8
+learning_rate = 1e-3
+tol = 1e-4
+train_mask_rate = 0.1
+seed = 0
+device = "cpu"

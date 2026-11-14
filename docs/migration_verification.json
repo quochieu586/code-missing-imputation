@@ -1,0 +1,54 @@
+{
+  "date": "2026-11-02",
+  "status": "passed",
+  "archive_checks": {
+    "main_manifest_preserved_files": 13716,
+    "workspace_history_preserved_files": 8599,
+    "exit_codes": [
+      0,
+      0
+    ],
+    "main_manifest": "archive/migration_2026-11-02/inventory.json",
+    "workspace_manifest": "archive/migration_2026-11-02/workspace_history.json"
+  },
+  "runtime_unchanged": {
+    "src/longitudinal_impute/__init__.py": "0f3591fd192feb09c741d782f348f09b15c6b2c3ef7c1b65697f964528761e71",
+    "src/longitudinal_impute/baselines/__init__.py": "197ea4fc114d0936b2cd965076050dce6c4ebd96c1d02dead3ec47908254595c",
+    "src/longitudinal_impute/baselines/common.py": "7b1d539048edd63d8952c266ed3524921abb9f0750daddb040849c2cec6885d8",
+    "src/longitudinal_impute/baselines/diagnostics.py": "e48dc7c7fd420d942435a061d15d128e1b25dc5f53de861f461cdc86e2da7540",
+    "src/longitudinal_impute/baselines/hron.py": "cc35d6ab076c06b926c4447fa69864c40614f472d889dfbbf7b2671ce1cd302f",
+    "src/longitudinal_impute/baselines/micoda.py": "686daa702243137d34bda6380fcf8612297cf46e49bb812b20821c3cdde6b7c8",
+    "src/longitudinal_impute/baselines/regression.py": "aae5ea2eb8e579f7f5fb155479ef03dfaa4f2b030e118466d5cdb27df410c2c6",
+    "src/longitudinal_impute/baselines/tsagris.py": "5de59f2944fbd835a69f97dcb87e977e851ff28c425efbfc98c85ffe1cefae01",
+    "src/longitudinal_impute/data.py": "8b5c19a67e5294c4c8729aaf3a4e729de9c28ce2da82cfdee51c49716f577453",
+    "src/longitudinal_impute/errors.py": "12128d66f734f9b9bea30a237c9654189f2d887e8640af02e00396f5fab5aa48",
+    "src/longitudinal_impute/evaluate.py": "807739723786a02d17e3f8ab9a6fac46c8c13e189eb6011a1dc79dd2aec1decf",
+    "src/longitudinal_impute/run.py": "1402b1748fd155559e9cd14921670eca686baf02a76ba7ffa7decc73cadd2aa4"
+  },
+  "data_unchanged": {
+    "data/covariants.csv": "bbb1aacdf46ebef345ca818f086d5586f4aded45475b00b6ee9bd89fc94a90ab",
+    "data/original_long_format.csv": "9eecf724ef34179ff5dbee4908a0bdf27fc63bc0f4e3aba3fa4e734e9f7fb7ac"
+  },
+  "tests": {
+    "passed": 115,
+    "failures": 0,
+    "errors": 0,
+    "current_source_test_hashes_match": true,
+    "evidence": "outputs/migration-tests/verification.json"
+  },
+  "handoff": {
+    "cases": 6,
+    "model_native_masked_runs": 36,
+    "script_sha256": "e62b379b89d6e6b0aa76781f9055066c4578839e8ef22752beb6c273be5c0900",
+    "evidence": "outputs/handoff audit/final-validation.json"
+  },
+  "independent_audit": {
+    "skill": "thermo-nuclear-code-quality-review",
+    "open_required_findings": 0
+  },
+  "scope_limits": [
+    "Microbiome fixture only; no real microbiome dataset supplied",
+    "MICoDa A17/R1 budget limitations preserved",
+    "No R oracle or legacy diffusion retraining"
+  ]
+}
