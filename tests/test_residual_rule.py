@@ -4,6 +4,7 @@
 """
 import copy
 import hashlib
+import json
 
 import numpy as np
 import pytest
@@ -48,13 +49,33 @@ def masks(data):
             'rc': make_mask(data, 'random_cell', .3, 4)[0]}
 
 
+# MICoDa (micoda, micoda_other) iterates to convergence, so its floating-point result depends on the
+# platform and the numpy/BLAS build (e.g. micoda_other:wf differs in the last bits on Linux with numpy
+# 2.5.5). Its golden is therefore the array itself, compared to rtol = atol = 1e-9 with the status
+# compared exactly. The arrays were written from the same pre-step-4 code and reproduce the GOLDEN
+# hashes below byte for byte where they were made (macOS, numpy 2.1.3); every other model is
+# compared byte for byte.
+ITERATIVE = ('micoda', 'micoda_other')
+GOLDEN_ARRAYS = json.loads((FIXTURES / 'residual_rule_micoda_golden.json').read_text(encoding='utf-8'))
+
+
 def test_without_a_rule_every_model_is_unchanged_byte_for_byte(covid):
-    seen = {}
+    seen, close = {}, set()
     for name, make in sorted(FACTORIES.items()):
         for kind, hidden in masks(covid).items():
             values, status, _ = run.run_model(covid, make(), hidden)
-            seen[f'{name}:{kind}'] = hashlib.sha256(values.tobytes() + status.encode()).hexdigest()[:16]
-    assert seen == GOLDEN
+            key = f'{name}:{kind}'
+            if name in ITERATIVE:
+                golden = GOLDEN_ARRAYS[key]
+                assert status == golden['status'], key
+                expected = np.array([[np.nan if v is None else v for v in row] for row in golden['values']])
+                np.testing.assert_allclose(values, expected, rtol=1e-9, atol=1e-9, err_msg=key)
+                close.add(key)
+            else:
+                seen[key] = hashlib.sha256(values.tobytes() + status.encode()).hexdigest()[:16]
+    assert seen == {k: v for k, v in GOLDEN.items() if k.split(':')[0] not in ITERATIVE}
+    assert close == set(GOLDEN_ARRAYS) == {k for k in GOLDEN if k.split(':')[0] in ITERATIVE}
+    assert all(GOLDEN_ARRAYS[k]['sha256_16'] == GOLDEN[k] for k in close)
 
 
 @pytest.mark.parametrize('name', ['hron', 'tsagris'])
