@@ -1,0 +1,51 @@
+# Step 4: the new cells of the residual-rule matrix, frozen before the runs. Same parameters as
+# models_default.toml (hron, tsagris) and models_micoda_other.toml (micoda other = true).
+# The current cells are read from earlier runs: hron/tsagris prop_other and micoda A17 rescale
+# (step 2 main), micoda_other prop_other (step 2 micoda_other), same_day_mean cap = sdm_full and
+# rescale = sdm_rescale (step 3), mean_fill cap (step 2 main).
+
+[hron_cap]
+model = "hron"
+k = 3
+ties = "group"
+adjustment = "median"
+residual_rule = "cap"
+
+[hron_rescale]
+model = "hron"
+k = 3
+ties = "group"
+adjustment = "median"
+residual_rule = "rescale"
+
+[tsagris_cap]
+model = "tsagris"
+k = 3
+alpha = 1.0
+tune = false
+zero_anchor = "global"
+zero_missing_mass = "uniform"
+residual_rule = "cap"
+
+[tsagris_rescale]
+model = "tsagris"
+k = 3
+alpha = 1.0
+tune = false
+zero_anchor = "global"
+zero_missing_mass = "uniform"
+residual_rule = "rescale"
+
+[micoda_other_cap]
+model = "micoda"
+max_iter = 120
+tol = 1e-8
+other = true
+residual_rule = "cap"
+
+[micoda_other_rescale]
+model = "micoda"
+max_iter = 120
+tol = 1e-8
+other = true
+residual_rule = "rescale"

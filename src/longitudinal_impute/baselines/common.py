@@ -124,16 +124,23 @@ def design_matrix(covariates, n):
     return np.column_stack((np.ones(n), x))
 
 
-def fill_within_residual(values, proposal):
+def fill_within_residual(values, proposal, rule='cap'):
     """Put per-cell proposals into the missing targets without exceeding the row residual.
 
     values: N x (D+1) model input (targets c/N then Other, NaN = missing).
     proposal: N x D proposed proportions; only the missing target cells are read.
-    Per incomplete row, R = 1 - sum(observed targets). If the proposals sum to more than R
-    they are scaled down to R; Other gets the rest, max(R - filled, 0). A row whose filled
-    mass and Other are both 0 gets Other = 1 as a pure weight, so restore_counts sends any
-    (rounding-level) residual to Other instead of failing. Returns (matrix, rows_scaled_down).
+    Per incomplete row, R = 1 - sum(observed targets).
+      rule 'cap' (default): proposals summing to more than R are scaled down to R; Other gets
+        the rest, max(R - filled, 0).
+      rule 'rescale' (R1-like, ablation only): proposals with a positive sum are always scaled
+        to sum to R and Other = 0. A row whose proposals sum to 0 keeps the 'cap' outcome
+        (fill 0, Other = R), so nothing is divided by 0.
+    A row whose filled mass and Other are both 0 gets Other = 1 as a pure weight, so
+    restore_counts sends any (rounding-level) residual to Other instead of failing.
+    Returns (matrix, rows_scaled).
     """
+    if rule not in ('cap', 'rescale'):
+        raise BaselineInputError(f"residual rule must be 'cap' or 'rescale', got {rule!r}")
     x = np.asarray(values, float)
     targets = x[:, :-1]
     missing = ~np.isfinite(targets)
@@ -144,11 +151,13 @@ def fill_within_residual(values, proposal):
     residual = np.maximum(1. - np.nansum(targets, axis=1), 0.)
     fill = np.where(missing, proposal, 0.)
     mass = fill.sum(axis=1)
-    over = rows & (mass > residual)
+    over = rows & ((mass > residual) if rule == 'cap' else (mass > 0))
     fill[over] *= (residual[over] / mass[over])[:, None]
     out = x.copy()
     out[:, :-1][missing] = fill[missing]
     other = np.maximum(residual - fill.sum(axis=1), 0.)
+    if rule == 'rescale':
+        other[over] = 0.
     other[rows & (other == 0) & (fill.sum(axis=1) == 0)] = 1.
     out[rows, -1] = other[rows]
     return out, int(over.sum())

@@ -1,0 +1,26 @@
+# Step 4 consistency check only (not a table): prop_other through data.apply_residual_rule must
+# reproduce the current output of hron, tsagris (step 2 main) and micoda other = true (step 2
+# micoda_other, adapter R2 branch).
+
+[hron_prop_check]
+model = "hron"
+k = 3
+ties = "group"
+adjustment = "median"
+residual_rule = "prop_other"
+
+[tsagris_prop_check]
+model = "tsagris"
+k = 3
+alpha = 1.0
+tune = false
+zero_anchor = "global"
+zero_missing_mass = "uniform"
+residual_rule = "prop_other"
+
+[micoda_other_prop_check]
+model = "micoda"
+max_iter = 120
+tol = 1e-8
+other = true
+residual_rule = "prop_other"

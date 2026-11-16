@@ -2,14 +2,19 @@
 
     python -m longitudinal_impute.run --data <csv> --schema <toml> --models <toml> --output <dir>
            [--mask whole_feature|random_cell|none] [--mask-rate 0.05] [--seeds 0 1 2 3 4]
-           [--only NAME [NAME ...]]
+           [--only NAME [NAME ...]] [--save-predictions]
 
-Every [name] table of --models runs, except tables with `enabled = false`.
+Every [name] table of --models runs, except tables with `enabled = false`. A table named
+after a registered model runs that model; any other name needs `model = "<registered name>"`
+(e.g. [sdm_no_time] with model = "same_day_mean") and its outputs carry the table name.
 --only runs exactly the named tables (enabled or not), in the given order.
+--save-predictions also writes predictions_<mask>.csv.gz: one row per hidden cell of every
+completed masked run (see cells.py), for scoring outside this runner.
 """
 import argparse
 import csv
 import hashlib
+import inspect
 import json
 from pathlib import Path
 import subprocess
@@ -18,8 +23,10 @@ import tomllib
 
 import numpy as np
 
-from .data import load_csv, read_schema, make_mask, validate_mask, model_input, restore_counts, check_completed, write_completed_csv
-from .evaluate import wasserstein_scores, masked_errors, summarize, paired_summary
+from .data import (load_csv, read_schema, make_mask, validate_mask, model_input, restore_counts, check_completed,
+                   write_completed_csv, apply_residual_rule, RESIDUAL_RULES)
+from .evaluate import wasserstein_scores, masked_errors, summarize, paired_summary, forced_zero
+from .cells import prediction_rows, write_predictions
 from .baselines.hron import HronKNN
 from .baselines.tsagris import TsagrisKNN
 from .baselines.micoda import MICoDaCovid
@@ -40,8 +47,13 @@ MODELS = {'hron': HronKNN, 'micoda': MICoDaCovid, 'tsagris': TsagrisKNN, 'main':
 SPACE = {'micoda': '18_with_other', 'hron': '18_with_other', 'tsagris': '18_with_other', 'main': '18_with_other'}
 
 
-def run_model(data, model, hidden):
-    """Fit on the visible cells and return (values, status, info) with counts checked."""
+def run_model(data, model, hidden, residual_rule=None):
+    """Fit on the visible cells and return (values, status, info) with counts checked.
+
+    residual_rule (step 4, Hron/Tsagris/MICoDa other = true only): restore the model's
+    composition with data.apply_residual_rule instead of the model's own rule. None keeps
+    every model's current path unchanged.
+    """
     if isinstance(model, MainModel):
         completed = model.impute(data, hidden)
         check_completed(data, completed, hidden)
@@ -52,6 +64,12 @@ def run_model(data, model, hidden):
             raise ValueError(f'counts adapter returned no values: {result.status}')
         info = {k: result.diagnostics[k] for k in MICODA_INFO_KEYS if k in result.diagnostics}
         info['unassigned'] = result.unassigned
+        if residual_rule is not None and model.proposals_ is not None:
+            # The adapter's own R2 result is discarded; its core composition is restored again.
+            completed, info['residual_rule'] = apply_residual_rule(data, model.proposals_, hidden, residual_rule)
+            check_completed(data, completed, hidden)
+            info['adapter_status'] = result.status
+            return completed, 'completed', info
         if result.status == 'completed':
             check_completed(data, result.values, hidden)
         return result.values, result.status, info
@@ -62,9 +80,13 @@ def run_model(data, model, hidden):
                                    'groups': data.groups, 'entities': data.entities})
     else:
         model.fit(values)
-    completed = restore_counts(data, model.predict(values) * data.totals[:, None], hidden)
+    if residual_rule is None:
+        completed = restore_counts(data, model.predict(values) * data.totals[:, None], hidden)
+        check_completed(data, completed, hidden)
+        return completed, 'completed', getattr(model, 'info_', None)
+    completed, rule_info = apply_residual_rule(data, model.predict(values), hidden, residual_rule)
     check_completed(data, completed, hidden)
-    return completed, 'completed', getattr(model, 'info_', None)
+    return completed, 'completed', {**(getattr(model, 'info_', None) or {}), 'residual_rule': rule_info}
 
 
 def impute(data, model, hidden):
@@ -82,34 +104,119 @@ def adapter_error(status, info):
     return f'{status} completion; {(info or {}).get("unresolved_cells", "-")} cells unresolved'
 
 
+def error_code(info=None, exc=None):
+    """Stable code of a failed or partial run: the exception's code, else the adapter's error code."""
+    if exc is not None:
+        return getattr(exc, 'code', type(exc).__name__)
+    return ((info or {}).get('error') or {}).get('code') or 'unresolved_cells'
+
+
+def cell_counts(data, hidden):
+    """Missing-to-the-model cells split into forced to 0 (row residual 0) and model-decided."""
+    forced = forced_zero(data, hidden)
+    missing = hidden | ~np.isfinite(data.counts)
+    return {'forced_zero_cells': int((forced & hidden).sum()), 'model_cells': int((hidden & ~forced).sum()),
+            'missing_forced_zero_cells': int((forced & missing).sum()),
+            'missing_model_cells': int((missing & ~forced).sum())}
+
+
 def space(name, model=None):
     """Space label: the counts adapter is 17 targets (A17) or 18 with Other (A18)."""
     if isinstance(model, MICoDaCovid):
         return '18_with_other' if model.other else '17_targets'
-    if name == 'micoda' and isinstance(model, dict):
-        return '18_with_other' if model.get('other', True) else '17_targets'
+    if isinstance(model, dict):                  # a table's parameters (replay): label by its model
+        name = model_kind(name, model)
+        if name == 'micoda':
+            return '18_with_other' if model.get('other', True) else '17_targets'
     return SPACE.get(name, '18_with_other')
+
+
+def model_kind(name, params):
+    """Registered model of a table: its `model` key, else the table name itself."""
+    return params.get('model', name)
+
+
+# Models whose `residual_rule` key is handled by the runner (step 4). For same_day_mean the key
+# is the model's own parameter (cap / rescale, step 3); other models have no such key.
+RUNNER_RULES = {'hron': RESIDUAL_RULES, 'tsagris': RESIDUAL_RULES, 'micoda': RESIDUAL_RULES}
+
+
+def residual_rule(name, params):
+    """The runner-level residual rule of table [name], or None (model's current rule)."""
+    return params.get('residual_rule') if model_kind(name, params) in RUNNER_RULES else None
+
+
+def constructor_params(name, params):
+    drop = {'model'} | ({'residual_rule'} if model_kind(name, params) in RUNNER_RULES else set())
+    return {k: v for k, v in params.items() if k not in drop}
+
+
+def check_rule(name, params):
+    """Refuse a residual rule a model cannot take, with the reason, before any side effect."""
+    kind, rule = model_kind(name, params), params.get('residual_rule')
+    if rule is None:
+        return
+    if kind == 'same_day_mean' and rule == 'prop_other':
+        raise ValueError(f'[{name}] residual_rule = "prop_other" is not applicable to same_day_mean: '
+                         'it predicts no Other share (use "cap" or "rescale")')
+    if kind == 'same_day_mean':
+        return                                   # its own parameter, checked by the constructor
+    if kind not in RUNNER_RULES:
+        raise ValueError(f'[{name}] residual_rule is not applicable to {kind}')
+    if rule not in RUNNER_RULES[kind]:
+        raise ValueError(f'[{name}] residual_rule must be one of {RESIDUAL_RULES}, got {rule!r}')
+    # Without an explicit key, MICoDaCovid's own default applies (other = true since PR #5).
+    if kind == 'micoda' and params.get('other', inspect.signature(MICoDaCovid).parameters['other'].default) is not True:
+        raise ValueError(f'[{name}] residual_rule is not applicable to micoda with other = false (A17): it '
+                         'predicts no Other share, and its R1 restore already is the "rescale" rule')
+
+
+def build(name, params):
+    """A fresh model of table [name]: the class of model_kind, with its constructor parameters."""
+    return MODELS[model_kind(name, params)](**constructor_params(name, params))
+
+
+def resolve_models(models):
+    """{table: {'model', 'class', 'params' (as written), 'effective_params' (with constructor defaults)}}."""
+    out = {}
+    for name, params in models.items():
+        cls = MODELS[model_kind(name, params)]
+        given = constructor_params(name, params)
+        defaults = {p.name: p.default for p in inspect.signature(cls).parameters.values()
+                    if p.default is not inspect.Parameter.empty}
+        out[name] = {'model': model_kind(name, params), 'class': cls.__name__, 'params': given,
+                     'effective_params': {**defaults, **given}}
+        if residual_rule(name, params) is not None:
+            out[name]['runner_residual_rule'] = residual_rule(name, params)
+    return out
 
 
 def read_models(path, only=None, construct=True):
     """[name] tables with constructor parameters -> {name: params} of the models to run.
 
-    A table with `enabled = false` is validated but only runs when --only names it.
+    A table with `enabled = false` is validated but only runs when --only names it. A table
+    whose name is not a registered model must say which one with `model = "<name>"`; params
+    keep that key (build() drops it).
     construct=False (stage evaluate, a replay) selects the same tables without building a model.
     """
     with Path(path).open('rb') as stream:
         config = tomllib.load(stream)
-    if not config or set(config) - set(MODELS):
-        raise ValueError(f'{path}: declare one or more of {sorted(MODELS)}, got {sorted(config)}')
+    unnamed = [name for name, params in config.items() if name not in MODELS and 'model' not in params]
+    if not config or unnamed:
+        raise ValueError(f'{path}: declare one or more of {sorted(MODELS)} (or a table with '
+                         f'model = "<one of them>"), got {sorted(config)}')
     selected = {}
     for name, params in config.items():
         params = dict(params)
         enabled = params.pop('enabled', True)
         if not isinstance(enabled, bool):
             raise ValueError(f'{path}: [{name}] enabled must be true or false')
+        if model_kind(name, params) not in MODELS:
+            raise ValueError(f'{path}: [{name}] model = {params["model"]!r} is not one of {sorted(MODELS)}')
         try:
+            check_rule(name, params)
             if construct:
-                MODELS[name](**params)      # reject bad parameters before any run starts
+                build(name, params)         # reject bad parameters before any run starts
         except TypeError as exc:
             raise ValueError(f'{path}: [{name}] {exc}') from None
         selected[name] = (params, enabled)
@@ -247,7 +354,8 @@ def validate_run_metadata(config, summary):
             if not isinstance(config[key], str) or not config[key]:
                 raise ValueError(f'invalid {key}')
         models = config['models']
-        if not isinstance(models, dict) or not models or set(models) - set(MODELS):
+        if not isinstance(models, dict) or not models or any(
+                not isinstance(p, dict) or model_kind(n, p) not in MODELS for n, p in models.items()):
             raise ValueError('invalid models')
         if config['pass'] == 'native':
             if config['mask'] != 'none' or config['seeds'] is not None or config['mask_rate'] is not None:
@@ -328,6 +436,8 @@ def main(argv=None):
     parser.add_argument('--from-run', type=Path)
     parser.add_argument('--only', nargs='+', metavar='NAME',
                         help='run only these [name] tables of --models, even those with enabled = false')
+    parser.add_argument('--save-predictions', action='store_true',
+                        help='write predictions_<mask>.csv.gz with every hidden cell of completed masked runs')
     args = parser.parse_args(argv)
     if args.output.exists():
         raise FileExistsError(f'{args.output} already exists; choose a new output directory')
@@ -433,10 +543,11 @@ def main(argv=None):
     output.mkdir(parents=True)
     config = {'data': str(args.data.resolve()), 'data_sha256': hashlib.sha256(args.data.read_bytes()).hexdigest(),
               'rows': len(data.counts), 'schema_path': str(args.schema.resolve()), 'schema': read_schema(args.schema),
-              'models_path': str(args.models.resolve()), 'models': models, 'only': args.only,
+              'models_path': str(args.models.resolve()), 'models': models,
+              'resolved_models': resolve_models(models), 'only': args.only,
               'mask': args.mask, 'mask_rate': args.mask_rate if args.mask != 'none' else None,
               'seeds': args.seeds if args.mask != 'none' else None, 'git': git_commit(),
-              'group_map': data.group_map,
+              'group_map': data.group_map, 'save_predictions': args.save_predictions,
               'stage': args.stage, 'pass': args.passes, 'schema_sha256': sha256(args.schema),
               'models_sha256': sha256(args.models),
               'code_sha256': previous.get('code_sha256') if args.stage == 'evaluate' else code_hashes(),
@@ -447,10 +558,12 @@ def main(argv=None):
         config['evaluation_code_sha256'] = sha256(Path(__file__).with_name('evaluate.py'))
     (output / 'config.json').write_text(json.dumps(config, indent=1, default=plain), encoding='utf-8')
 
-    rows, detail, failures = [], {'native': {}, 'masked': {}}, []
+    nothing = np.zeros(data.counts.shape, bool)
+    rows, detail, failures, predictions = [], {'native': {}, 'masked': {}}, [], []
+    detail['native_cells'] = cell_counts(data, nothing)
     artifacts = {'version': 1, 'files': {}, 'predictions': {}, 'initials': {}}
 
-    def execute(name, model, hidden, case):
+    def execute(name, model, hidden, case, rule=None):
         if args.stage == 'evaluate':
             result, values = replay[f'{case}/{name}']
             status = 'completed' if result['status'] == 'ok' else result['status']
@@ -466,22 +579,21 @@ def main(argv=None):
             completed = model.impute(data, hidden, initial=initial_states[case])
             check_completed(data, completed, hidden)
             return completed, 'completed', model.info_
-        return run_model(data, model, hidden)
+        return run_model(data, model, hidden, rule)
 
     def failed(model, run, seed, exc):
         line = f'{model} | {run} | {"-" if seed is None else seed} | {type(exc).__name__} | {describe(exc, data)}'
         failures.append(line)
         with (output / 'errors.log').open('a', encoding='utf-8') as stream:
             stream.write(line + '\n')
-        return {'status': 'failed', 'error': f'{type(exc).__name__}: {exc}'}
+        return {'status': 'failed', 'error': f'{type(exc).__name__}: {exc}', 'error_code': error_code(exc=exc)}
 
     # 2. Native run: fill the real NaN cells from every observed cell.
-    nothing = np.zeros(data.counts.shape, bool)
     for name, params in (models.items() if args.passes in ('native', 'both') else []):
         start = time.perf_counter()
         try:
-            model = params if args.stage == 'evaluate' else MODELS[name](**params)
-            completed, status, info = execute(name, model, nothing, 'native')
+            model = params if args.stage == 'evaluate' else build(name, params)
+            completed, status, info = execute(name, model, nothing, 'native', residual_rule(name, params))
             seconds = replay[f'native/{name}'][0]['seconds'] if args.stage == 'evaluate' else time.perf_counter() - start
             suffix = '_completed' if status == 'completed' else (
                 '_partial' if status == 'partial' else '')
@@ -500,15 +612,15 @@ def main(argv=None):
                 message = adapter_error(status, info)
                 failed(name, 'native', None, ValueError(message))
                 result = {'status': 'partial', 'space': space(name, model), 'seconds': seconds,
-                          'info': info, 'error': message}
+                          'info': info, 'error': message, 'error_code': error_code(info)}
             else:
                 message = adapter_error(status, info)
                 failed(name, 'native', None, ValueError(message))
                 result = {'status': 'failed', 'space': space(name, model), 'seconds': seconds,
-                          'info': info, 'error': message}
+                          'info': info, 'error': message, 'error_code': error_code(info)}
         except ValueError as exc:
             result = {**failed(name, 'native', None, exc), 'seconds': time.perf_counter() - start,
-                      'space': space(name)}
+                      'space': space(model_kind(name, params))}
         detail['native'][name] = result
         rows.append({'model': name, 'pass': 'native', 'mask': 'none', 'seed': None,
                      'status': result['status'], 'space': result['space'],
@@ -519,12 +631,14 @@ def main(argv=None):
     for seed in (args.seeds if args.mask != 'none' else []):
         hidden, stats = make_mask(data, args.mask, args.mask_rate, seed)
         np.save(output / f'mask_{args.mask}_seed{seed}.npy', hidden)
+        stats.update(cell_counts(data, hidden))
         detail['masked'][seed] = {'mask': stats, 'models': {}}
         for name, params in models.items():
             start = time.perf_counter()
             try:
-                model = params if args.stage == 'evaluate' else MODELS[name](**params)
-                completed, status, info = execute(name, model, hidden, f'{args.mask}_seed{seed}')
+                model = params if args.stage == 'evaluate' else build(name, params)
+                completed, status, info = execute(name, model, hidden, f'{args.mask}_seed{seed}',
+                                                  residual_rule(name, params))
                 seconds = (replay[f'{args.mask}_seed{seed}/{name}'][0]['seconds'] if args.stage == 'evaluate'
                            else time.perf_counter() - start)
                 if status in ('completed', 'partial') and completed is not None:
@@ -538,7 +652,7 @@ def main(argv=None):
                     message = adapter_error(status, info)
                     failed(name, 'masked', seed, ValueError(message))
                     result = {'status': status, 'space': space(name, model), 'seconds': seconds,
-                              'info': info, 'error': message,
+                              'info': info, 'error': message, 'error_code': error_code(info),
                               'coverage': float((hidden & (np.isfinite(completed) if completed is not None
                                                            else np.zeros(hidden.shape, bool))).sum()
                                                 / max(hidden.sum(), 1))}
@@ -549,9 +663,12 @@ def main(argv=None):
                               'info': info,
                               'errors': masked_errors(data, completed, hidden) if coverage == 1. else None,
                               'coverage': coverage}
+                    if args.save_predictions:
+                        predictions += prediction_rows(data, completed, hidden, name, args.mask, seed,
+                                                       config['schema'].get('time'))
             except ValueError as exc:
                 result = {**failed(name, 'masked', seed, exc),
-                          'seconds': time.perf_counter() - start, 'space': space(name),
+                          'seconds': time.perf_counter() - start, 'space': space(model_kind(name, params)),
                           'coverage': 0.}
             detail['masked'][seed]['models'][name] = result
             rows.append({'model': name, 'pass': 'masked', 'mask': args.mask, 'seed': seed,
@@ -571,11 +688,15 @@ def main(argv=None):
     paired = paired_summary(rows) if args.stage != 'init' else {'cases': {}, 'aggregate': []}
     (output / 'summary.json').write_text(json.dumps({**detail, 'rows': rows, 'aggregate': aggregate, 'paired': paired},
                                                     indent=1, default=plain), encoding='utf-8')
+    if args.save_predictions and args.mask != 'none':
+        write_predictions(output / f'predictions_{args.mask}.csv.gz', predictions)
     for path in output.rglob('*'):
         if path.is_file():
             artifacts['files'][path.relative_to(output).as_posix()] = sha256(path)
     (output / 'artifacts.json').write_text(json.dumps(artifacts, indent=1), encoding='utf-8')
     print_table(aggregate)
+    print('(mean/sd over the seeds each model completed, so models may be averaged over different '
+          'seeds: not a ranking. Rank with tv2_step2/tier01.py, which uses the seeds common to all models.)')
     if paired['cases']:
         print('\nPaired masked comparison (shared successful seeds, same model space):')
         print_table(paired['aggregate'])

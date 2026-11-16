@@ -1,0 +1,32 @@
+# Step 3 ablation of same_day_mean, frozen before the runs: one factor off around sdm_full,
+# plus sdm_none (T, G and W all off, residual rule kept). Every other parameter is the default
+# of models_default.toml: window_days = 28, min_obs = 20, max_widen = 2, exclude_same_location = false.
+#   T use_time       true -> false: one window over every date of the group, no widening
+#   G use_group      true -> false: one group for every location
+#   W weighting      "n"  -> "none": plain mean of c/N instead of sum(c) / sum(N)
+#   R residual_rule  "cap" -> "rescale": always scale the proposals to the residual, Other = 0
+
+[sdm_full]
+model = "same_day_mean"
+
+[sdm_no_time]
+model = "same_day_mean"
+use_time = false
+
+[sdm_no_group]
+model = "same_day_mean"
+use_group = false
+
+[sdm_unweighted]
+model = "same_day_mean"
+weighting = "none"
+
+[sdm_rescale]
+model = "same_day_mean"
+residual_rule = "rescale"
+
+[sdm_none]
+model = "same_day_mean"
+use_time = false
+use_group = false
+weighting = "none"

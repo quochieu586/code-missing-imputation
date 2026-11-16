@@ -1,0 +1,264 @@
+{
+ "random_cell": {
+  "regression_check": {
+   "max_abs_diff": 0.0,
+   "values_checked": 1200
+  },
+  "runs": [
+   {
+    "config_sha256": "0de58fe22d18cf27d6defa0b86ebbe86862c608d4b253fcdeb7d845720d7e58f",
+    "data": "covariants.csv",
+    "data_sha256": "dbdce6030721d3f881c4e340a52b3bc1f18efb741bcdcfdc2efc4b74dd37ef35",
+    "dir": "main_random_cell",
+    "git": {
+     "commit": "7ef91466754c2660113db92861c11d73ce6b67dd",
+     "uncommitted_changes": false
+    },
+    "group_map": {
+     "entries": 150,
+     "groups": 6,
+     "path": "nextgen/configs/covid_location_continent.csv",
+     "rows_resolved": 11671,
+     "sha256": "5e0547a924b2096070423de7267ee7508075a70a08ce6c1c6fd139b24f6935fc"
+    },
+    "mask": "random_cell",
+    "mask_sha256": {
+     "0": "b1b423d6a4265974001c3b103f8ba33876bee19fd15dbe546a900df266bb925c",
+     "1": "2a3216055856fea24a153e6966840c930ebd9abba5baa4b57a0686a1485ab8c4",
+     "2": "032bff14e5506297fa88acc36fd11f5a119b46ff5dc7c227f166980fc35a104b",
+     "3": "a9df976eac6247c50687356713b7461a5a3270a9eab0ecd87f8c08e00ce68656",
+     "4": "6ef6d0fdd0792a61c0bbda08f7f3689e58a0a1fdf5dfa8100ed78607d192b3d0"
+    },
+    "models": {
+     "hron": {
+      "adjustment": "median",
+      "k": 3,
+      "ties": "group"
+     },
+     "marginal_sampler": {
+      "seed": 0
+     },
+     "mean_fill": {},
+     "micoda": {
+      "max_iter": 120,
+      "tol": 1e-08
+     },
+     "same_day_mean": {
+      "exclude_same_location": false,
+      "max_widen": 2,
+      "min_obs": 20,
+      "window_days": 28
+     },
+     "tsagris": {
+      "alpha": 1.0,
+      "k": 3,
+      "tune": false,
+      "zero_anchor": "global",
+      "zero_missing_mass": "uniform"
+     },
+     "zero_fill": {}
+    },
+    "models_sha256": "81128f25ad9013a945d6c8ed97650ee13e208383f1ddf738ee0ac824073e05f6",
+    "prediction_rows": 195552,
+    "predictions": "predictions_random_cell.csv.gz",
+    "predictions_sha256": "0275f2e9274a102e7f7e9149ad5b4315192b01c4d84ce0713cc1fc33abecbe30",
+    "rate": 0.05,
+    "resolved_models": null,
+    "schema_sha256": "b708328690a124435103e83cdd4f43f5a5305b7b2d2f0d9f9dc9d4a4539602c5",
+    "seeds": [
+     "0",
+     "1",
+     "2",
+     "3",
+     "4"
+    ],
+    "summary_sha256": "11881d6c1ab224632c8df681c1bdd8e70846de56eb4d26eecede1437a2290ea5"
+   },
+   {
+    "config_sha256": "e4ade9e8462054d1f4bf57d623f52aa80d1490277d96d69d726fffd5edf2ec10",
+    "data": "covariants.csv",
+    "data_sha256": "dbdce6030721d3f881c4e340a52b3bc1f18efb741bcdcfdc2efc4b74dd37ef35",
+    "dir": "micoda_other_random_cell",
+    "git": {
+     "commit": "8978d7215b5f9c8851c4d5714c0680b2276eae31",
+     "uncommitted_changes": false
+    },
+    "group_map": {
+     "entries": 150,
+     "groups": 6,
+     "path": "nextgen/configs/covid_location_continent.csv",
+     "rows_resolved": 11671,
+     "sha256": "5e0547a924b2096070423de7267ee7508075a70a08ce6c1c6fd139b24f6935fc"
+    },
+    "mask": "random_cell",
+    "mask_sha256": {
+     "0": "b1b423d6a4265974001c3b103f8ba33876bee19fd15dbe546a900df266bb925c",
+     "1": "2a3216055856fea24a153e6966840c930ebd9abba5baa4b57a0686a1485ab8c4",
+     "2": "032bff14e5506297fa88acc36fd11f5a119b46ff5dc7c227f166980fc35a104b",
+     "3": "a9df976eac6247c50687356713b7461a5a3270a9eab0ecd87f8c08e00ce68656",
+     "4": "6ef6d0fdd0792a61c0bbda08f7f3689e58a0a1fdf5dfa8100ed78607d192b3d0"
+    },
+    "models": {
+     "micoda": {
+      "max_iter": 120,
+      "other": true,
+      "tol": 1e-08
+     }
+    },
+    "models_sha256": "6b8bbb1be90a018540c61cbd4bbd31d5129006044e7c170e6c1bf68b3c22d46f",
+    "prediction_rows": 27936,
+    "predictions": "predictions_random_cell.csv.gz",
+    "predictions_sha256": "59a11bc0e41a054b4328a08ee6ddc389a614ba276ba660906e688f4544f1fd1a",
+    "rate": 0.05,
+    "resolved_models": null,
+    "schema_sha256": "b708328690a124435103e83cdd4f43f5a5305b7b2d2f0d9f9dc9d4a4539602c5",
+    "seeds": [
+     "0",
+     "1",
+     "2",
+     "3",
+     "4"
+    ],
+    "summary_sha256": "33c1e43a7549d938ca61d54e5462043faeac9c91c55a2e4b1a8d7d1c7be9352c"
+   }
+  ],
+  "step1_reuse": {
+   "errors_equal_step1_runs": true,
+   "masks_equal_step1_manifest": true,
+   "runs_compared": 40
+  }
+ },
+ "whole_feature": {
+  "regression_check": {
+   "max_abs_diff": 0.0,
+   "values_checked": 1320
+  },
+  "runs": [
+   {
+    "config_sha256": "046ff4f6579bbdc2962ff9de6428211087baeff7298b4626378ae3ddd1addeb0",
+    "data": "covariants.csv",
+    "data_sha256": "dbdce6030721d3f881c4e340a52b3bc1f18efb741bcdcfdc2efc4b74dd37ef35",
+    "dir": "main_whole_feature",
+    "git": {
+     "commit": "7ef91466754c2660113db92861c11d73ce6b67dd",
+     "uncommitted_changes": false
+    },
+    "group_map": {
+     "entries": 150,
+     "groups": 6,
+     "path": "nextgen/configs/covid_location_continent.csv",
+     "rows_resolved": 11671,
+     "sha256": "5e0547a924b2096070423de7267ee7508075a70a08ce6c1c6fd139b24f6935fc"
+    },
+    "mask": "whole_feature",
+    "mask_sha256": {
+     "0": "9ea04b56c640bb21d13e7f7516807a6f6106b62aec287270558e6039e1c9c25a",
+     "1": "5643b7cf219fa5a574e4d495b116a0d404e6d15e3f6455ed376277d231edde4a",
+     "109": "a12629b9f098c2d2a27c31626fc6a242760b91e052f4eec0fc98bb1194e4c4c1",
+     "2": "4a8e20c64e9e64f30bbbbd94d367fb059a2a61e7d483594010887fc8d4e6b356",
+     "3": "5933da2450e9ca7d8d32e3d3819b1da7df3c6384fce5b6f7365e4c623eb292ca",
+     "4": "3b6291af5e5a111c87256cdaa8518277615d2a558eff2c3304ad2fffe20433ec"
+    },
+    "models": {
+     "hron": {
+      "adjustment": "median",
+      "k": 3,
+      "ties": "group"
+     },
+     "marginal_sampler": {
+      "seed": 0
+     },
+     "mean_fill": {},
+     "micoda": {
+      "max_iter": 120,
+      "tol": 1e-08
+     },
+     "same_day_mean": {
+      "exclude_same_location": false,
+      "max_widen": 2,
+      "min_obs": 20,
+      "window_days": 28
+     },
+     "tsagris": {
+      "alpha": 1.0,
+      "k": 3,
+      "tune": false,
+      "zero_anchor": "global",
+      "zero_missing_mass": "uniform"
+     },
+     "zero_fill": {}
+    },
+    "models_sha256": "81128f25ad9013a945d6c8ed97650ee13e208383f1ddf738ee0ac824073e05f6",
+    "prediction_rows": 220667,
+    "predictions": "predictions_whole_feature.csv.gz",
+    "predictions_sha256": "f7979c9d50484c79bfa1c4f4d002160d2aa55884323de25c0c8e7f8e33f23ef0",
+    "rate": 0.05,
+    "resolved_models": null,
+    "schema_sha256": "b708328690a124435103e83cdd4f43f5a5305b7b2d2f0d9f9dc9d4a4539602c5",
+    "seeds": [
+     "0",
+     "1",
+     "2",
+     "3",
+     "4",
+     "109"
+    ],
+    "summary_sha256": "12911faef47da27b83fd6aff97470ab7888ecd61093d8e8430dc5027bf43fb24"
+   },
+   {
+    "config_sha256": "a5c02f63e1f682840243f23bb5f6e896ba7807b20ff1e313fa1fda4f0cb3e97a",
+    "data": "covariants.csv",
+    "data_sha256": "dbdce6030721d3f881c4e340a52b3bc1f18efb741bcdcfdc2efc4b74dd37ef35",
+    "dir": "micoda_other_whole_feature",
+    "git": {
+     "commit": "8978d7215b5f9c8851c4d5714c0680b2276eae31",
+     "uncommitted_changes": false
+    },
+    "group_map": {
+     "entries": 150,
+     "groups": 6,
+     "path": "nextgen/configs/covid_location_continent.csv",
+     "rows_resolved": 11671,
+     "sha256": "5e0547a924b2096070423de7267ee7508075a70a08ce6c1c6fd139b24f6935fc"
+    },
+    "mask": "whole_feature",
+    "mask_sha256": {
+     "0": "9ea04b56c640bb21d13e7f7516807a6f6106b62aec287270558e6039e1c9c25a",
+     "1": "5643b7cf219fa5a574e4d495b116a0d404e6d15e3f6455ed376277d231edde4a",
+     "109": "a12629b9f098c2d2a27c31626fc6a242760b91e052f4eec0fc98bb1194e4c4c1",
+     "2": "4a8e20c64e9e64f30bbbbd94d367fb059a2a61e7d483594010887fc8d4e6b356",
+     "3": "5933da2450e9ca7d8d32e3d3819b1da7df3c6384fce5b6f7365e4c623eb292ca",
+     "4": "3b6291af5e5a111c87256cdaa8518277615d2a558eff2c3304ad2fffe20433ec"
+    },
+    "models": {
+     "micoda": {
+      "max_iter": 120,
+      "other": true,
+      "tol": 1e-08
+     }
+    },
+    "models_sha256": "6b8bbb1be90a018540c61cbd4bbd31d5129006044e7c170e6c1bf68b3c22d46f",
+    "prediction_rows": 28309,
+    "predictions": "predictions_whole_feature.csv.gz",
+    "predictions_sha256": "4dd0a4ae1c1b377288c1f79c91eab418c1fecf922cf1ccb569c0b48f6da11d4a",
+    "rate": 0.05,
+    "resolved_models": null,
+    "schema_sha256": "b708328690a124435103e83cdd4f43f5a5305b7b2d2f0d9f9dc9d4a4539602c5",
+    "seeds": [
+     "0",
+     "1",
+     "2",
+     "3",
+     "4",
+     "109"
+    ],
+    "summary_sha256": "4723a3c0ac324ddbd9da06c653c79be487ace2c86cd86ee0e854a44aebb605e1"
+   }
+  ],
+  "step1_reuse": {
+   "errors_equal_step1_runs": true,
+   "masks_equal_step1_manifest": true,
+   "runs_compared": 40
+  }
+ }
+}
