@@ -8,9 +8,9 @@ Mọi kết luận dưới đây có dạng: **"trong 10 ca (whole_feature, rand
 
 | File | Nội dung |
 |---|---|
-| `nextgen/src/longitudinal_impute/tier3_calibration.py` (207 dòng) | Use case U1–U4, ngưỡng đạt, sensitivity, so cặp trong từng ca, regret, precision của cờ D3, kiểm đối thủ giả, D1 với ngưỡng theo tỷ lệ. Commit trước khi tính trên output nào. |
-| `nextgen/tests/test_tier3_calibration.py` | 13 test mới. |
-| `nextgen/README.md` | Một đoạn về Tầng 3. |
+| `src/longitudinal_impute/tier3_calibration.py` (207 dòng) | Use case U1–U4, ngưỡng đạt, sensitivity, so cặp trong từng ca, regret, precision của cờ D3, kiểm đối thủ giả, D1 với ngưỡng theo tỷ lệ. Commit trước khi tính trên output nào. |
+| `tests/test_tier3_calibration.py` | 13 test mới. |
+| `README.md` | Một đoạn về Tầng 3. |
 | `tv2_step6/tier3.py` (430 dòng), `test_tier3.py` (3 test) | Kiểm hash, đọc long file, dựng bảng. Đọc run và regression check qua `tier01.load_run` và `validate_pair`; diagnostic qua `tier2_diagnostics`; sai số Tầng 1 qua `evaluate.cell_errors`. Không có bộ chấm điểm thứ hai. |
 | `tv2_step6/tier3_cases.json`, `tier3_results.md`, `tier3_manifest.json` | Output sinh tự động. |
 

@@ -6,6 +6,7 @@ numbers come from tier01 (tier 1 runs) and tier3 (tier 3 verdicts); this module 
 from math import comb
 import json
 from pathlib import Path
+import hashlib
 import tomllib
 
 TOP = {'version', 'data', 'masks', 'models', 'runs', 'tier0', 'tier1', 'tier2', 'tier3', 'diagnostics', 'hypotheses'}
@@ -29,6 +30,36 @@ def exact_keys(where, got, expected):
     if set(got) != set(expected):
         raise ValueError(f'{where}: unknown keys {sorted(set(got) - set(expected))}, '
                          f'missing keys {sorted(set(expected) - set(got))}')
+
+
+# Amendment of eval_v1.toml after the rebase on main with PR #5 (repository restructure, MICoDa default
+# A18). eval_v1.toml was frozen before the confirmation masks were drawn; masks_manifest.json keeps the
+# sha256 of that frozen file. The amendment only moves the paths (nextgen/ -> root, models_default ->
+# models_default_a17 with MICoDa A17 explicit) and adds a comment block between AMENDMENT markers.
+# frozen_bytes() removes the block and moves the paths back, so the freeze check still compares the
+# frozen file byte for byte and fails on any other edit.
+AMENDMENT = ('# --- amendment (rebase on PR #5) ---\n', '# --- end of amendment ---\n')
+PATH_MOVES = (('"configs/models_default_a17.toml"', '"nextgen/configs/models_default.toml"'),
+              ('"configs/', '"nextgen/configs/'), ('"src/', '"nextgen/src/'))
+
+
+def frozen_bytes(path):
+    """eval_v1.toml as frozen: without the amendment block, paths moved back. A file without the
+    block is returned unchanged."""
+    text = Path(path).read_bytes().decode('utf-8')
+    start, end = AMENDMENT
+    if start not in text:
+        return text.encode('utf-8')
+    if text.count(start) != 1 or text.count(end) != 1 or text.index(end) < text.index(start):
+        raise ValueError('eval_v1.toml: malformed amendment block')
+    text = text[:text.index(start)] + text[text.index(end) + len(end):]
+    for new, old in PATH_MOVES:
+        text = text.replace(new, old)
+    return text.encode('utf-8')
+
+
+def frozen_sha256(path):
+    return hashlib.sha256(frozen_bytes(path)).hexdigest()
 
 
 def read_config(path):

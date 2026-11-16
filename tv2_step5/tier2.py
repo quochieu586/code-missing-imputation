@@ -1,8 +1,8 @@
 """Step 5: tier 2 diagnostics on the real missing cells (native), baselines only. Descriptive, NOT accuracy.
 
-    PYTHONPATH=nextgen/src python tv2_step5/tier2.py [--out DIR] [--rerun DIR]
+    PYTHONPATH=src python tv2_step5/tier2.py [--out DIR] [--rerun DIR]
 
-Definitions: nextgen/src/longitudinal_impute/tier2_diagnostics.py, frozen (committed) before this
+Definitions: src/longitudinal_impute/tier2_diagnostics.py, frozen (committed) before this
 script read any output. Order of work:
 1. Reuse the native completed CSV of each model from the step 2 / step 4 run directories, after
    checking data sha256, schema, group map sha256, the model's table against the current models
@@ -26,7 +26,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
-sys.path.insert(0, str(REPO / 'nextgen/src'))
+sys.path.insert(0, str(REPO / 'src'))
 from longitudinal_impute.data import load_csv, read_schema, check_completed  # noqa: E402
 from longitudinal_impute.run import read_models  # noqa: E402
 from longitudinal_impute import tier2_diagnostics as t2  # noqa: E402
@@ -35,19 +35,19 @@ _spec = importlib.util.spec_from_file_location('tier01', REPO / 'tv2_step2/tier0
 tier01 = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(tier01)
 
-DATA, SCHEMA = REPO / 'data/covariants.csv', REPO / 'nextgen/configs/baselines_covariants.toml'
-GROUP_MAP, CONFIGS = REPO / 'nextgen/configs/covid_location_continent.csv', REPO / 'nextgen/configs'
+DATA, SCHEMA = REPO / 'data/covariants.csv', REPO / 'configs/baselines_covariants.toml'
+GROUP_MAP, CONFIGS = REPO / 'configs/covid_location_continent.csv', REPO / 'configs'
 MAIN, OTHER, RESIDUAL = 'tv2_step2/runs/main', 'tv2_step2/runs/micoda_other', 'tv2_step4/runs/residual'
 # reported name: (run directory prefix, table in that run's config, models file, --rerun subfolder)
 SOURCES = {
-    'hron': (MAIN, 'hron', 'models_default.toml', 'main'),
-    'tsagris': (MAIN, 'tsagris', 'models_default.toml', 'main'),
-    'micoda': (MAIN, 'micoda', 'models_default.toml', 'main'),
+    'hron': (MAIN, 'hron', 'models_default_a17.toml', 'main'),
+    'tsagris': (MAIN, 'tsagris', 'models_default_a17.toml', 'main'),
+    'micoda': (MAIN, 'micoda', 'models_default_a17.toml', 'main'),
     'micoda_other': (OTHER, 'micoda', 'models_micoda_other.toml', 'other'),
-    'same_day_mean': (MAIN, 'same_day_mean', 'models_default.toml', 'main'),
-    'mean_fill': (MAIN, 'mean_fill', 'models_default.toml', 'main'),
-    'zero_fill': (MAIN, 'zero_fill', 'models_default.toml', 'main'),
-    'marginal_sampler': (MAIN, 'marginal_sampler', 'models_default.toml', 'main'),
+    'same_day_mean': (MAIN, 'same_day_mean', 'models_default_a17.toml', 'main'),
+    'mean_fill': (MAIN, 'mean_fill', 'models_default_a17.toml', 'main'),
+    'zero_fill': (MAIN, 'zero_fill', 'models_default_a17.toml', 'main'),
+    'marginal_sampler': (MAIN, 'marginal_sampler', 'models_default_a17.toml', 'main'),
     'hron_cap': (RESIDUAL, 'hron_cap', 'models_residual_rule.toml', 'residual'),
     'tsagris_cap': (RESIDUAL, 'tsagris_cap', 'models_residual_rule.toml', 'residual'),
     'micoda_other_cap': (RESIDUAL, 'micoda_other_cap', 'models_residual_rule.toml', 'residual'),
@@ -66,6 +66,19 @@ def signed(value, digits=3):
 
 # ---------- step 1: reuse checks ----------
 
+def recorded_table(config, table):
+    """[table] of a run's config.json, with MICoDa's `other` written out when the run left it to the
+    runner's default (tier01.step1.micoda_other: other = false before PR #5), so that a run made before
+    PR #5 compares equal to configs/models_default_a17.toml, where A17 is explicit."""
+    params = config['models'].get(table)
+    if params is None:
+        return None
+    params = dict(params)
+    if params.get('model', table) == 'micoda' and 'other' not in params:
+        params['other'] = tier01.step1.micoda_other(config, table)
+    return params
+
+
 def load_source(name, data, rerun=None):
     """Checked native completed counts of one model, and its provenance record."""
     prefix, table, models_file, rerun_dir = SOURCES[name]
@@ -79,7 +92,7 @@ def load_source(name, data, rerun=None):
         (config['schema'] != read_schema(SCHEMA), 'schema differs from the current schema'),
         (group_map.get('sha256') != sha256(GROUP_MAP) or group_map.get('rows_resolved') != len(data.counts),
          'group map differs'),
-        (config['models'].get(table) != read_models(CONFIGS / models_file, [table])[table],
+        (recorded_table(config, table) != read_models(CONFIGS / models_file, [table])[table],
          f'[{table}] differs from {models_file}'),
         ((config.get('git') or {}).get('uncommitted_changes') is not False, 'run made from an unclean tree'),
         ((summary['native'].get(table) or {}).get('status') != 'ok', 'native status is not ok'),
@@ -370,7 +383,7 @@ def summarize(out_dir, rerun=None):
         md += [f'## {title}', '', *blocks[name], '']
     (out_dir / 'tier2_results.md').write_text('\n'.join(md) + '\n', encoding='utf-8')
     manifest = {'data_sha256': sha256(DATA), 'schema_sha256': sha256(SCHEMA), 'group_map_sha256': sha256(GROUP_MAP),
-                'diagnostics_sha256': sha256(REPO / 'nextgen/src/longitudinal_impute/tier2_diagnostics.py'),
+                'diagnostics_sha256': sha256(REPO / 'src/longitudinal_impute/tier2_diagnostics.py'),
                 'constants': {k: getattr(t2, k) for k in ('ZERO_BELOW', 'WINDOW_DAYS', 'MIN_CELLS', 'MIN_LOCATIONS',
                                                           'MIN_STRATUM_CELLS', 'MATERIAL_CHANGE')},
                 'cells': {k: int(v.sum()) for k, v in cells.items()}, 'models': {m: rec for m, (_, rec) in loaded.items()},

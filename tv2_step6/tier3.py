@@ -1,8 +1,8 @@
 """Step 6: tier 3, test the tier 2 diagnostics on masked cells where the truth is known (baselines only).
 
-    PYTHONPATH=nextgen/src python tv2_step6/tier3.py [--out DIR]
+    PYTHONPATH=src python tv2_step6/tier3.py [--out DIR]
 
-Use cases, thresholds and sensitivities: nextgen/src/longitudinal_impute/tier3_calibration.py, frozen
+Use cases, thresholds and sensitivities: src/longitudinal_impute/tier3_calibration.py, frozen
 (committed) before this script read any output. Diagnostics: tier2_diagnostics.py (step 5), unchanged.
 1. Reuse the masked runs of step 2 (main_*, micoda_other_*) and step 4 (residual_*): tier01.load_run
    (long file = summary.json to 1e-12), F2 (tier01 / step 1 validate_pair), and here: data sha256,
@@ -22,7 +22,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
-sys.path.insert(0, str(REPO / 'nextgen/src'))
+sys.path.insert(0, str(REPO / 'src'))
 from longitudinal_impute.cells import read_predictions  # noqa: E402
 from longitudinal_impute.data import load_csv, make_mask, read_schema  # noqa: E402
 from longitudinal_impute.run import read_models  # noqa: E402
@@ -42,7 +42,7 @@ MASKS, SEEDS, RATE = ('whole_feature', 'random_cell'), ('0', '1', '2', '3', '4')
 SHORT = {'whole_feature': 'wf', 'random_cell': 'rc', 'whole_feature_matched': 'wfm'}
 MODELS = t3.REAL + t3.DECOYS
 # run directory prefix: (rename of tables, models file, tables used)
-RUNS = {tier2.MAIN: ({}, 'models_default.toml', ('hron', 'tsagris', 'micoda', 'same_day_mean', *t3.DECOYS)),
+RUNS = {tier2.MAIN: ({}, 'models_default_a17.toml', ('hron', 'tsagris', 'micoda', 'same_day_mean', *t3.DECOYS)),
         tier2.OTHER: ({'micoda': 'micoda_other'}, 'models_micoda_other.toml', ('micoda',)),
         tier2.RESIDUAL: ({}, 'models_residual_rule.toml', ('hron_cap',))}
 DROPPED = {'tsagris_cap': 'trùng tsagris (`cap` ≡ `prop_other`, step 4–5)',
@@ -70,7 +70,7 @@ def load_mask(data, mask, runs_of=None, pair_root=None, seeds=None, target=None)
             (config['schema'] != read_schema(tier2.SCHEMA), 'schema'),
             ((config.get('group_map') or {}).get('sha256') != tier2.sha256(tier2.GROUP_MAP), 'group map'),
             ((config.get('git') or {}).get('uncommitted_changes') is not False, 'unclean tree'),
-            (any(config['models'].get(t) != expected[t] for t in tables), f'model tables vs {models_file}'),
+            (any(tier2.recorded_table(config, t) != expected[t] for t in tables), f'model tables vs {models_file}'),
             (config['mask'] != mask or config['mask_rate'] != RATE, 'mask kind or rate')) if bad]
         for seed in use:
             saved = np.load(folder / f'mask_{mask}_seed{seed}.npy')
@@ -418,8 +418,8 @@ def summarize(out_dir):
         md += [f'## {title}', '', *blocks[name], '']
     (out_dir / 'tier3_results.md').write_text('\n'.join(md) + '\n', encoding='utf-8')
     manifest.update(verdicts={k: v for k, v in verdicts.items()}, data_sha256=tier2.sha256(tier2.DATA),
-                    calibration_sha256=tier2.sha256(REPO / 'nextgen/src/longitudinal_impute/tier3_calibration.py'),
-                    diagnostics_sha256=tier2.sha256(REPO / 'nextgen/src/longitudinal_impute/tier2_diagnostics.py'),
+                    calibration_sha256=tier2.sha256(REPO / 'src/longitudinal_impute/tier3_calibration.py'),
+                    diagnostics_sha256=tier2.sha256(REPO / 'src/longitudinal_impute/tier2_diagnostics.py'),
                     cases_sha256=hashlib.sha256(payload.encode()).hexdigest())
     (out_dir / 'tier3_manifest.json').write_text(json.dumps(manifest, indent=1, sort_keys=True) + '\n',
                                                  encoding='utf-8')

@@ -479,7 +479,7 @@ Mọi kết luận dưới đây chỉ nói về **biến thiên theo mask** (10
 2. **Không bao giờ tune trên seed 200–209**, kể cả nhìn kết quả từng seed để chọn tham số. Mọi tuning dùng seed 0–4 hoặc tập kiểm định nội bộ của model.
 3. **Chốt cấu hình trước khi chạy:** commit file models toml và config mới trước khi chạy `evaluate_v1.py run`. Đây là đường đóng băng của v1, giống Phần C.
 4. **Chạy:**
-   - `PYTHONPATH=nextgen/src python tv2_step8/evaluate_v1.py check`;
+   - `PYTHONPATH=src python tv2_step8/evaluate_v1.py check`;
    - `run` cho các lượt của model mới (thư mục mới, không ghi đè);
    - `evaluate`.
    

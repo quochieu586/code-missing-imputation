@@ -1,6 +1,6 @@
 """Tests of the step 6 table logic (verdicts per mask, U2 regret rule, U4 counts) on toy cases.
 
-    PYTHONPATH=nextgen/src python -W error::RuntimeWarning -m pytest tv2_step6/test_tier3.py
+    PYTHONPATH=src python -W error::RuntimeWarning -m pytest tv2_step6/test_tier3.py
 """
 import importlib.util
 from pathlib import Path
@@ -57,7 +57,7 @@ def test_one_case_with_a_failed_real_model_marks_its_pairs_na():
     """Step 8 bug: a real model that failed in a case is absent, its pairs are NA (not a KeyError)."""
     import numpy as np
     import sys
-    sys.path.insert(0, str(tier3.REPO / 'nextgen/tests'))
+    sys.path.insert(0, str(tier3.REPO / 'tests'))
     from test_tier2_diagnostics import panel
     data = panel(seed=3)
     rng = np.random.default_rng(0)

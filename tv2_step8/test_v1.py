@@ -1,6 +1,6 @@
 """Step 8 tests: config, unused seeds, sign test, failure policy, hypotheses, tier 2 against step 5.
 
-    PYTHONPATH=nextgen/src python -W error::RuntimeWarning -m pytest tv2_step8/test_v1.py
+    PYTHONPATH=src python -W error::RuntimeWarning -m pytest tv2_step8/test_v1.py
 """
 import importlib.util
 import json
@@ -142,3 +142,19 @@ def test_run_commands_follow_the_config():
     matched = [c for c in commands if 'whole_feature_matched' in c]
     assert all('--mask-target' in c for c in matched) and len(matched) == 3
     assert all(c[c.index('--seeds') + 1:c.index('--seeds') + 11] == SEEDS for c in commands)
+
+
+def test_amended_config_still_matches_the_frozen_hash_and_any_other_edit_does_not(tmp_path):
+    """eval_v1.toml after the restructure (paths moved, amendment block) is the frozen file once
+    v1.frozen_bytes() undoes exactly those edits; masks_manifest.json keeps the frozen sha256."""
+    frozen = json.loads((HERE / 'masks_manifest.json').read_text(encoding='utf-8'))['config_sha256']
+    assert v1.frozen_sha256(HERE / 'eval_v1.toml') == frozen
+    text = (HERE / 'eval_v1.toml').read_text(encoding='utf-8')
+    for old, new in (('min_wins = 8', 'min_wins = 7'), ('# --- end of amendment ---\n', '# --- end of amendment ---\n#\n')):
+        changed = tmp_path / 'changed.toml'
+        changed.write_text(text.replace(old, new, 1), encoding='utf-8')
+        assert v1.frozen_sha256(changed) != frozen
+    broken = tmp_path / 'broken.toml'
+    broken.write_text(text.replace('# --- end of amendment ---\n', ''), encoding='utf-8')
+    with pytest.raises(ValueError, match='malformed amendment'):
+        v1.frozen_bytes(broken)

@@ -1,6 +1,6 @@
 """Tests of the step 5 table logic (reuse checks, table 6, table 7) on toy inputs.
 
-    PYTHONPATH=nextgen/src python -W error::RuntimeWarning -m pytest tv2_step5/test_tier2.py
+    PYTHONPATH=src python -W error::RuntimeWarning -m pytest tv2_step5/test_tier2.py
 """
 import importlib.util
 import json
@@ -50,13 +50,13 @@ def test_reuse_stops_on_any_mismatch(tmp_path, monkeypatch):
         for name in ('config.json', 'summary.json', 'zero_fill_completed.csv'):
             shutil.copy(source / name, target / name)
     monkeypatch.setattr(tier2, 'REPO', tmp_path)
-    monkeypatch.setitem(tier2.SOURCES, 'zero_fill', ('run', 'zero_fill', 'models_default.toml', 'main'))
+    monkeypatch.setitem(tier2.SOURCES, 'zero_fill', ('run', 'zero_fill', 'models_default_a17.toml', 'main'))
     values, record = tier2.load_source('zero_fill', data)
     assert values.shape == data.counts.shape and record['same_csv_in_random_cell']
     config = json.loads((tmp_path / 'run_whole_feature/config.json').read_text())
     config['models']['zero_fill'] = {'unexpected': 1}
     (tmp_path / 'run_whole_feature/config.json').write_text(json.dumps(config))
-    with pytest.raises(ValueError, match='differs from models_default.toml'):
+    with pytest.raises(ValueError, match='differs from models_default_a17.toml'):
         tier2.load_source('zero_fill', data)
     config['models']['zero_fill'] = {}
     (tmp_path / 'run_whole_feature/config.json').write_text(json.dumps(config))

@@ -1,5 +1,7 @@
 # Step 5: Tầng 2, diagnostic trên ô thiếu thật (native), chỉ baseline (exploratory)
 
+> **Ghi chú sau khi rebase lên main mới (PR #5):** micoda trong các step này = A17 (other=false); micoda_other = A18. Trên main sau PR #5, micoda mặc định = A18. Để chạy lại đúng A17, dùng `configs/models_default_a17.toml` (bảng `[micoda]` ghi tường minh `other = false`); tên model trong các bảng kết quả giữ nguyên như lúc chạy. Đường dẫn đã đổi theo cấu trúc mới (`nextgen/src` → `src`, `nextgen/configs` → `configs`, `nextgen/tests` → `tests`); hash commit nhắc trong báo cáo là hash trước khi rebase; bảng ánh xạ cũ → mới ở `tv2_step8/HASH_MAP.md` (PR step 5–8).
+
 Branch `step5-tier2-native` (từ `step4-residual-rule`). Không có `iterative_net` hay phần nào của `framework/`. Không sửa thuật toán baseline, không đổi mặc định. Mọi bảng số trong khối `auto:*` do `tier2.py` sinh, không sửa tay; bảng đầy đủ ở [tier2_results.md](tier2_results.md).
 
 Tầng 2 chỉ **mô tả**: trên 86 050 ô thiếu thật không có đáp án, mọi số dưới đây đo mức giống một reference lấy từ ô quan sát. Không số nào là độ chính xác, không bảng nào là xếp hạng, và không có điểm tổng hợp.
@@ -8,9 +10,9 @@ Tầng 2 chỉ **mô tả**: trên 86 050 ô thiếu thật không có đáp án
 
 | File | Nội dung |
 |---|---|
-| `nextgen/src/longitudinal_impute/tier2_diagnostics.py` (277 dòng) | Hằng số và hàm D1/D2/D3, R-pooled, R-local, phân tầng, tổng hợp qua target, quy tắc bảng 6. `native_cells` và `calibration_cells` dựng hai mask E/V. Commit trước khi tính trên output nào. |
-| `nextgen/tests/test_tier2_diagnostics.py` | 13 test mới. |
-| `nextgen/README.md` | Một đoạn về diagnostic Tầng 2. |
+| `src/longitudinal_impute/tier2_diagnostics.py` (277 dòng) | Hằng số và hàm D1/D2/D3, R-pooled, R-local, phân tầng, tổng hợp qua target, quy tắc bảng 6. `native_cells` và `calibration_cells` dựng hai mask E/V. Commit trước khi tính trên output nào. |
+| `tests/test_tier2_diagnostics.py` | 13 test mới. |
+| `README.md` | Một đoạn về diagnostic Tầng 2. |
 | `tv2_step5/tier2.py` (408 dòng), `test_tier2.py` (3 test) | Kiểm hash, đọc output native, dựng bảng. Phần hash, `update_report` và CSV gọi `tier01`. |
 | `tv2_step5/tier2_targets.csv`, `tier2_strata.csv`, `tier2_support.csv`, `tier2_results.md`, `tier2_manifest.json` | Output sinh tự động. |
 

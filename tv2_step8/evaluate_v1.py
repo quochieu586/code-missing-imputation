@@ -1,12 +1,14 @@
 """Evaluation v1 (step 8): one confirmation pass of the baselines on unseen mask seeds.
 
-    PYTHONPATH=nextgen/src python tv2_step8/evaluate_v1.py check       # config + unused seeds, no side effect
-    PYTHONPATH=nextgen/src python tv2_step8/evaluate_v1.py masks       # draw the masks, write masks_manifest.json
-    PYTHONPATH=nextgen/src python tv2_step8/evaluate_v1.py run         # every pass x mask with run.py, once
-    PYTHONPATH=nextgen/src python tv2_step8/evaluate_v1.py [evaluate] [--out DIR]
+    PYTHONPATH=src python tv2_step8/evaluate_v1.py check       # config + unused seeds, no side effect
+    PYTHONPATH=src python tv2_step8/evaluate_v1.py masks       # draw the masks, write masks_manifest.json
+    PYTHONPATH=src python tv2_step8/evaluate_v1.py run         # every pass x mask with run.py, once
+    PYTHONPATH=src python tv2_step8/evaluate_v1.py [evaluate] [--out DIR]
 
 Everything is read from eval_v1.toml (v1.read_config refuses unknown or missing keys) and every
-command first checks that no confirmation seed appears in steps 1-7. Scores come from the existing
+command first checks that no confirmation seed appears in steps 1-7. The freeze check compares
+masks_manifest.json with v1.frozen_sha256(eval_v1.toml): the frozen file, without the amendment
+made when the repository moved from nextgen/ to the root (v1.AMENDMENT, v1.PATH_MOVES). Scores come from the existing
 code: tier01 (tier 0 / 1), tier2 (native diagnostics, must equal step 5 byte for byte), tier3 (step 6
 use cases), matched (strata scores). Pairs add the exact sign test as a description of mask variation.
 """
@@ -23,7 +25,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
-sys.path.insert(0, str(REPO / 'nextgen/src'))
+sys.path.insert(0, str(REPO / 'src'))
 sys.path.insert(0, str(HERE))
 from longitudinal_impute import matched_mask as mm, tier2_diagnostics as t2  # noqa: E402
 from longitudinal_impute.cells import read_predictions  # noqa: E402
@@ -73,7 +75,7 @@ def draw_masks(config):
     if MASKS_MANIFEST.exists():
         raise FileExistsError(f'{MASKS_MANIFEST} exists: the confirmation masks are drawn once')
     data = tier2.load_csv(REPO / config['data']['data'], REPO / config['data']['schema'])
-    out = {'config_sha256': tier2.sha256(CONFIG), 'masks': {}}
+    out = {'config_sha256': v1.frozen_sha256(CONFIG), 'masks': {}}
     for mask in masks_of(config):
         out['masks'][mask] = {}
         for seed in config['masks']['seeds']:
@@ -100,10 +102,10 @@ def run_commands(config):
 
 def run_all(config):
     manifest = json.loads(MASKS_MANIFEST.read_text(encoding='utf-8'))
-    if manifest['config_sha256'] != tier2.sha256(CONFIG):
+    if manifest['config_sha256'] != v1.frozen_sha256(CONFIG):
         raise ValueError('eval_v1.toml changed after the masks were drawn')
     RUNS_DIR.mkdir(exist_ok=True)
-    env = {**os.environ, 'PYTHONPATH': str(REPO / 'nextgen/src')}
+    env = {**os.environ, 'PYTHONPATH': str(REPO / 'src')}
     for args in run_commands(config):
         log = REPO / (args[args.index('--output') + 1] + '.log')
         with log.open('w', encoding='utf-8') as stream:
@@ -327,7 +329,7 @@ def exploratory_lines(config, runs, seeds, verdicts):
 def evaluate(config, seed_files, out_dir):
     seeds, masks = seeds_of(config), masks_of(config)
     masks_manifest = json.loads(MASKS_MANIFEST.read_text(encoding='utf-8'))
-    if masks_manifest['config_sha256'] != tier2.sha256(CONFIG):
+    if masks_manifest['config_sha256'] != v1.frozen_sha256(CONFIG):
         raise ValueError('eval_v1.toml changed after the masks were drawn')
     data = tier2.load_csv(REPO / config['data']['data'], REPO / config['data']['schema'])
     facts, cuts = t2.row_facts(data), matched.step5_cuts()
@@ -366,7 +368,7 @@ def evaluate(config, seed_files, out_dir):
     tier01.write_csv(out_dir / 'v1_pairs.csv', pairs_csv)
     payload = json.dumps(cases, sort_keys=True, default=lambda x: x.tolist() if hasattr(x, 'tolist') else str(x))
     (out_dir / 'v1_cases.json').write_text(payload + '\n', encoding='utf-8')
-    manifest = {'config_sha256': tier2.sha256(CONFIG), 'masks_manifest_sha256': tier2.sha256(MASKS_MANIFEST),
+    manifest = {'config_sha256': v1.frozen_sha256(CONFIG), 'masks_manifest_sha256': tier2.sha256(MASKS_MANIFEST),
                 'seed_check_files': seed_files, 'runs': records, 'tier2_equal_step5': same, 'verdicts': verdicts,
                 'hypotheses': {k: {m: o for m, (o, _) in v.items()} for k, v in judged.items()},
                 'cases_sha256': tier2.sha256(out_dir / 'v1_cases.json')}

@@ -1,9 +1,9 @@
 """Step 7: a whole_feature mask matched to the support of the native missing cells; tiers 0, 1, 3 again.
 
-    PYTHONPATH=nextgen/src python tv2_step7/matched.py target    # pi -> nextgen/configs/mask_target_covid.json
-    PYTHONPATH=nextgen/src python tv2_step7/matched.py [summary] [--out DIR]
+    PYTHONPATH=src python tv2_step7/matched.py target    # pi -> configs/mask_target_covid.json
+    PYTHONPATH=src python tv2_step7/matched.py [summary] [--out DIR]
 
-Mask: nextgen/src/longitudinal_impute/matched_mask.py (frozen before any mask was drawn). The N cut
+Mask: src/longitudinal_impute/matched_mask.py (frozen before any mask was drawn). The N cut
 points are read from the step 5 output (tv2_step5/tier2_results.md), not recomputed.
 Declared before the runs (no definition of tiers 1-3 changes):
 - Tier 0 / 1: tier01 on the three passes (7 models, micoda_other, the cap variants) of tv2_step7/runs,
@@ -32,7 +32,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
-sys.path.insert(0, str(REPO / 'nextgen/src'))
+sys.path.insert(0, str(REPO / 'src'))
 from longitudinal_impute import matched_mask as mm, tier2_diagnostics as t2, tier3_calibration as t3  # noqa: E402
 from longitudinal_impute.cells import read_predictions  # noqa: E402
 from longitudinal_impute.evaluate import cell_errors, forced_zero  # noqa: E402
@@ -45,7 +45,7 @@ na, signed, ms = tier01.na, tier2.signed, tier3.ms
 
 MASK, WF, RC = 'whole_feature_matched', 'whole_feature', 'random_cell'
 SEEDS = tier3.SEEDS
-TARGET_FILE = REPO / 'nextgen/configs/mask_target_covid.json'
+TARGET_FILE = REPO / 'configs/mask_target_covid.json'
 STEP5 = REPO / 'tv2_step5/tier2_results.md'
 RUNS7 = {'tv2_step7/runs/main': tier3.RUNS[tier2.MAIN], 'tv2_step7/runs/micoda_other': tier3.RUNS[tier2.OTHER],
          'tv2_step7/runs/residual': tier3.RUNS[tier2.RESIDUAL]}

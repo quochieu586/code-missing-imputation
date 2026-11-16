@@ -1,20 +1,27 @@
 # Evaluation v1 (step 8). Frozen, with the hypotheses below, before any confirmation mask is drawn.
 # Read by tv2_step8/evaluate_v1.py (checked by v1.read_config: unknown or missing keys stop it before
 # any side effect). Every score is computed by the existing code (tier01, tier2, tier3, matched_mask).
+# --- amendment (rebase on PR #5) ---
+# micoda trong các step này = A17 (other=false); micoda_other = A18. Trên main sau PR #5, micoda mặc
+# định = A18, nên [runs.main] đọc configs/models_default_a17.toml (MICoDa A17 ghi tường minh).
+# Đường dẫn đổi theo cấu trúc repo mới (nextgen/configs -> configs, nextgen/src -> src). Ngoài khối
+# này và các đường dẫn, file giữ nguyên bản đóng băng; v1.frozen_bytes() đảo lại đúng các thay đổi đó
+# để kiểm hash đóng băng trong masks_manifest.json.
+# --- end of amendment ---
 
 version = "v1"
 
 [data]
 data = "data/covariants.csv"
-schema = "nextgen/configs/baselines_covariants.toml"
-group_map = "nextgen/configs/covid_location_continent.csv"
+schema = "configs/baselines_covariants.toml"
+group_map = "configs/covid_location_continent.csv"
 rate = 0.05
 
 [masks]
 primary = "whole_feature"
 sensitivity = ["whole_feature_matched", "random_cell"]
 seeds = [200, 201, 202, 203, 204, 205, 206, 207, 208, 209]
-target = "nextgen/configs/mask_target_covid.json"        # pi of whole_feature_matched, frozen in step 7
+target = "configs/mask_target_covid.json"        # pi of whole_feature_matched, frozen in step 7
 # The script refuses to run if a seed above appears in a config or manifest of steps 1-7.
 previous = ["tv2_step[1-7]/**/config.json", "tv2_step[1-7]/*manifest*.json"]
 
@@ -25,17 +32,17 @@ tier1_only = ["tsagris_cap", "micoda_other_cap"]
 
 # Run passes (as steps 2-7). Directory: tv2_step8/runs/<pass>_<mask>.
 [runs.main]
-models_file = "nextgen/configs/models_default.toml"
+models_file = "configs/models_default_a17.toml"
 tables = ["hron", "tsagris", "micoda", "same_day_mean", "mean_fill", "marginal_sampler", "zero_fill"]
 rename = {}
 
 [runs.micoda_other]
-models_file = "nextgen/configs/models_micoda_other.toml"
+models_file = "configs/models_micoda_other.toml"
 tables = ["micoda"]
 rename = { micoda = "micoda_other" }
 
 [runs.residual]
-models_file = "nextgen/configs/models_residual_rule.toml"
+models_file = "configs/models_residual_rule.toml"
 tables = ["hron_cap", "tsagris_cap", "micoda_other_cap"]
 rename = {}
 
@@ -64,7 +71,7 @@ references = ["local", "pooled"]         # R-local main, R-pooled secondary (ste
 compare_with = "tv2_step5"               # native outputs must be byte-identical to step 5
 
 [tier3]
-spec = "nextgen/src/longitudinal_impute/tier3_calibration.py"   # step 6, unchanged
+spec = "src/longitudinal_impute/tier3_calibration.py"   # step 6, unchanged
 # Ten cases per mask; pass / fail / insufficient per mask with the step 6 functions, and over the
 # three masks: pass if all three pass, fail if any fails, otherwise insufficient.
 

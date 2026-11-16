@@ -8,11 +8,11 @@ Branch `step7-matched-mask` (từ `step6-tier3-calibration`). Không có `iterat
 
 | File | Nội dung |
 |---|---|
-| `nextgen/src/longitudinal_impute/matched_mask.py` (126 dòng) | Tầng, π native, trọng số, lấy mẫu có trọng số không hoàn lại, TV. |
-| `nextgen/src/longitudinal_impute/data.py` | `make_mask(..., target=None)` thêm kiểu `whole_feature_matched`. Vòng che chuỗi, guard và quy tắc dừng dùng chung với `whole_feature`; `whole_feature` vẫn gọi `rng.permutation` như cũ. |
-| `nextgen/src/longitudinal_impute/run.py` | `--mask whole_feature_matched --mask-target JSON`. Đường dẫn, sha256 và nội dung target ghi vào `config.json`. |
-| `nextgen/configs/mask_target_covid.json` | π đóng băng: 18 tầng, ngưỡng N 17 / 149 đọc từ output step 5. |
-| `nextgen/tests/test_matched_mask.py` | 8 test mới. |
+| `src/longitudinal_impute/matched_mask.py` (126 dòng) | Tầng, π native, trọng số, lấy mẫu có trọng số không hoàn lại, TV. |
+| `src/longitudinal_impute/data.py` | `make_mask(..., target=None)` thêm kiểu `whole_feature_matched`. Vòng che chuỗi, guard và quy tắc dừng dùng chung với `whole_feature`; `whole_feature` vẫn gọi `rng.permutation` như cũ. |
+| `src/longitudinal_impute/run.py` | `--mask whole_feature_matched --mask-target JSON`. Đường dẫn, sha256 và nội dung target ghi vào `config.json`. |
+| `configs/mask_target_covid.json` | π đóng băng: 18 tầng, ngưỡng N 17 / 149 đọc từ output step 5. |
+| `tests/test_matched_mask.py` | 8 test mới. |
 | `tv2_step6/tier3.py` | `load_mask` nhận thư mục run, seed và target; các bảng lặp theo các mask được đưa vào. Output step 6 sinh lại giống từng byte. |
 | `tv2_step7/matched.py` (323 dòng), `test_matched.py` (3 test), `run_all.sh` | Tính π, dựng bảng 1–6, chạy ba lượt model. |
 | `tv2_step7/matched_*.csv`, `matched_results.md`, `matched_manifest.json`, `matched_cases.json` | Output sinh tự động. Thư mục run không commit; hash nằm trong manifest. |

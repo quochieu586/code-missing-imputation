@@ -1,6 +1,6 @@
 """Step 7 checks on the COVID table: step 5 cut points, old masks unchanged, firewall of the matched mask.
 
-    PYTHONPATH=nextgen/src python -W error::RuntimeWarning -m pytest tv2_step7/test_matched.py
+    PYTHONPATH=src python -W error::RuntimeWarning -m pytest tv2_step7/test_matched.py
 """
 import importlib.util
 import json
