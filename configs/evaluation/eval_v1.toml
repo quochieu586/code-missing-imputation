@@ -4,9 +4,11 @@
 # --- amendment (rebase on PR #5) ---
 # micoda trong các step này = A17 (other=false); micoda_other = A18. Trên main sau PR #5, micoda mặc
 # định = A18, nên [runs.main] đọc configs/models_default_a17.toml (MICoDa A17 ghi tường minh).
-# Đường dẫn đổi theo cấu trúc repo mới (nextgen/configs -> configs, nextgen/src -> src). Ngoài khối
-# này và các đường dẫn, file giữ nguyên bản đóng băng; v1.frozen_bytes() đảo lại đúng các thay đổi đó
-# để kiểm hash đóng băng trong masks_manifest.json.
+# Sau khi gom thành module (src/longitudinal_impute/evaluation/), file này nằm ở configs/evaluation/;
+# mask target, seed đã dùng (used_seeds.json) và bảng Tầng 2 tham chiếu cũng là ảnh chụp ở đó.
+# Comment ngoài khối này giữ nguyên bản đóng băng (tên script cũ, xem tag evaluation-v1-results).
+# Ngoài khối này và các đường dẫn, file giữ nguyên bản đóng băng; protocol.frozen_bytes() đảo lại
+# đúng các thay đổi đó để kiểm hash đóng băng trong masks_manifest.json.
 # --- end of amendment ---
 
 version = "v1"
@@ -21,9 +23,9 @@ rate = 0.05
 primary = "whole_feature"
 sensitivity = ["whole_feature_matched", "random_cell"]
 seeds = [200, 201, 202, 203, 204, 205, 206, 207, 208, 209]
-target = "configs/mask_target_covid.json"        # pi of whole_feature_matched, frozen in step 7
+target = "configs/evaluation/mask_target_covid.json"        # pi of whole_feature_matched, frozen in step 7
 # The script refuses to run if a seed above appears in a config or manifest of steps 1-7.
-previous = ["tv2_step[1-7]/**/config.json", "tv2_step[1-7]/*manifest*.json"]
+previous = ["configs/evaluation/used_seeds.json"]
 
 [models]
 real = ["hron", "hron_cap", "tsagris", "micoda", "micoda_other", "same_day_mean"]
@@ -57,7 +59,7 @@ primary = "mae_prop"                     # MAE of c / N on model_cell, cell-weig
 secondary = ["mse_prop", "mae_count", "series_macro_mae_prop", "mae_prop_truth_zero",
              "mae_prop_truth_positive", "mae_prop_model_truth_zero"]
 strata = ["continent", "n"]              # N cut points of step 5, read from n_cuts_from
-n_cuts_from = "tv2_step5/tier2_results.md"
+n_cuts_from = "configs/evaluation/step5_tier2/tier2_results.md"
 min_stratum_cells = 30
 # Pairs: A - B per seed; mean, sd (ddof = 1), wins, exact two-sided sign test (ties dropped), as a
 # description of mask variation on a fixed table: not a CI over countries, no bootstrap.
@@ -68,10 +70,10 @@ pairs = [["same_day_mean", "hron"], ["same_day_mean", "hron_cap"], ["same_day_me
 
 [tier2]
 references = ["local", "pooled"]         # R-local main, R-pooled secondary (step 5 definitions)
-compare_with = "tv2_step5"               # native outputs must be byte-identical to step 5
+compare_with = "configs/evaluation/step5_tier2"               # native outputs must be byte-identical to step 5
 
 [tier3]
-spec = "src/longitudinal_impute/tier3_calibration.py"   # step 6, unchanged
+spec = "src/longitudinal_impute/evaluation/tier3.py"   # step 6, unchanged
 # Ten cases per mask; pass / fail / insufficient per mask with the step 6 functions, and over the
 # three masks: pass if all three pass, fail if any fails, otherwise insufficient.
 

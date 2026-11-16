@@ -1,0 +1,371 @@
+{
+ "description": "Seeds used by the runs, configs and manifests of evaluation steps 1-7, read once with the patterns below at tag evaluation-v1-results (tracked files: content at the tag; run config.json files are not tracked: content of the local run directories). protocol.check_unused refuses a confirmation seed found here.",
+ "tag": "evaluation-v1-results",
+ "patterns": [
+  "tv2_step[1-7]/**/config.json",
+  "tv2_step[1-7]/*manifest*.json"
+ ],
+ "seeds": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  109
+ ],
+ "files": [
+  {
+   "path": "tv2_step1/results_manifest.json",
+   "sha256": "1fabba92859e6c351a7d20eff8812035cb046effa7b31a61ffdea1b800e8ea17",
+   "tracked_at_tag": true,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step1/runs/before_pr4/main_random_cell/config.json",
+   "sha256": "85a242d98a3c1edf496af50b6718f56f1c9c58af15e8387b50f95e1b4607be87",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step1/runs/before_pr4/main_whole_feature/config.json",
+   "sha256": "f226cb98569e6a6c5c55b0985dd2fd82380153cf92ad00ec8437ab6719669fa1",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step1/runs/before_pr4/micoda_other_random_cell/config.json",
+   "sha256": "c81ab6b7343b11e9b0f338b49116cf68741a55ffe346ba6bcdfd29541ff5352f",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step1/runs/before_pr4/micoda_other_whole_feature/config.json",
+   "sha256": "400f521f772d920c10bfe44966d87debe2e45f3db94db18cd47f22bf79f8c647",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step1/runs/main_random_cell/config.json",
+   "sha256": "1fabc613a593c976b27b22ca4bf8246e8ba61a6b09e3f6a0d7373c04f8234e9e",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step1/runs/main_whole_feature/config.json",
+   "sha256": "f324471765b3219f15811e2f1304fcf711dae05fcc0065cfc3356eb2215ff57c",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step1/runs/micoda_other_random_cell/config.json",
+   "sha256": "41e7d33b4e94d0b4226241f94efbfc35dfde195765ac079bb3c54a71df479b4b",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step1/runs/micoda_other_whole_feature/config.json",
+   "sha256": "f6ae38b4a9c607e4f1eb4108486bc3dfd2c5af7256e279d5e4235f9a08304b6f",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step2/runs/main_random_cell/config.json",
+   "sha256": "0de58fe22d18cf27d6defa0b86ebbe86862c608d4b253fcdeb7d845720d7e58f",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step2/runs/main_whole_feature/config.json",
+   "sha256": "046ff4f6579bbdc2962ff9de6428211087baeff7298b4626378ae3ddd1addeb0",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    109
+   ]
+  },
+  {
+   "path": "tv2_step2/runs/micoda_other_random_cell/config.json",
+   "sha256": "e4ade9e8462054d1f4bf57d623f52aa80d1490277d96d69d726fffd5edf2ec10",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step2/runs/micoda_other_whole_feature/config.json",
+   "sha256": "a5c02f63e1f682840243f23bb5f6e896ba7807b20ff1e313fa1fda4f0cb3e97a",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    109
+   ]
+  },
+  {
+   "path": "tv2_step2/tier01_manifest.json",
+   "sha256": "521f3f06343adfafceb8d03337ad9eacdd1d9b62e00b84baf1dd5e96e4670fae",
+   "tracked_at_tag": true,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    109
+   ]
+  },
+  {
+   "path": "tv2_step3/ablation_manifest.json",
+   "sha256": "e436d9e4eaa000deed838fb9cf6e8be23c944d3bede3fe63ed00e5ededb8cd45",
+   "tracked_at_tag": true,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    109
+   ]
+  },
+  {
+   "path": "tv2_step3/runs/ablation_random_cell/config.json",
+   "sha256": "8ebfe7ef43a3695ea786e62e26eda4e651d0821679076a8df5bb265de921642a",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step3/runs/ablation_whole_feature/config.json",
+   "sha256": "fee3bd7026e1494b9b17581cea33a8a9a17ea6f2f485eeeb60fbf0ddcc54c3c7",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step4/residual_manifest.json",
+   "sha256": "4bebe5ac135ec279556ff14ad75f23a46644118aa521e2c0a9c5e4b8356e0043",
+   "tracked_at_tag": true,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    109
+   ]
+  },
+  {
+   "path": "tv2_step4/runs/check_random_cell/config.json",
+   "sha256": "110aaf8186abe6a359493cf75f0d55f73ab32551155c6b839b6134e8ad13c90f",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step4/runs/check_whole_feature/config.json",
+   "sha256": "ce08725932c752cd55f9930aff9da00bdbb3c2b555b3f5c483ac20785bef9880",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step4/runs/failed_first_attempt/check_random_cell/config.json",
+   "sha256": "bb9e62a575925301c1c8ed03b371645a263674b6c66e56750dedb7a4bc394844",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step4/runs/failed_first_attempt/check_whole_feature/config.json",
+   "sha256": "ef83d1b3f52ed04fe7fc262dfd5f8c010dd5fc47d596e142e657c9b0f5409915",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step4/runs/residual_random_cell/config.json",
+   "sha256": "321553d477be26c4d08638dc677a4053ade497812cfb03aa48f24d9b52a01598",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step4/runs/residual_whole_feature/config.json",
+   "sha256": "38088c16a5e01c36b902737cbd3e13e5f1499534a3abde55ae82441844a2e039",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step6/tier3_manifest.json",
+   "sha256": "2dae80c92fc32a84934ea888e3b4d0012c2e088d9230fd7d67dd0595e722df7d",
+   "tracked_at_tag": true,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step7/matched_manifest.json",
+   "sha256": "95f257c773b3543b10747506c7c4dc5072530b23b5ef04a596a3a22d3fb95a71",
+   "tracked_at_tag": true,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step7/runs/main_whole_feature_matched/config.json",
+   "sha256": "2a7a83dbd6a3969ac35d6b32986d412d1b8d155902c31972562267bf51469f91",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step7/runs/micoda_other_whole_feature_matched/config.json",
+   "sha256": "293116e887906afaa1458cf7e73e98010121cb3f603c2f6da2b880966f1516df",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "path": "tv2_step7/runs/residual_whole_feature_matched/config.json",
+   "sha256": "9ef752e61b8938096f8aeedf0f7d3fc1ec772b068d62cded3f1ff52a6ddcd94f",
+   "tracked_at_tag": false,
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ]
+  }
+ ]
+}

@@ -1,0 +1,36 @@
+{
+ "step6": {
+  "pooled_u1": {
+   "u1_over": "pass",
+   "u1_under": "fail"
+  },
+  "pooled_u2": "fail",
+  "prop": {
+   "u1_over": "pass",
+   "u1_under": "fail"
+  },
+  "u1": {
+   "u1_over": "pass",
+   "u1_under": "fail"
+  },
+  "u2": "pass",
+  "u3": "pass"
+ },
+ "step7": {
+  "pooled_u1": {
+   "u1_over": "pass",
+   "u1_under": "fail"
+  },
+  "pooled_u2": "pass",
+  "prop": {
+   "u1_over": "pass",
+   "u1_under": "fail"
+  },
+  "u1": {
+   "u1_over": "pass",
+   "u1_under": "fail"
+  },
+  "u2": "fail",
+  "u3": "pass"
+ }
+}
