@@ -1,7 +1,8 @@
 """Impute one count table with every configured model, then score them on shared masks.
 
     python -m longitudinal_impute.run --data <csv> --schema <toml> --models <toml> --output <dir>
-           [--mask whole_feature|random_cell|none] [--mask-rate 0.05] [--seeds 0 1 2 3 4]
+           [--mask whole_feature|random_cell|whole_feature_matched|none] [--mask-target JSON]
+           [--mask-rate 0.05] [--seeds 0 1 2 3 4]
            [--only NAME [NAME ...]] [--save-predictions]
 
 Every [name] table of --models runs, except tables with `enabled = false`. A table named
@@ -10,6 +11,8 @@ after a registered model runs that model; any other name needs `model = "<regist
 --only runs exactly the named tables (enabled or not), in the given order.
 --save-predictions also writes predictions_<mask>.csv.gz: one row per hidden cell of every
 completed masked run (see cells.py), for scoring outside this runner.
+--mask whole_feature_matched (step 7) needs --mask-target, the frozen strata target of
+matched_mask.py; its path, sha256 and content are written to config.json.
 """
 import argparse
 import csv
@@ -24,7 +27,8 @@ import tomllib
 import numpy as np
 
 from .data import (load_csv, read_schema, make_mask, validate_mask, model_input, restore_counts, check_completed,
-                   write_completed_csv, apply_residual_rule, RESIDUAL_RULES)
+                   write_completed_csv, apply_residual_rule, RESIDUAL_RULES, MASK_KINDS)
+from .matched_mask import read_target
 from .evaluate import wasserstein_scores, masked_errors, summarize, paired_summary, forced_zero
 from .cells import prediction_rows, write_predictions
 from .baselines.hron import HronKNN
@@ -408,7 +412,7 @@ def scheduled_cases(config, data):
         yield 'native', None, np.zeros(data.counts.shape, bool), None
     if config['pass'] in ('masked', 'both'):
         for seed in config['seeds']:
-            hidden, stats = make_mask(data, config['mask'], config['mask_rate'], seed)
+            hidden, stats = make_mask(data, config['mask'], config['mask_rate'], seed, config.get('mask_target'))
             yield f'{config["mask"]}_seed{seed}', seed, hidden, stats
 
 
@@ -428,7 +432,8 @@ def main(argv=None):
     parser.add_argument('--schema', type=Path)
     parser.add_argument('--models', type=Path)
     parser.add_argument('--output', required=True, type=Path)
-    parser.add_argument('--mask', choices=('none', 'random_cell', 'whole_feature'))
+    parser.add_argument('--mask', choices=('none', *MASK_KINDS))
+    parser.add_argument('--mask-target', type=Path, help='strata target JSON, for whole_feature_matched only')
     parser.add_argument('--mask-rate', type=float)
     parser.add_argument('--seeds', type=int, nargs='+')
     parser.add_argument('--pass', dest='passes', choices=('native', 'masked', 'both'))
@@ -462,6 +467,11 @@ def main(argv=None):
         if args.only is not None and args.only != previous.get('only'):
             raise ValueError('source artifact only is incompatible with the requested override')
         args.only = previous.get('only')
+        recorded_target = previous.get('mask_target')
+        if recorded_target:
+            args.mask_target = args.mask_target or Path(recorded_target['path'])
+            if not args.mask_target.is_file() or sha256(args.mask_target) != recorded_target['sha256']:
+                raise ValueError('mask target hash changed or file missing')
         if args.stage == 'refine' and previous['stage'] != 'init':
             raise ValueError('refine requires a successful init-stage source run')
         if args.stage == 'evaluate' and previous['stage'] == 'init':
@@ -485,6 +495,9 @@ def main(argv=None):
         validate_mask(args.mask, args.mask_rate)
         if min(args.seeds) < 0 or len(set(args.seeds)) != len(args.seeds):
             raise ValueError(f'--seeds must be distinct nonnegative integers, got {args.seeds}')
+    if (args.mask == 'whole_feature_matched') != (args.mask_target is not None):
+        raise ValueError('--mask-target is needed for --mask whole_feature_matched and only for it')
+    target = read_target(args.mask_target) if args.mask_target else None
 
     # 1. Load and validate everything before writing; never overwrite an earlier run.
     if args.output.exists():
@@ -556,6 +569,9 @@ def main(argv=None):
         config['compute_git'] = previous.get('compute_git', previous.get('git'))
         config['compute_stage'] = previous.get('compute_stage', previous['stage'])
         config['evaluation_code_sha256'] = sha256(Path(__file__).with_name('evaluate.py'))
+    if target is not None:
+        config['mask_target'] = {'path': str(args.mask_target.resolve()),
+                                 'sha256': hashlib.sha256(args.mask_target.read_bytes()).hexdigest(), **target}
     (output / 'config.json').write_text(json.dumps(config, indent=1, default=plain), encoding='utf-8')
 
     nothing = np.zeros(data.counts.shape, bool)
@@ -629,7 +645,7 @@ def main(argv=None):
 
     # 3. Masked runs: one mask per seed, shared by every model; a fresh model per run.
     for seed in (args.seeds if args.mask != 'none' else []):
-        hidden, stats = make_mask(data, args.mask, args.mask_rate, seed)
+        hidden, stats = make_mask(data, args.mask, args.mask_rate, seed, target)
         np.save(output / f'mask_{args.mask}_seed{seed}.npy', hidden)
         stats.update(cell_counts(data, hidden))
         detail['masked'][seed] = {'mask': stats, 'models': {}}
