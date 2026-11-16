@@ -1,14 +1,16 @@
-"""whole_feature_matched (step 7): selection, firewall, guard, weights, strata cut points, runner."""
+"""whole_feature_matched (step 7): selection, firewall, guard, weights, strata cut points, runner, COVID checks."""
 import hashlib
 import json
 
 import numpy as np
 import pytest
 
-from longitudinal_impute import matched_mask as mm, run
+from longitudinal_impute import run
+from longitudinal_impute.evaluation import masks as mm, tier2 as t2
+from longitudinal_impute.evaluation.report import ROOT, digest
 from longitudinal_impute.data import Dataset, make_mask
-from longitudinal_impute.evaluate import forced_zero
-from test_tier2_diagnostics import panel
+from longitudinal_impute.evaluation.metrics import forced_zero
+from test_tier2 import panel
 
 TARGET = {'n_cuts': [17., 149.], 'pi': {'G1|N1': .2, 'G2|N1': .5, 'G2|N2': .3}}
 
@@ -163,3 +165,56 @@ def test_runner_needs_the_target_for_the_matched_mask_only(tmp_path):
     from longitudinal_impute.data import load_csv
     assert np.array_equal(saved, make_mask(load_csv(data, schema), 'whole_feature_matched', .2, 1,
                                            json.loads(target.read_text()))[0])
+
+
+# ---------- COVID checks (step 7) ----------
+
+# Masks of steps 1-7 (rate 0.05, seeds 0-4), as recorded by the step 1 results manifest at tag
+# evaluation-v1-results: make_mask must still draw exactly these.
+STEP1_MASKS = {
+    'whole_feature': {
+        '0': '9ea04b56c640bb21d13e7f7516807a6f6106b62aec287270558e6039e1c9c25a',
+        '1': '5643b7cf219fa5a574e4d495b116a0d404e6d15e3f6455ed376277d231edde4a',
+        '2': '4a8e20c64e9e64f30bbbbd94d367fb059a2a61e7d483594010887fc8d4e6b356',
+        '3': '5933da2450e9ca7d8d32e3d3819b1da7df3c6384fce5b6f7365e4c623eb292ca',
+        '4': '3b6291af5e5a111c87256cdaa8518277615d2a558eff2c3304ad2fffe20433ec'
+    },
+    'random_cell': {
+        '0': 'b1b423d6a4265974001c3b103f8ba33876bee19fd15dbe546a900df266bb925c',
+        '1': '2a3216055856fea24a153e6966840c930ebd9abba5baa4b57a0686a1485ab8c4',
+        '2': '032bff14e5506297fa88acc36fd11f5a119b46ff5dc7c227f166980fc35a104b',
+        '3': 'a9df976eac6247c50687356713b7461a5a3270a9eab0ecd87f8c08e00ce68656',
+        '4': '6ef6d0fdd0792a61c0bbda08f7f3689e58a0a1fdf5dfa8100ed78607d192b3d0'
+    }
+}
+
+
+def covid():
+    return t2.load_csv(t2.DATA, t2.SCHEMA)
+
+
+def test_cut_points_are_read_from_step_5():
+    cuts = mm.step5_cuts(ROOT / 'configs/evaluation/step5_tier2/tier2_results.md')
+    data = covid()
+    assert cuts == [17., 149.]
+    assert tuple(cuts) == t2.n_strata(t2.row_facts(data), t2.native_cells(data)['eval'])[1]   # consistency only
+
+
+def test_whole_feature_and_random_cell_masks_are_unchanged():
+    data = covid()
+    for kind, by_seed in STEP1_MASKS.items():
+        for seed, expected in by_seed.items():
+            assert digest(make_mask(data, kind, .05, int(seed))[0]) == expected
+
+
+def test_firewall_on_covid_counts():
+    data = covid()
+    target = mm.native_target(data, [17., 149.])
+    hidden, stats = make_mask(data, 'whole_feature_matched', .05, 0, target)
+    rng = np.random.default_rng(1)
+    other = np.floor(rng.dirichlet(np.ones(len(data.targets) + 1), len(data.totals))[:, :-1] * data.totals[:, None])
+    other[~np.isfinite(data.counts)] = np.nan
+    changed = Dataset(other, data.totals, data.targets, data.entities, data.fields, data.rows, data.lines, data.days,
+                      data.week, data.time_kind, data.groups, data.group_map)
+    assert np.array_equal(make_mask(changed, 'whole_feature_matched', .05, 0, target)[0], hidden)
+    assert stats['reached_goal'] and not (hidden & ~np.isfinite(data.counts)).any()

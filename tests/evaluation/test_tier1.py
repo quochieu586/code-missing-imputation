@@ -1,25 +1,19 @@
-"""Tests of tier01.py: F07 common-seed pairing, failed runs in the status table, end to end on a fixture.
+"""Tier 0 / 1 tables (tier1): F07 common-seed pairing, failed runs in the status table, end to end on a fixture.
 
-    PYTHONPATH=src python -W error::RuntimeWarning -m pytest tv2_step2/test_tier01.py
+    PYTHONPATH=src python -W error::RuntimeWarning -m pytest tests/evaluation/test_tier1.py
 """
 import csv
-import importlib.util
 import json
 from pathlib import Path
-import sys
 
 import pytest
 
-HERE = Path(__file__).resolve().parent
-spec = importlib.util.spec_from_file_location('tier01', HERE / 'tier01.py')
-tier01 = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(tier01)
+from longitudinal_impute import run
+from longitudinal_impute.baselines.tsagris import TsagrisKNN
+from longitudinal_impute.errors import InsufficientDataError
+from longitudinal_impute.evaluation import tier0, tier1 as tier01
 
-from longitudinal_impute import run  # noqa: E402  (tier01 put src on sys.path)
-from longitudinal_impute.baselines.tsagris import TsagrisKNN  # noqa: E402
-from longitudinal_impute.errors import InsufficientDataError  # noqa: E402
-
-FIXTURE = HERE.parent / 'tests/fixtures/covid_small.csv'
+FIXTURE = Path(__file__).resolve().parents[1] / 'fixtures/covid_small.csv'
 SCHEMA = '[dataset]\nentity="location"\ntime="date"\ntotal="total_sequence"\ntargets=["v1","v2","v3","v4"]\n'
 
 
@@ -63,14 +57,14 @@ def test_failed_and_missing_runs_stay_in_the_status_table():
                               'error': 'Complete-case initialization needs more than one row',
                               'info': {'converged': None}}}},
                           '1': {'mask': stats, 'models': {'hron': {'status': 'ok', 'coverage': 1.}}}}}
-    rows = tier01.status_rows('main_whole_feature', config, summary, {'micoda': 'micoda_x'})
+    rows = tier0.status_rows('main_whole_feature', config, summary, {'micoda': 'micoda_x'})
     assert len(rows) == 2 + 2 * 2
     by = {(r['model'], r['seed']): r for r in rows}
     assert by['micoda_x', '0']['status'] == 'failed' and by['micoda_x', '0']['error_code'] == 'insufficient_fit'
     assert by['micoda_x', '1']['status'] == 'missing'
     assert by['micoda_x', None]['converged'] is True and by['hron', None]['coverage'] == 1.
     assert (by['hron', '0']['forced_zero_cells'], by['hron', '0']['model_cells']) == (4, 6)
-    rel = {(e['model'], e['pass']): e for e in tier01.reliability(rows)}
+    rel = {(e['model'], e['pass']): e for e in tier0.reliability(rows)}
     assert (rel['micoda_x', 'masked']['scheduled'], rel['micoda_x', 'masked']['completed']) == (2, 0)
     assert rel['micoda_x', 'masked']['not_ok'] == ['0: failed (insufficient_fit)', '1: missing (missing_result)']
 
@@ -88,7 +82,6 @@ def fixture_runs(tmp_path, monkeypatch):
 
     monkeypatch.setitem(run.MODELS, 'tsagris', FailsOnSecondSeed)
     monkeypatch.setattr(tier01, 'SEEDS', {'whole_feature': ('1', '2')})
-    monkeypatch.setattr(tier01, 'compare_step1', lambda *a: {'skipped': 'fixture'})
     (tmp_path / 'schema.toml').write_text(SCHEMA)
     for prefix, models in (('main', '[hron]\n[tsagris]\n[micoda]\nother = false\n[mean_fill]\n'),
                            ('micoda_other', '[micoda]\nother = true\n')):

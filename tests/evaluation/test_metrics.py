@@ -1,6 +1,6 @@
-"""Step 2 (tier 0-1): empty groups, series-macro MAE, the long prediction file, model input.
+"""Tier 1 metrics (step 2): empty groups, series-macro MAE, the long prediction file, model input.
 
-    PYTHONPATH=src python -W error::RuntimeWarning -m pytest tests/test_tier01_eval.py
+    PYTHONPATH=src python -W error::RuntimeWarning -m pytest tests/evaluation/test_metrics.py
 """
 import copy
 import json
@@ -10,9 +10,9 @@ import pytest
 
 from longitudinal_impute import run
 from longitudinal_impute.baselines import micoda
-from longitudinal_impute.cells import COLUMNS, read_predictions, score_predictions
 from longitudinal_impute.data import load_csv, make_mask
-from longitudinal_impute.evaluate import GROUPS, METRICS, cell_errors, masked_errors, series_macro_mae
+from longitudinal_impute.evaluation.metrics import (COLUMNS, GROUPS, METRICS, cell_errors, masked_errors,
+                                                    read_predictions, score_predictions, series_macro_mae)
 from test_run import COVID_SCHEMA, FIXTURES, call, write
 
 
