@@ -1,5 +1,7 @@
 # Step 3: sửa nhỏ step 2 + ablation same_day_mean (exploratory)
 
+> **Ghi chú sau khi rebase lên main mới (PR #5):** micoda trong các step này = A17 (other=false); micoda_other = A18. Trên main sau PR #5, micoda mặc định = A18. Để chạy lại đúng A17, dùng `configs/models_default_a17.toml` (bảng `[micoda]` ghi tường minh `other = false`); tên model trong các bảng kết quả giữ nguyên như lúc chạy. Đường dẫn đã đổi theo cấu trúc mới (`nextgen/src` → `src`, `nextgen/configs` → `configs`, `nextgen/tests` → `tests`); hash commit nhắc trong báo cáo là hash trước khi rebase; bảng ánh xạ cũ → mới ở `tv2_step8/HASH_MAP.md` (PR step 5–8).
+
 Branch `step3-sameday-ablation` (từ `step2-tier01-eval`). Không đổi thuật toán Hron/Tsagris/MICoDa, không đổi mặc định của model nào. Mọi bảng số trong các khối `auto:*` do `ablation.py` sinh, không sửa tay. Bảng đầy đủ: [ablation_results.md](ablation_results.md).
 
 ## 1. Phần A: sửa từ review step 2
@@ -11,12 +13,12 @@ Branch `step3-sameday-ablation` (từ `step2-tier01-eval`). Không đổi thuậ
 
 | File | Nội dung |
 |---|---|
-| `nextgen/src/longitudinal_impute/baselines/same_day_mean.py` | Thêm `use_time`, `use_group`, `weighting`, `residual_rule`. `info_` ghi lại cả bốn tham số. Mặc định giống từng byte bản trước. |
-| `nextgen/src/longitudinal_impute/baselines/common.py` | `fill_within_residual(..., rule='cap'\|'rescale')`. Mặc định `cap` như cũ. |
-| `nextgen/src/longitudinal_impute/run.py` | Khóa tùy chọn `model = "<tên đã đăng ký>"` (`model_kind`, `build`). `config.json` có thêm `resolved_models` (bảng → model, class, tham số khai báo, tham số hiệu lực). Thêm dòng ghi chú sau bảng in. |
-| `nextgen/configs/models_sameday_ablation.toml` | Sáu biến thể, đóng băng trước khi chạy. |
-| `nextgen/README.md` | Ghi chú bảng tổng hợp (A2), khóa `model`, các công tắc ablation. |
-| `nextgen/tests/test_sameday_ablation.py` | 28 test mới. |
+| `src/longitudinal_impute/baselines/same_day_mean.py` | Thêm `use_time`, `use_group`, `weighting`, `residual_rule`. `info_` ghi lại cả bốn tham số. Mặc định giống từng byte bản trước. |
+| `src/longitudinal_impute/baselines/common.py` | `fill_within_residual(..., rule='cap'\|'rescale')`. Mặc định `cap` như cũ. |
+| `src/longitudinal_impute/run.py` | Khóa tùy chọn `model = "<tên đã đăng ký>"` (`model_kind`, `build`). `config.json` có thêm `resolved_models` (bảng → model, class, tham số khai báo, tham số hiệu lực). Thêm dòng ghi chú sau bảng in. |
+| `configs/models_sameday_ablation.toml` | Sáu biến thể, đóng băng trước khi chạy. |
+| `README.md` | Ghi chú bảng tổng hợp (A2), khóa `model`, các công tắc ablation. |
+| `tests/test_sameday_ablation.py` | 28 test mới. |
 | `tv2_step2/tier01.py`, `test_tier01.py` | `UNDECLARED` (A1), tách hàm `load_run`; thêm 1 test. Bảng step 2 sinh lại. |
 | `tv2_step3/run_all.sh`, `ablation.py` (263 dòng), `test_ablation.py` (4 test) | Chạy ablation và dựng bảng. Phần chấm điểm, regression check và ghép cặp đều gọi `tier01`. |
 | `tv2_step3/ablation_status.csv`, `ablation_runs.csv`, `ablation_pairs.csv`, `ablation_results.md`, `ablation_manifest.json` | Output sinh tự động. File dự đoán không commit, chỉ commit hash trong manifest. |

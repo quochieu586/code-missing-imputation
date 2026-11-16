@@ -1,6 +1,6 @@
 """Step 4: compare algorithms under one residual rule (exploratory), built on tier01 and ablation.
 
-    PYTHONPATH=nextgen/src python tv2_step4/residual.py [--runs DIR] [--step2-runs DIR]
+    PYTHONPATH=src python tv2_step4/residual.py [--runs DIR] [--step2-runs DIR]
                                                        [--step3-runs DIR] [--out DIR]
 
 Cells of the matrix (variant = model + rule) come from four run directories per mask:
@@ -28,7 +28,7 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 _spec = importlib.util.spec_from_file_location('ablation', REPO / 'tv2_step3/ablation.py')
 ablation = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(ablation)           # loads tier01 and puts nextgen/src on sys.path
+_spec.loader.exec_module(ablation)           # loads tier01 and puts src on sys.path
 tier01 = ablation.tier01
 from longitudinal_impute.cells import read_predictions  # noqa: E402
 from longitudinal_impute.data import load_csv  # noqa: E402
@@ -185,7 +185,8 @@ def load_data(folder):
     config = json.loads((folder / 'config.json').read_text(encoding='utf-8'))
     if hashlib.sha256(Path(config['data']).read_bytes()).hexdigest() != config['data_sha256']:
         raise ValueError(f"{folder.name}: {config['data']} changed since the run")
-    return load_csv(config['data'], config['schema_path']), config['schema_path']
+    schema = tier01.step1.current_path(config['schema_path'])
+    return load_csv(config['data'], schema), schema
 
 
 def by_rule(rule):

@@ -1,15 +1,17 @@
 # Step 2: Evaluation Tầng 0–1 tối thiểu (exploratory)
 
+> **Ghi chú sau khi rebase lên main mới (PR #5):** micoda trong các step này = A17 (other=false); micoda_other = A18. Trên main sau PR #5, micoda mặc định = A18. Để chạy lại đúng A17, dùng `configs/models_default_a17.toml` (bảng `[micoda]` ghi tường minh `other = false`); tên model trong các bảng kết quả giữ nguyên như lúc chạy. Đường dẫn đã đổi theo cấu trúc mới (`nextgen/src` → `src`, `nextgen/configs` → `configs`, `nextgen/tests` → `tests`); hash commit nhắc trong báo cáo là hash trước khi rebase; bảng ánh xạ cũ → mới ở `tv2_step8/HASH_MAP.md` (PR step 5–8).
+
 Branch `step2-tier01-eval` (từ `step1-decoys-sameday` 14818f3). Không đổi thuật toán của model nào. Mọi bảng số trong các khối `auto:*` do `tier01.py` sinh, không sửa tay. Bảng đầy đủ (mọi cặp, cả random_cell): [tier01_results.md](tier01_results.md).
 
 ## 1. File đã sửa/thêm
 
 | File | Nội dung |
 |---|---|
-| `nextgen/src/longitudinal_impute/evaluate.py` | Tách `cell_errors(truth, pred, N, forced)` để `masked_errors` và phần chấm từ file long dùng chung một định nghĩa (định nghĩa không đổi, test cũ pass). Thêm `GROUPS`, `METRICS`, `series_macro_mae`. Nhóm rỗng → `None` (NA). |
-| `nextgen/src/longitudinal_impute/cells.py` (mới) | File long: `prediction_rows`, `write_predictions` (csv.gz, float dạng `repr` nên đọc lại không mất chính xác, header gzip cố định nên cùng nội dung thì cùng hash), `read_predictions`, `score_predictions`. |
-| `nextgen/src/longitudinal_impute/run.py` | Thêm cờ `--save-predictions` (opt-in, không bật thì output như cũ). Run failed/partial ghi thêm `error_code`. Mask stats ghi thêm `forced_zero_cells` và `model_cells` (tính bằng `evaluate.forced_zero`); `native_cells` cho lượt native. |
-| `nextgen/tests/test_tier01_eval.py` | 22 test mới. |
+| `src/longitudinal_impute/evaluate.py` | Tách `cell_errors(truth, pred, N, forced)` để `masked_errors` và phần chấm từ file long dùng chung một định nghĩa (định nghĩa không đổi, test cũ pass). Thêm `GROUPS`, `METRICS`, `series_macro_mae`. Nhóm rỗng → `None` (NA). |
+| `src/longitudinal_impute/cells.py` (mới) | File long: `prediction_rows`, `write_predictions` (csv.gz, float dạng `repr` nên đọc lại không mất chính xác, header gzip cố định nên cùng nội dung thì cùng hash), `read_predictions`, `score_predictions`. |
+| `src/longitudinal_impute/run.py` | Thêm cờ `--save-predictions` (opt-in, không bật thì output như cũ). Run failed/partial ghi thêm `error_code`. Mask stats ghi thêm `forced_zero_cells` và `model_cells` (tính bằng `evaluate.forced_zero`); `native_cells` cho lượt native. |
+| `tests/test_tier01_eval.py` | 22 test mới. |
 | `tv2_step1/summarize_runs.py` | `validate_pair` (F2) nhận thêm danh sách seed, mặc định vẫn là 0–4. |
 | `tv2_step2/run_all.sh` | Chạy 7 model rồi lượt riêng `micoda_other` (A18), rate 0.05, `--save-predictions`; whole_feature thêm seed 109. |
 | `tv2_step2/tier01.py`, `test_tier01.py` | Script tổng hợp Tầng 0–1 (408 dòng) và 5 test. |

@@ -123,7 +123,10 @@ def assert_same(a, b):
         assert a == b
 
 
-FACTORIES = {name: cls for name, cls in run.MODELS.items()}
+# The baselines (the main model of PR #5 has no fit/predict); MICoDa A17 written out, since the
+# MICoDaCovid default is A18 after PR #5.
+FACTORIES = {name: cls for name, cls in run.MODELS.items() if name not in ('main', 'micoda')}
+FACTORIES['micoda'] = lambda: micoda.MICoDaCovid(other=False)
 FACTORIES['micoda_other'] = lambda: micoda.MICoDaCovid(other=True)
 
 

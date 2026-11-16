@@ -1,6 +1,6 @@
 """Step 3: same_day_mean ablation tables (exploratory), built on tv2_step2/tier01.py.
 
-    PYTHONPATH=nextgen/src python tv2_step3/ablation.py [--runs DIR] [--step2-runs DIR] [--out DIR]
+    PYTHONPATH=src python tv2_step3/ablation.py [--runs DIR] [--step2-runs DIR] [--out DIR]
 
 Reads <runs>/ablation_<mask> (the six variants of configs/models_sameday_ablation.toml) and the
 step 2 baselines from <step2-runs>/main_<mask>. No second scorer: status rows, scores from the
@@ -28,7 +28,7 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 _spec = importlib.util.spec_from_file_location('tier01', REPO / 'tv2_step2/tier01.py')
 tier01 = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(tier01)            # also puts nextgen/src on sys.path
+_spec.loader.exec_module(tier01)            # also puts src on sys.path
 from longitudinal_impute import run  # noqa: E402
 from longitudinal_impute.cells import read_predictions  # noqa: E402
 from longitudinal_impute.data import load_csv  # noqa: E402
@@ -102,7 +102,7 @@ def window_levels(ablation, mask):
     config = json.loads((ablation / 'config.json').read_text(encoding='utf-8'))
     if hashlib.sha256(Path(config['data']).read_bytes()).hexdigest() != config['data_sha256']:
         raise ValueError(f"{ablation.name}: {config['data']} changed since the run")
-    data = load_csv(config['data'], config['schema_path'])
+    data = load_csv(config['data'], tier01.step1.current_path(config['schema_path']))
     if (config['group_map'] or {}).get('sha256') != (data.group_map or {}).get('sha256'):
         raise ValueError(f'{ablation.name}: group map differs from the one the run used')
     rows = read_predictions(ablation / f'predictions_{mask}.csv.gz')

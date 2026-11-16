@@ -165,7 +165,8 @@ def check_rule(name, params):
         raise ValueError(f'[{name}] residual_rule is not applicable to {kind}')
     if rule not in RUNNER_RULES[kind]:
         raise ValueError(f'[{name}] residual_rule must be one of {RESIDUAL_RULES}, got {rule!r}')
-    if kind == 'micoda' and params.get('other', False) is not True:
+    # Without an explicit key, MICoDaCovid's own default applies (other = true since PR #5).
+    if kind == 'micoda' and params.get('other', inspect.signature(MICoDaCovid).parameters['other'].default) is not True:
         raise ValueError(f'[{name}] residual_rule is not applicable to micoda with other = false (A17): it '
                          'predicts no Other share, and its R1 restore already is the "rescale" rule')
 

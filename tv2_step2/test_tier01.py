@@ -1,6 +1,6 @@
 """Tests of tier01.py: F07 common-seed pairing, failed runs in the status table, end to end on a fixture.
 
-    PYTHONPATH=nextgen/src python -W error::RuntimeWarning -m pytest tv2_step2/test_tier01.py
+    PYTHONPATH=src python -W error::RuntimeWarning -m pytest tv2_step2/test_tier01.py
 """
 import csv
 import importlib.util
@@ -15,11 +15,11 @@ spec = importlib.util.spec_from_file_location('tier01', HERE / 'tier01.py')
 tier01 = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(tier01)
 
-from longitudinal_impute import run  # noqa: E402  (tier01 put nextgen/src on sys.path)
+from longitudinal_impute import run  # noqa: E402  (tier01 put src on sys.path)
 from longitudinal_impute.baselines.tsagris import TsagrisKNN  # noqa: E402
 from longitudinal_impute.errors import InsufficientDataError  # noqa: E402
 
-FIXTURE = HERE.parent / 'nextgen/tests/fixtures/covid_small.csv'
+FIXTURE = HERE.parent / 'tests/fixtures/covid_small.csv'
 SCHEMA = '[dataset]\nentity="location"\ntime="date"\ntotal="total_sequence"\ntargets=["v1","v2","v3","v4"]\n'
 
 
@@ -90,7 +90,7 @@ def fixture_runs(tmp_path, monkeypatch):
     monkeypatch.setattr(tier01, 'SEEDS', {'whole_feature': ('1', '2')})
     monkeypatch.setattr(tier01, 'compare_step1', lambda *a: {'skipped': 'fixture'})
     (tmp_path / 'schema.toml').write_text(SCHEMA)
-    for prefix, models in (('main', '[hron]\n[tsagris]\n[micoda]\n[mean_fill]\n'),
+    for prefix, models in (('main', '[hron]\n[tsagris]\n[micoda]\nother = false\n[mean_fill]\n'),
                            ('micoda_other', '[micoda]\nother = true\n')):
         (tmp_path / f'{prefix}.toml').write_text(models)
         run.main(['--data', str(FIXTURE), '--schema', str(tmp_path / 'schema.toml'), '--models',

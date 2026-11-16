@@ -1,6 +1,6 @@
 """Tests of ablation.py on the small COVID fixture (random_cell only, seeds 0-4).
 
-    PYTHONPATH=nextgen/src python -W error::RuntimeWarning -m pytest tv2_step3/test_ablation.py
+    PYTHONPATH=src python -W error::RuntimeWarning -m pytest tv2_step3/test_ablation.py
 """
 import importlib.util
 import json
@@ -17,7 +17,7 @@ spec.loader.exec_module(ablation)
 from longitudinal_impute import run  # noqa: E402
 
 REPO = HERE.parent
-FIXTURE = REPO / 'nextgen/tests/fixtures/covid_small.csv'
+FIXTURE = REPO / 'tests/fixtures/covid_small.csv'
 SCHEMA = '[dataset]\nentity="location"\ntime="date"\ntotal="total_sequence"\ntargets=["v1","v2","v3","v4"]\n'
 ARGS = ('--mask', 'random_cell', '--mask-rate', '.2', '--seeds', '0', '1', '2', '3', '4', '--save-predictions')
 
@@ -27,7 +27,7 @@ def runs(tmp_path, monkeypatch, step2_models='[hron]\n[same_day_mean]\n[mean_fil
     (tmp_path / 'schema.toml').write_text(SCHEMA)
     (tmp_path / 'step2.toml').write_text(step2_models)
     for root, models in ((tmp_path / 'step2', tmp_path / 'step2.toml'),
-                         (tmp_path / 'step3', REPO / 'nextgen/configs/models_sameday_ablation.toml')):
+                         (tmp_path / 'step3', REPO / 'configs/models_sameday_ablation.toml')):
         name = 'main_random_cell' if root.name == 'step2' else 'ablation_random_cell'
         run.main(['--data', str(FIXTURE), '--schema', str(tmp_path / 'schema.toml'), '--models', str(models),
                   '--output', str(root / name), *ARGS])

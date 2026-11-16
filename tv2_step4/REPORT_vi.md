@@ -1,18 +1,20 @@
 # Step 4: so sánh công bằng theo quy tắc phần dư (exploratory)
 
+> **Ghi chú sau khi rebase lên main mới (PR #5):** micoda trong các step này = A17 (other=false); micoda_other = A18. Trên main sau PR #5, micoda mặc định = A18. Để chạy lại đúng A17, dùng `configs/models_default_a17.toml` (bảng `[micoda]` ghi tường minh `other = false`); tên model trong các bảng kết quả giữ nguyên như lúc chạy. Đường dẫn đã đổi theo cấu trúc mới (`nextgen/src` → `src`, `nextgen/configs` → `configs`, `nextgen/tests` → `tests`); hash commit nhắc trong báo cáo là hash trước khi rebase; bảng ánh xạ cũ → mới ở `tv2_step8/HASH_MAP.md` (PR step 5–8).
+
 Branch `step4-residual-rule` (từ `step3-sameday-ablation`). Không sửa thuật toán bên trong Hron/Tsagris/MICoDa/same_day_mean; không đổi mặc định của model nào; A18 vẫn chỉ là sensitivity (D08 không đổi). Mọi bảng số trong khối `auto:*` do `residual.py` sinh, không sửa tay. Bảng đầy đủ cả hai mask: [residual_results.md](residual_results.md).
 
 ## 1. File đã sửa/thêm
 
 | File | Nội dung |
 |---|---|
-| `nextgen/src/longitudinal_impute/data.py` | `apply_residual_rule(data, composition, hidden, rule)`: hàm dùng chung cho ba quy tắc, chỉ ghép `fill_within_residual` với `restore_counts`, không thêm tolerance mới. Chỉ đọc các dòng có ô thiếu. |
-| `nextgen/src/longitudinal_impute/run.py` | Khóa tùy chọn `residual_rule` cho `hron`, `tsagris`, `micoda` có `other = true`, xử lý ở tầng restore. Quy tắc không áp dụng được thì báo lỗi kèm lý do trước mọi side effect. `resolved_models` ghi thêm `runner_residual_rule`. |
-| `nextgen/src/longitudinal_impute/baselines/micoda.py` | Chỉ thêm thuộc tính `proposals_`, lưu composition của lõi để runner dùng. Không đổi phép tính nào; nhánh R2 cũ vẫn chạy cho mặc định. |
-| `nextgen/src/longitudinal_impute/evaluate.py` | `implied_other_errors`: sai số của Other ngầm trên các dòng đầy đủ trước khi che. |
-| `nextgen/configs/models_residual_rule.toml`, `models_residual_check.toml` | Sáu biến thể mới (đóng băng trước khi chạy) và ba lượt kiểm tra `prop_other`. |
-| `nextgen/README.md` | Mục `residual_rule`. |
-| `nextgen/tests/test_residual_rule.py` | 42 test mới. |
+| `src/longitudinal_impute/data.py` | `apply_residual_rule(data, composition, hidden, rule)`: hàm dùng chung cho ba quy tắc, chỉ ghép `fill_within_residual` với `restore_counts`, không thêm tolerance mới. Chỉ đọc các dòng có ô thiếu. |
+| `src/longitudinal_impute/run.py` | Khóa tùy chọn `residual_rule` cho `hron`, `tsagris`, `micoda` có `other = true`, xử lý ở tầng restore. Quy tắc không áp dụng được thì báo lỗi kèm lý do trước mọi side effect. `resolved_models` ghi thêm `runner_residual_rule`. |
+| `src/longitudinal_impute/baselines/micoda.py` | Chỉ thêm thuộc tính `proposals_`, lưu composition của lõi để runner dùng. Không đổi phép tính nào; nhánh R2 cũ vẫn chạy cho mặc định. |
+| `src/longitudinal_impute/evaluate.py` | `implied_other_errors`: sai số của Other ngầm trên các dòng đầy đủ trước khi che. |
+| `configs/models_residual_rule.toml`, `models_residual_check.toml` | Sáu biến thể mới (đóng băng trước khi chạy) và ba lượt kiểm tra `prop_other`. |
+| `README.md` | Mục `residual_rule`. |
+| `tests/test_residual_rule.py` | 42 test mới. |
 | `tv2_step4/run_all.sh`, `residual.py` (283 dòng), `test_residual.py` (3 test) | Chạy và dựng bảng. Phần đọc run, chấm điểm, regression check và ghép cặp đều gọi `tier01` và `ablation`. |
 | `tv2_step4/residual_runs.csv`, `residual_pairs.csv`, `residual_results.md`, `residual_manifest.json` | Output sinh tự động. File dự đoán không commit; hash nằm trong manifest. |
 

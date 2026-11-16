@@ -1,6 +1,6 @@
 """Step 2: tier 0 (run status) and tier 1 (errors on masked cells) tables, all labelled exploratory.
 
-    PYTHONPATH=nextgen/src python tv2_step2/tier01.py [--runs DIR] [--out DIR] [--step1-runs DIR]
+    PYTHONPATH=src python tv2_step2/tier01.py [--runs DIR] [--out DIR] [--step1-runs DIR]
 
 Reads <runs>/main_<mask> (7 models) and <runs>/micoda_other_<mask> (MICoDa other = true, reported
 as micoda_other), written by run_all.sh with --save-predictions. Order of work:
@@ -30,7 +30,7 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
-sys.path.insert(0, str(REPO / 'nextgen/src'))
+sys.path.insert(0, str(REPO / 'src'))
 from longitudinal_impute.cells import read_predictions, score_predictions  # noqa: E402
 from longitudinal_impute.evaluate import GROUPS, METRICS  # noqa: E402
 

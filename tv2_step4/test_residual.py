@@ -1,6 +1,6 @@
 """Tests of residual.py on the small COVID fixture (random_cell only, seeds 0-4).
 
-    PYTHONPATH=nextgen/src python -W error::RuntimeWarning -m pytest tv2_step4/test_residual.py
+    PYTHONPATH=src python -W error::RuntimeWarning -m pytest tv2_step4/test_residual.py
 """
 import importlib.util
 from pathlib import Path
@@ -16,12 +16,12 @@ spec.loader.exec_module(residual)
 from longitudinal_impute import run  # noqa: E402
 
 REPO = HERE.parent
-FIXTURE = REPO / 'nextgen/tests/fixtures/covid_small.csv'
+FIXTURE = REPO / 'tests/fixtures/covid_small.csv'
 SCHEMA = '[dataset]\nentity="location"\ntime="date"\ntotal="total_sequence"\ntargets=["v1","v2","v3","v4"]\n'
 ARGS = ('--mask', 'random_cell', '--mask-rate', '.2', '--seeds', '0', '1', '2', '3', '4', '--save-predictions')
 SDM = 'window_days = 31\nmin_obs = 2\nmax_widen = 1\n'
 DIRS = {
-    'step2/main': '[hron]\n[tsagris]\n[micoda]\nmax_iter = 40\n[mean_fill]\n',
+    'step2/main': '[hron]\n[tsagris]\n[micoda]\nother = false\nmax_iter = 40\n[mean_fill]\n',
     'step2/micoda_other': '[micoda]\nmax_iter = 40\nother = true\n',
     'step3/ablation': f'[sdm_full]\nmodel = "same_day_mean"\n{SDM}[sdm_rescale]\nmodel = "same_day_mean"\n{SDM}'
                       'residual_rule = "rescale"\n',

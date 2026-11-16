@@ -144,7 +144,7 @@ def test_switch_values_are_checked():
 
 ALIASES = ('[same_day_mean]\nwindow_days = 31\nmin_obs = 2\nmax_widen = 1\n'
            '[sdm_no_time]\nmodel = "same_day_mean"\nwindow_days = 31\nmin_obs = 2\nmax_widen = 1\nuse_time = false\n'
-           '[mic17]\nmodel = "micoda"\nmax_iter = 40\n')
+           '[mic17]\nmodel = "micoda"\nother = false\nmax_iter = 40\n')
 
 
 def test_model_key_runs_the_registered_class_under_the_table_name(tmp_path):

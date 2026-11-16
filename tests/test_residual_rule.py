@@ -27,7 +27,10 @@ GOLDEN = {
     'same_day_mean:rc': 'c010b792766a8e67', 'tsagris:none': 'dd4d2ae349cec143', 'tsagris:wf': '4eb826bb4e24f1b6',
     'tsagris:rc': '9b7689fea480b558', 'zero_fill:none': 'd21af58fd7d9abc5', 'zero_fill:wf': 'aa45737c20916e8e',
     'zero_fill:rc': '1ebd621c6f239e28'}
-FACTORIES = {**{n: c for n, c in run.MODELS.items() if n != 'same_day_mean'},
+# The step's models, A17 written out: MICoDa defaults to A18 since PR #5, and 'main' (the main model,
+# PR #5) is not a baseline of this step.
+FACTORIES = {**{n: c for n, c in run.MODELS.items() if n not in ('same_day_mean', 'micoda', 'main')},
+             'micoda': lambda: MICoDaCovid(other=False),
              'same_day_mean': lambda: run.MODELS['same_day_mean'](31, min_obs=2, max_widen=1),
              'micoda_other': lambda: MICoDaCovid(other=True)}
 NEW = {('hron', 'cap'): run.MODELS['hron'], ('hron', 'rescale'): run.MODELS['hron'],
@@ -154,8 +157,8 @@ def test_rule_in_toml_runs_and_is_recorded(tmp_path):
 
 @pytest.mark.parametrize('models, message', [
     ('[same_day_mean]\nresidual_rule = "prop_other"\n', 'not applicable to same_day_mean: it predicts no Other'),
-    ('[micoda]\nresidual_rule = "rescale"\n', r'not applicable to micoda with other = false \(A17\)'),
-    ('[micoda]\nresidual_rule = "cap"\n', r'not applicable to micoda with other = false \(A17\)'),
+    ('[micoda]\nother = false\nresidual_rule = "rescale"\n', r'not applicable to micoda with other = false \(A17\)'),
+    ('[micoda]\nother = false\nresidual_rule = "cap"\n', r'not applicable to micoda with other = false \(A17\)'),
     ('[mean_fill]\nresidual_rule = "cap"\n', 'residual_rule is not applicable to mean_fill'),
     ('[hron]\nresidual_rule = "r1"\n', 'residual_rule must be one of'),
 ])
@@ -163,6 +166,14 @@ def test_inapplicable_rule_stops_before_any_output(tmp_path, models, message):
     with pytest.raises(ValueError, match=message):
         call(tmp_path, FIXTURES / 'covid_small.csv', COVID_SCHEMA, models, '--mask', 'random_cell')
     assert not (tmp_path / 'out').exists()
+
+
+def test_micoda_without_other_key_is_a18_and_takes_a_rule():
+    """After PR #5 the MICoDaCovid default is other = true (A18), so a [micoda] table without the key
+    takes a residual rule; only an explicit other = false (A17) is refused."""
+    run.check_rule('micoda', {'residual_rule': 'cap'})
+    with pytest.raises(ValueError, match=r'other = false \(A17\)'):
+        run.check_rule('micoda', {'residual_rule': 'cap', 'other': False})
 
 
 def test_implied_other_by_hand():
