@@ -16,6 +16,12 @@ other = true
 max_iter = 120
 tol = 1e-8
 
+[same_day_mean]           # official baseline since step 1, as in models_default.toml
+window_days = 28
+min_obs = 20
+max_widen = 2
+exclude_same_location = false
+
 [main]
 outer_iters = 5
 epochs_per_iter = 10
