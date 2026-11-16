@@ -17,7 +17,7 @@ from longitudinal_impute.baselines.zero_fill import ZeroFill
 from longitudinal_impute.data import Dataset, load_csv, make_mask, model_input
 
 FIXTURES = Path(__file__).resolve().parent / 'fixtures'
-ROOT = Path(__file__).resolve().parents[1]     # repository root (tests/ left nextgen/ in PR #5)
+ROOT = Path(__file__).resolve().parents[1]     # repository root
 SCHEMA = ('[dataset]\nentity="location"\ntime="date"\ntotal="total_sequence"\ntargets=["v1","v2","v3","v4"]\n'
           'group_col="continent"\ngroup_map="map.csv"\n')
 MAP = 'location,continent\nAvalon,North\nBrill,North\nCorin,South\n'

@@ -7,7 +7,7 @@ import pytest
 from longitudinal_impute.data import load_csv
 
 FIXTURES = Path(__file__).resolve().parent / 'fixtures'
-ROOT = Path(__file__).resolve().parents[1]     # repository root (tests/ left nextgen/ in PR #5)
+ROOT = Path(__file__).resolve().parents[1]     # repository root
 COVID_SCHEMA = '[dataset]\nentity="location"\ntime="date"\ntotal="total_sequence"\ntargets=["v1","v2","v3","v4"]\n'
 MICROBIOME_SCHEMA = ('[dataset]\nentity="subject"\ntime="visit"\ntargets=["Bacteroides","Prevotella",'
                      '"Faecalibacterium","Akkermansia","Bifidobacterium"]\n')
