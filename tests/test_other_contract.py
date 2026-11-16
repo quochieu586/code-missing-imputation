@@ -52,7 +52,7 @@ def test_hidden_truth_cannot_determine_other_or_preprocessing():
 
 
 def test_paired_comparison_excludes_failures_and_mixed_budget():
-    from longitudinal_impute.evaluate import paired_summary
+    from longitudinal_impute.evaluation.metrics import paired_summary
     rows = [dict(model=m, **{'pass': 'masked'}, mask='random_cell', seed=s,
                  status='ok', space='18_with_other', hidden_cells=2, resolved_cells=2,
                  mse_count=float(s)) for m in ('hron', 'tsagris', 'micoda') for s in (1, 2)]
@@ -68,7 +68,7 @@ def test_paired_comparison_excludes_failures_and_mixed_budget():
 
 
 def test_paired_comparison_refuses_partial_coverage_and_empty_masks():
-    from longitudinal_impute.evaluate import paired_summary
+    from longitudinal_impute.evaluation.metrics import paired_summary
     row = dict(model='micoda', **{'pass': 'masked'}, mask='random_cell', seed=1,
                status='ok', space='18_with_other', hidden_cells=2, resolved_cells=1)
     assert not paired_summary([row])['aggregate']

@@ -48,7 +48,7 @@ flowchart TD
 |---|---|
 | `src/longitudinal_impute/run.py` | Giữ CLI; thêm main và lựa chọn chạy từng phần. |
 | `src/longitudinal_impute/data.py` | Giữ data/mask/budget/validator; bổ sung metadata thời gian. |
-| `src/longitudinal_impute/evaluate.py` | Giữ định nghĩa metric hiện có. |
+| `src/longitudinal_impute/evaluate.py` (nay `src/longitudinal_impute/evaluation/metrics.py`) | Giữ định nghĩa metric hiện có. |
 | `src/longitudinal_impute/baselines/` | Giữ interface và thuật toán mặc định. |
 | `src/longitudinal_impute/main_model.py` **mới** | Chuẩn bị chuỗi, khởi tạo, train và loop cập nhật. |
 | `src/longitudinal_impute/network.py` **mới** | Mạng và forward; không đọc file hay điều phối run. |

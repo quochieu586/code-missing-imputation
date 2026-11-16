@@ -42,7 +42,7 @@ Main không gọi ngược runner để chạy initializer. Nó gọi trực ti�
 | `src/longitudinal_impute/network.py` — mới | `CompositionNet`, forward và một block attention. Không đọc CSV, không tạo mask thí nghiệm, không chứa loop train. |
 | `src/longitudinal_impute/data.py` | Giữ owner input/budget/validator/writer. Chỉ thêm trường thời gian gốc tùy chọn vào Dataset và nạp từ schema. |
 | `src/longitudinal_impute/run.py` | Thêm dispatch main; chọn lượt/stage; đọc/ghi artifact nhỏ và báo lỗi theo model/case. |
-| `src/longitudinal_impute/evaluate.py` | Dùng lại metric và paired summary, không thêm metric mới cho task main. |
+| `src/longitudinal_impute/evaluate.py` (nay `src/longitudinal_impute/evaluation/metrics.py`) | Dùng lại metric và paired summary, không thêm metric mới cho task main. |
 | `configs/`, `tests/` | Thêm config main và test tập trung; không sửa mặc định ba baseline. |
 
 Các hàm chính dự kiến trong `main_model.py`: `initialize`, `clr_features`, `pack_sequences`, `train_one_round`, `predict_counts`, `refine`. Chỉ tách helper khi nó có một việc rõ và kiểm thử được; không dựng generic abstraction để tránh vài dòng gọi trực tiếp.

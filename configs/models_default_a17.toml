@@ -1,4 +1,4 @@
-# Evaluation steps 1-8 (tv2_step*): models_default.toml as it was when those runs were made, with
+# Evaluation steps 1-8 (evaluation v1): models_default.toml as it was when those runs were made, with
 # MICoDa A17 written out (other = false). After PR #5 the [micoda] default is A18 (other = true), so
 # rerunning steps 1-8 with configs/models_default.toml would run A18 under the name micoda.
 # 'micoda' in steps 1-8 = A17 (other = false); 'micoda_other' = A18 (models_micoda_other.toml).

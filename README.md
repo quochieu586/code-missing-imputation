@@ -75,13 +75,11 @@ Thư mục `--output` phải chưa tồn tại.
 | `summary.json` | Toàn bộ chi tiết: Wasserstein theo target của lượt thật, `info_` của model (với MICoDa gồm δ, reference, hội tụ, warning counts), thống kê mask, sai số theo nhóm, `coverage` của lượt che, `aggregate` (mean ± sd qua seed). |
 | `errors.log` | Chỉ xuất hiện khi có lỗi hoặc có run không `completed` (kèm trạng thái `partial`). |
 
-**Bảng tổng hợp của `run.py` không dùng để xếp hạng.** Bảng in ra màn hình, `aggregate` trong `summary.json` và `evaluate.summarize` lấy mean ± sd trên các seed mà *từng model* chạy xong. Vì vậy hai model có thể được tính trên hai tập seed khác nhau: một model fail ở seed khó sẽ trông tốt hơn thực tế (F07). Để xếp hạng hay so sánh model, dùng [`tv2_step2/tier01.py`](tv2_step2/tier01.py): bảng metric lấy trung bình trên tập seed chung của mọi model, mỗi cặp ghép trên tập seed chung của riêng cặp đó, và run fail vẫn có mặt trong bảng trạng thái.
+**Bảng tổng hợp của `run.py` không dùng để xếp hạng.** Bảng in ra màn hình, `aggregate` trong `summary.json` và `evaluation.metrics.summarize` lấy mean ± sd trên các seed mà *từng model* chạy xong. Vì vậy hai model có thể được tính trên hai tập seed khác nhau: một model fail ở seed khó sẽ trông tốt hơn thực tế (F07). Để xếp hạng hay so sánh model, dùng Tầng 1 của [module evaluation](src/longitudinal_impute/evaluation/README.md): bảng metric lấy trung bình trên tập seed chung của mọi model, mỗi cặp ghép trên tập seed chung của riêng cặp đó, và run fail vẫn có mặt trong bảng trạng thái.
 
-Ô "bị ép về 0" nằm ở dòng mà tổng các ô nhìn thấy đã bằng N. Phần dư của dòng đó là 0, nên model không quyết định được ô này. Định nghĩa metric nằm trong [`evaluate.py`](src/longitudinal_impute/evaluate.py).
+Ô "bị ép về 0" nằm ở dòng mà tổng các ô nhìn thấy đã bằng N. Phần dư của dòng đó là 0, nên model không quyết định được ô này. Định nghĩa metric nằm trong [`evaluation/metrics.py`](src/longitudinal_impute/evaluation/metrics.py).
 
-**Diagnostic Tầng 2** ([`tier2_diagnostics.py`](src/longitudinal_impute/tier2_diagnostics.py), step 5) mô tả giá trị điền trên ô không có đáp án. Đây không phải độ chính xác và không dùng để xếp hạng. Có ba diagnostic: D1 (chênh tỷ lệ zero), D2 (W1 trên phần dương) và D3 (cờ ngoài support thời gian quan sát). Mỗi hàm nhận hai mask tường minh: tập ô được mô tả E và tập ô reference V. Hàm không tự đọc NaN. Với lượt native, `native_cells` cho E = ô thiếu thật không bị ép về 0 và V = ô quan sát. Với lượt masked, `calibration_cells` cho E = ô che thuộc nhóm model và V = ô quan sát còn thấy, dành cho Tầng 3. Bảng COVID do [`tv2_step5/tier2.py`](tv2_step5/tier2.py) sinh.
-
-**Tầng 3** ([`tier3_calibration.py`](src/longitudinal_impute/tier3_calibration.py), step 6) kiểm các diagnostic đó trên ô che giả có đáp án. Có bốn use case (U1–U4) với ngưỡng đạt khai báo trước. Phép so sánh luôn nằm trong cùng một ca (mask, seed), không pooling qua ca. Bảng COVID do [`tv2_step6/tier3.py`](tv2_step6/tier3.py) sinh. Kết quả chỉ áp dụng cho các mask và support đã kiểm, không phải độ chính xác trên ô thiếu thật.
+**Evaluation 5 tầng** (Tầng 0–3 đã hiện thực, Tầng 4 chưa làm) nằm trong một module: [`src/longitudinal_impute/evaluation/`](src/longitudinal_impute/evaluation/README.md), cấu hình đóng băng và ảnh chụp đầu vào ở `configs/evaluation/`. Chạy: `python -m longitudinal_impute.evaluation {check,masks,run,evaluate}`. Báo cáo và bảng đầy đủ của step 1–8: `git checkout evaluation-v1-results`.
 
 ## MICoDa và ngân sách Other chung
 
@@ -126,7 +124,7 @@ Kết quả migration và phạm vi kiểm chứng nằm trong [báo cáo audit 
 | `src/longitudinal_impute/data.py` | Đọc CSV, kiểm tra schema/count, mask và khôi phục counts |
 | `src/longitudinal_impute/baselines/` | Thuật toán Hron, Tsagris và MICoDa |
 | `src/longitudinal_impute/run.py` | CLI và điều phối native/masked |
-| `src/longitudinal_impute/evaluate.py` | Wasserstein, MSE, MAE và aggregate |
+| `src/longitudinal_impute/evaluation/` | Evaluation 5 tầng: metric (MSE, MAE, Wasserstein, aggregate), mask matched, Tầng 0–3, protocol v1 |
 | `src/longitudinal_impute/main_model.py` | MainModel, hai view an toàn và bounded refinement; torch import trễ |
 | `src/longitudinal_impute/network.py` | Network temporal/feature nhỏ, composition head |
 | `configs/`, `tests/`, `scripts/` | Cấu hình, kiểm thử và kiểm chứng bàn giao |
