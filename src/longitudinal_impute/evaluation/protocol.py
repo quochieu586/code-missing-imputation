@@ -1,13 +1,24 @@
-"""Evaluation v1 logic (step 8): configuration, unused seeds, sign test, failure policy, hypotheses.
+"""Evaluation v1 protocol: the frozen configuration, unused seeds and the decision on each hypothesis.
 
-Frozen with eval_v1.toml before any confirmation mask was drawn. No score is computed here: the
-numbers come from tier01 (tier 1 runs) and tier3 (tier 3 verdicts); this module only decides.
+eval_v1.toml was frozen before any confirmation mask was drawn; masks_manifest.json keeps the sha256 of
+that frozen file. Later edits are allowed only inside the marked AMENDMENT block and as the path moves of
+PATH_MOVES (the repository restructure of PR #5, then the move to configs/evaluation/ and this module).
+frozen_bytes() removes the block and moves the paths back, so the freeze check still compares the frozen
+file byte for byte and fails on any other edit. PATH_MOVES keeps the old paths on purpose: they are the
+text of the frozen file.
+
+Unused seeds: check_unused reads a snapshot (configs/evaluation/used_seeds.json) of the seeds that steps
+1-7 used, built once with used_seeds() over their configs and manifests at tag evaluation-v1-results.
+No score is computed here: the numbers come from tier1 (tier 1 runs) and tier3 (tier 3 verdicts).
 """
-from math import comb
+import hashlib
 import json
 from pathlib import Path
-import hashlib
 import tomllib
+
+from .tier0 import failed_seeds
+from .tier1 import sign_test
+
 
 TOP = {'version', 'data', 'masks', 'models', 'runs', 'tier0', 'tier1', 'tier2', 'tier3', 'diagnostics', 'hypotheses'}
 SECTIONS = {'data': {'data', 'schema', 'group_map', 'rate'},
@@ -32,15 +43,16 @@ def exact_keys(where, got, expected):
                          f'missing keys {sorted(set(expected) - set(got))}')
 
 
-# Amendment of eval_v1.toml after the rebase on main with PR #5 (repository restructure, MICoDa default
-# A18). eval_v1.toml was frozen before the confirmation masks were drawn; masks_manifest.json keeps the
-# sha256 of that frozen file. The amendment only moves the paths (nextgen/ -> root, models_default ->
-# models_default_a17 with MICoDa A17 explicit) and adds a comment block between AMENDMENT markers.
-# frozen_bytes() removes the block and moves the paths back, so the freeze check still compares the
-# frozen file byte for byte and fails on any other edit.
 AMENDMENT = ('# --- amendment (rebase on PR #5) ---\n', '# --- end of amendment ---\n')
-PATH_MOVES = (('"configs/models_default_a17.toml"', '"nextgen/configs/models_default.toml"'),
-              ('"configs/', '"nextgen/configs/'), ('"src/', '"nextgen/src/'))
+PATH_MOVES = (
+    ('"configs/evaluation/mask_target_covid.json"', '"nextgen/configs/mask_target_covid.json"'),
+    ('previous = ["configs/evaluation/used_seeds.json"]',
+     'previous = ["tv2_step[1-7]/**/config.json", "tv2_step[1-7]/*manifest*.json"]'),
+    ('"configs/evaluation/step5_tier2/tier2_results.md"', '"tv2_step5/tier2_results.md"'),
+    ('"configs/evaluation/step5_tier2"', '"tv2_step5"'),
+    ('"src/longitudinal_impute/evaluation/tier3.py"', '"nextgen/src/longitudinal_impute/tier3_calibration.py"'),
+    ('"configs/models_default_a17.toml"', '"nextgen/configs/models_default.toml"'),
+    ('"configs/', '"nextgen/configs/'), ('"src/', '"nextgen/src/'))
 
 
 def frozen_bytes(path):
@@ -94,8 +106,6 @@ def read_config(path):
     return config
 
 
-# ---------- seeds already used ----------
-
 def json_seeds(obj, out=None):
     """Every value under a key 'seeds' (list), 'seed' (scalar) or the keys of 'mask_sha256', as ints."""
     out = set() if out is None else out
@@ -124,29 +134,29 @@ def used_seeds(root, patterns):
     return found
 
 
-def check_unused(seeds, root, patterns):
-    """Refuse confirmation seeds that a previous step already used; returns the files read."""
+def seed_snapshot(root, patterns):
+    """{'patterns', 'seeds', 'files': [{'path', 'sha256', 'seeds'}]} of the JSON files under root: the
+    content of configs/evaluation/used_seeds.json (written once, at tag evaluation-v1-results)."""
     found = used_seeds(root, patterns)
+    files = sorted({f for fs in found.values() for f in fs})
+    return {'patterns': list(patterns), 'seeds': sorted(found),
+            'files': [{'path': f, 'sha256': hashlib.sha256((Path(root) / f).read_bytes()).hexdigest(),
+                       'seeds': sorted(json_seeds(json.loads((Path(root) / f).read_text(encoding='utf-8'))))}
+                      for f in files]}
+
+
+def check_unused(seeds, snapshots):
+    """Refuse confirmation seeds that a previous step already used (used_seeds.json snapshots);
+    returns the files the snapshots were read from."""
+    found = {}
+    for path in snapshots:
+        for record in json.loads(Path(path).read_text(encoding='utf-8'))['files']:
+            for seed in record['seeds']:
+                found.setdefault(seed, []).append(record['path'])
     clash = sorted(set(seeds) & set(found))
     if clash:
         raise ValueError(f'confirmation seeds already used: {clash} (e.g. {found[clash[0]][:3]})')
     return sorted({f for files in found.values() for f in files})
-
-
-# ---------- statistics and decisions ----------
-
-def sign_test(wins, losses):
-    """Exact two-sided binomial sign test, p = 0.5, ties already dropped; None when n = 0."""
-    n = wins + losses
-    if n == 0:
-        return None
-    k = min(wins, losses)
-    return min(1., 2 * sum(comb(n, i) for i in range(k + 1)) / 2 ** n)
-
-
-def failed_seeds(runs, model, seeds):
-    """Seeds where the model does not count (not completed with coverage 1, or no run)."""
-    return [s for s in seeds if not runs.get(model, {}).get(s, {}).get('eligible')]
 
 
 def pair_outcome(p, kind, threshold):

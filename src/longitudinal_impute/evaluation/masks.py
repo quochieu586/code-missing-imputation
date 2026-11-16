@@ -17,11 +17,23 @@ Frozen before any mask was drawn. Called by data.make_mask (kind 'whole_feature_
   Then the whole_feature rules: skip a series that would leave a row with no visible target (the
   guard, counted), stop once rate x observed cells are hidden.
 - Firewall: the selection reads entities, groups, N and which cells are observed, never a count.
+
+step5_cuts reads the N cut points q1, q2 from the step 5 tier 2 table (configs/evaluation/step5_tier2).
+
+step5_cuts reads the N cut points q1, q2 from the step 5 tier 2 table (configs/evaluation/step5_tier2).
+
+step5_cuts reads the N cut points q1, q2 from the step 5 tier 2 table (configs/evaluation/step5_tier2).
+
+step5_cuts reads the N cut points q1, q2 from the step 5 tier 2 table (configs/evaluation/step5_tier2).
 """
 import json
 from pathlib import Path
+import re
 
 import numpy as np
+
+from .metrics import forced_zero
+
 
 N_LABELS = ('N1', 'N2', 'N3')
 
@@ -52,7 +64,6 @@ def total_variation(a, b):
 
 def native_target(data, n_cuts):
     """pi of the native model-decided missing cells (missing, row residual > 0), per stratum."""
-    from .evaluate import forced_zero
     missing = ~np.isfinite(data.counts)
     model = missing & ~forced_zero(data, np.zeros_like(missing))
     return {'n_cuts': [float(q) for q in n_cuts], 'pi': shares(strata(data.groups, data.totals, n_cuts), model)}
@@ -101,3 +112,12 @@ def draw_order(rng, w):
     keys[w > 0] = np.log(u[w > 0]) / w[w > 0]
     order = np.argsort(-keys, kind='stable')
     return order[w[order] > 0]
+
+
+
+def step5_cuts(path):
+    """N cut points as printed by step 5 (table 1): 'N1 ≤ q1 < N2 ≤ q2 < N3'."""
+    found = re.findall(r'N1 ≤ ([0-9.e+-]+) < N2 ≤ ([0-9.e+-]+) < N3', Path(path).read_text(encoding='utf-8'))
+    if len(found) != 1:
+        raise ValueError(f'{path}: expected one line with the N cut points, found {len(found)}')
+    return [float(found[0][0]), float(found[0][1])]

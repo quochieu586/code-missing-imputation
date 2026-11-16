@@ -1,49 +1,27 @@
-"""Step 2: tier 0 (run status) and tier 1 (errors on masked cells) tables, all labelled exploratory.
+"""Tier 1: errors on masked cells with known truth, common-seed pairing (F07), sign test.
 
-    PYTHONPATH=src python tv2_step2/tier01.py [--runs DIR] [--out DIR] [--step1-runs DIR]
-
-Reads <runs>/main_<mask> (7 models) and <runs>/micoda_other_<mask> (MICoDa other = true, reported
-as micoda_other), written by run_all.sh with --save-predictions. Order of work:
-1. F2 (step 1): validate_pair refuses to merge the two runs of a mask unless data, schema,
-   mask, rate, seeds, group map and every saved mask agree.
-2. Tier 0: one status row per scheduled run (config models x seeds, plus native), read from
-   summary.json; a scheduled run with no result is reported as 'missing', never dropped.
-3. Tier 1: every metric is recomputed from predictions_<mask>.csv.gz (cells.score_predictions)
-   and must equal the errors in summary.json to 1e-12, or nothing is written.
-4. F07: a run counts only if completed with coverage 1. Model means are taken over the seeds
-   where every model counts; each pair is compared over the seeds where both count. The
-   reliability table keeps every run. No per-model success-only mean is ranked. Only the
-   pre-declared seeds (not UNDECLARED) enter metric and pair tables.
-Outputs in --out: tier01_status.csv, tier01_runs.csv, tier01_pairs.csv, tier01_results.md,
-tier01_manifest.json; the auto:* blocks of REPORT_vi.md are regenerated.
+Every metric is recomputed from predictions_<mask>.csv.gz (score_predictions) and must equal the
+errors in summary.json to 1e-12 (check_scores). A model mean is taken over the seeds where every model
+counts; each pair is compared over the seeds where both count. The sign test is a description of
+mask variation on a fixed table, not a confidence interval over countries.
+summarize() writes the tier 0 / 1 tables of a set of exploratory runs (main_<mask>, micoda_other_<mask>).
 """
-import argparse
-import csv
-import hashlib
-import importlib.util
 import itertools
 import json
-from pathlib import Path
-import sys
+
+from math import comb
 
 import numpy as np
 
-HERE = Path(__file__).resolve().parent
-REPO = HERE.parent
-sys.path.insert(0, str(REPO / 'src'))
-from longitudinal_impute.cells import read_predictions, score_predictions  # noqa: E402
-from longitudinal_impute.evaluate import GROUPS, METRICS  # noqa: E402
+from .report import mean_sd, na, sha256, update_report, write_csv
+from .metrics import GROUPS, METRICS, cell_errors, read_predictions, score_predictions
+from .masks import strata
+from .tier0 import reliability, seed_markdown, status_markdown, status_rows, validate_pair
 
-_spec = importlib.util.spec_from_file_location('summarize_runs', REPO / 'tv2_step1/summarize_runs.py')
-step1 = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(step1)
 
 SEEDS = {'whole_feature': ('0', '1', '2', '3', '4', '109'), 'random_cell': ('0', '1', '2', '3', '4')}
-# Seeds not declared before the results were seen (109 was picked because it makes runs fail):
-# status and reliability tables only, never a metric table or a paired difference.
 UNDECLARED = ('109',)
 PASSES = (('main', {}), ('micoda_other', {'micoda': 'micoda_other'}))
-# (column, group, key, label); the first one is the primary metric.
 METRIC_COLUMNS = (('mae_prop', 'model', 'mae_proportion', 'MAE tỷ lệ'),
                   ('mse_prop', 'model', 'mse_proportion', 'MSE tỷ lệ'),
                   ('mae_count', 'model', 'mae_count', 'MAE count'),
@@ -55,72 +33,7 @@ PRIMARY = 'mae_prop'
 KEY_PAIRS = (('same_day_mean', 'hron'), ('tsagris', 'hron'), ('micoda_other', 'mean_fill'),
              ('micoda', 'mean_fill'), ('micoda_other', 'micoda'), ('hron', 'mean_fill'))
 TOLERANCE = 1e-12
-STATUS = {'ok': 'completed', 'partial': 'partial', 'failed': 'failed'}
 
-
-def sha256(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
-
-
-def na(value, digits=4):
-    return 'NA' if value is None else f'{value:.{digits}f}'
-
-
-# ---------- tier 0 ----------
-
-def status_rows(run_dir, config, summary, rename):
-    """One row per scheduled run of one run directory: native per model, then model x seed."""
-    rows = []
-    cells = summary.get('native_cells', {})
-    for name in config['models']:
-        result = summary['native'].get(name)
-        rows.append(status_row(run_dir, rename.get(name, name), 'native', 'none', None, result,
-                               {'hidden_cells': 0, 'forced_zero_cells': cells.get('missing_forced_zero_cells'),
-                                'model_cells': cells.get('missing_model_cells')}))
-    for seed in (config['seeds'] or []):
-        masked = summary['masked'].get(str(seed), {'mask': {}, 'models': {}})
-        stats = masked['mask']
-        for name in config['models']:
-            rows.append(status_row(run_dir, rename.get(name, name), 'masked', config['mask'], str(seed),
-                                   masked['models'].get(name), {k: stats.get(k) for k in (
-                                       'hidden_cells', 'forced_zero_cells', 'model_cells', 'complete_rows_after')}))
-    return rows
-
-
-def status_row(run_dir, model, run_pass, mask, seed, result, cells):
-    base = {'run_dir': run_dir, 'model': model, 'pass': run_pass, 'mask': mask, 'seed': seed}
-    if result is None:
-        return {**base, 'status': 'missing', 'coverage': None, 'error_code': 'missing_result',
-                'error_message': 'scheduled run has no entry in summary.json', **dict.fromkeys(
-                    ('converged', 'termination_reason', 'iterations')), **cells}
-    info = result.get('info') or {}
-    status = STATUS.get(result['status'], result['status'])
-    coverage = result.get('coverage')
-    if coverage is None and run_pass == 'native':
-        if status == 'completed':
-            coverage = 1.
-        elif info.get('missing_cells'):
-            coverage = info.get('resolved_cells', 0) / info['missing_cells']
-    return {**base, 'status': status, 'coverage': coverage, 'error_code': result.get('error_code', ''),
-            'error_message': result.get('error', ''), 'converged': info.get('converged'),
-            'termination_reason': info.get('termination_reason'), 'iterations': info.get('iterations'), **cells}
-
-
-def reliability(status):
-    """Per model, pass and mask: every scheduled run counted, failed seeds listed with their code."""
-    table = {}
-    for r in status:
-        entry = table.setdefault((r['model'], r['pass'], r['mask']), {
-            'model': r['model'], 'pass': r['pass'], 'mask': r['mask'], 'scheduled': 0, 'completed': 0,
-            'partial': 0, 'failed': 0, 'missing': 0, 'not_ok': []})
-        entry['scheduled'] += 1
-        entry[r['status']] += 1
-        if r['status'] != 'completed' or r['coverage'] != 1.:
-            entry['not_ok'].append(f"{r['seed'] or r['run_dir']}: {r['status']} ({r['error_code']})")
-    return list(table.values())
-
-
-# ---------- tier 1 ----------
 
 def check_scores(scores, summary, rename, mask):
     """Regression check: long-file metrics equal summary.json errors; returns (values checked, max diff)."""
@@ -180,13 +93,6 @@ def common_seeds(runs, models, seeds):
     return used, dropped
 
 
-def mean_sd(values):
-    values = np.array([v for v in values if v is not None], float)
-    if not len(values):
-        return None, None
-    return float(values.mean()), (float(values.std(ddof=1)) if len(values) > 1 else None)
-
-
 def ranking(runs, models, seeds, column=PRIMARY):
     """F07: order models by the mean over the seeds common to all of them (explicit None last)."""
     used, dropped = common_seeds(runs, models, seeds)
@@ -203,32 +109,6 @@ def pair(runs, a, b, seeds, column=PRIMARY):
     mean, sd = mean_sd(diffs)
     return {'a': a, 'b': b, 'metric': column, 'seeds_used': used, 'n': len(diffs), 'dropped': dropped,
             'mean_diff': mean, 'sd_diff': sd, 'wins': sum(d < 0 for d in diffs), 'ties': sum(d == 0 for d in diffs)}
-
-
-# ---------- markdown ----------
-
-def status_markdown(status, rel):
-    out = ['| Model | Lượt | Mask | Lên lịch | completed | partial | failed | missing | Run không ok |',
-           '|---|---|---|---:|---:|---:|---:|---:|---|']
-    for e in rel:
-        out.append(f"| {e['model']} | {e['pass']} | {e['mask']} | {e['scheduled']} | {e['completed']} | "
-                   f"{e['partial']} | {e['failed']} | {e['missing']} | {'; '.join(e['not_ok']) or '-'} |")
-    return out
-
-
-def seed_markdown(status, seed):
-    rows = [r for r in status if r['seed'] == seed]
-    if not rows:
-        return []
-    r0 = rows[0]
-    out = [f"Seed {seed} ({r0['mask']}): {r0['hidden_cells']} ô che, {r0['forced_zero_cells']} ép về 0, "
-           f"{r0['model_cells']} ô model; {r0['complete_rows_after']} dòng đầy đủ sau khi che.", '',
-           '| Model | status | coverage | mã lỗi | thông điệp | hội tụ (MICoDa) |', '|---|---|---:|---|---|---|']
-    for r in rows:
-        message = (r['error_message'] or '-').replace('|', '/')[:110]
-        out.append(f"| {r['model']} | {r['status']} | {na(r['coverage'], 3)} | {r['error_code'] or '-'} | "
-                   f"{message} | {'-' if r['converged'] is None else r['converged']} |")
-    return out
 
 
 def main_markdown(runs, models, seeds, undeclared=()):
@@ -281,8 +161,6 @@ def macro_markdown(runs, models, seeds):
     return out
 
 
-# ---------- driver ----------
-
 def load_run(folder, rename, mask):
     """One run directory: status rows, scores from its long file (checked against summary.json), record."""
     config = json.loads((folder / 'config.json').read_text(encoding='utf-8'))
@@ -300,7 +178,7 @@ def load_run(folder, rename, mask):
 
 
 def load_mask(root, mask):
-    records = step1.validate_pair(root, mask, SEEDS[mask])        # F2, raises on any mismatch
+    records = validate_pair(root, mask, SEEDS[mask])        # F2, raises on any mismatch
     status, scores, check = [], {}, [0, 0.]
     for record, (prefix, rename) in zip(records, PASSES):
         own_status, own, extra, (checked, worst) = load_run(root / f'{prefix}_{mask}', rename, mask)
@@ -311,58 +189,15 @@ def load_mask(root, mask):
     return status, scores, records, {'values_checked': check[0], 'max_abs_diff': check[1]}
 
 
-def compare_step1(root, records, mask, step1_runs):
-    """Reuse check: same masks as the committed step 1 manifest; same errors as the step 1 runs if present."""
-    manifest = json.loads((REPO / 'tv2_step1/results_manifest.json').read_text(encoding='utf-8'))[mask]
-    out = {'masks_equal_step1_manifest': all(
-        new['mask_sha256'][s] == old['mask_sha256'][s] for new, old in zip(records, manifest) for s in step1.SEEDS)}
-    if step1_runs is None or not (step1_runs / f'main_{mask}').exists():
-        out['errors_equal_step1_runs'] = 'step 1 runs not available'
-        return out
-    same, compared = True, 0
-    for prefix, _ in PASSES:
-        new, old = (json.loads((r / f'{prefix}_{mask}' / 'summary.json').read_text()) for r in (root, step1_runs))
-        for seed in step1.SEEDS:
-            for m, result in old['masked'][seed]['models'].items():
-                compared += 1
-                other = new['masked'][seed]['models'][m]
-                same &= (result['status'], result.get('errors')) == (other['status'], other.get('errors'))
-    out['errors_equal_step1_runs'] = same
-    out['runs_compared'] = compared
-    return out
-
-
-def update_report(path, blocks):
-    if not path.exists():
-        return
-    text = path.read_text(encoding='utf-8')
-    for name, lines in blocks.items():
-        start, end = f'<!-- auto:{name}:start -->', f'<!-- auto:{name}:end -->'
-        if text.count(start) != 1 or text.count(end) != 1:
-            continue
-        head, rest = text.split(start)
-        _, tail = rest.split(end)
-        text = head + start + '\n' + '\n'.join(lines).rstrip() + '\n' + end + tail
-    path.write_text(text, encoding='utf-8')
-
-
-def write_csv(path, rows):
-    with path.open('w', newline='', encoding='utf-8') as stream:
-        writer = csv.DictWriter(stream, fieldnames=list(dict.fromkeys(k for r in rows for k in r)), restval='')
-        writer.writeheader()
-        writer.writerows([{k: 'NA' if v is None else v for k, v in r.items()} for r in rows])
-
-
-def summarize(root, out_dir, step1_runs=None):
+def summarize(root, out_dir):
     all_status, run_rows, pair_rows, manifest = [], [], [], {}
     md = ['# Step 2: Tầng 0–1 (COVID đầy đủ, che 5%) — **exploratory**', '',
-          'Sinh bởi `tier01.py`; không sửa tay. Metric chính: MAE tỷ lệ trên nhóm ô `model`, cell-weighted '
+          'Sinh bởi `evaluation.tier1.summarize`; không sửa tay. Metric chính: MAE tỷ lệ trên nhóm ô `model`, cell-weighted '
           'trong từng seed. Seed 0–4 đã được nhìn và chỉnh trước đó.', '']
     blocks = {}
     for mask in SEEDS:
         status, scores, records, check = load_mask(root, mask)
-        manifest[mask] = {'runs': records, 'regression_check': check,
-                          'step1_reuse': compare_step1(root, records, mask, step1_runs)}
+        manifest[mask] = {'runs': records, 'regression_check': check}
         all_status += status
         runs = table_runs(status, scores)
         seeds = tuple(s for s in SEEDS[mask] if s not in UNDECLARED)
@@ -405,14 +240,34 @@ def summarize(root, out_dir, step1_runs=None):
     return manifest, all_status, run_rows, pair_rows
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--runs', type=Path, default=HERE / 'runs')
-    parser.add_argument('--out', type=Path, default=HERE)
-    parser.add_argument('--step1-runs', type=Path, default=REPO / 'tv2_step1/runs')
-    args = parser.parse_args(argv)
-    summarize(args.runs, args.out, args.step1_runs)
+
+def sign_test(wins, losses):
+    """Exact two-sided binomial sign test, p = 0.5, ties already dropped; None when n = 0."""
+    n = wins + losses
+    if n == 0:
+        return None
+    k = min(wins, losses)
+    return min(1., 2 * sum(comb(n, i) for i in range(k + 1)) / 2 ** n)
 
 
-if __name__ == '__main__':
-    main()
+
+STRATUM_MIN_CELLS = 30
+
+
+def stratum_scores(rows, cuts):
+    """{(model, seed, kind, stratum): MAE of c / N on the model cells, None below STRATUM_MIN_CELLS cells}."""
+    groups = {}
+    for r in rows:
+        if r['model_cell']:
+            groups.setdefault((r['model'], str(r['seed'])), []).append(r)
+    out = {}
+    for (model, seed), cells in groups.items():
+        truth, pred, n = (np.array([c[k] for c in cells]) for k in ('truth_count', 'pred_count', 'N'))
+        labels = {'continent': np.array([c['group'] for c in cells]),
+                  'n': np.array([s.split('|')[1] for s in strata([''] * len(n), n, cuts)])}
+        for kind, label in labels.items():
+            for value in sorted(set(label)):
+                sel = label == value
+                out[model, seed, kind, value] = (cell_errors(truth[sel], pred[sel], n[sel], np.zeros(sel.sum(), bool))
+                                                 ['all']['mae_proportion'] if sel.sum() >= STRATUM_MIN_CELLS else None)
+    return out

@@ -1,44 +1,33 @@
-"""Tier 3 calibration (step 6): what are the tier 2 diagnostics good for? Tested on masked cells.
+"""Tier 3: what are the tier 2 diagnostics good for? Tested on masked cells where the truth is known.
 
-Frozen (use cases, thresholds, sensitivities) before any output was scored; never changed after.
-A case is one (mask, seed). In a case: E = hidden cells of the model group, V = O minus H
-(tier2_diagnostics.calibration_cells); D1 / D2 / D3 keep their step 5 definitions; T_j of D3 is
-read from V only. The hidden truth enters only the "truth" row (its own D1 / D2 on E) and the
-tier 1 errors, never a reference.
+Use cases U1-U4, thresholds and sensitivities were frozen in step 6 before any output was scored (full
+text at tag evaluation-v1-results, src/longitudinal_impute/tier3_calibration.py). A case is one
+(mask, seed): E = hidden cells of the model group, V = O minus H (tier2.calibration_cells). The hidden
+truth enters only the "truth" row and the tier 1 errors, never a reference.
 
-Scalars of a (case, model): the per-target value (or its distance to the truth row's value)
-averaged over targets with weights = cells the value used (R-local: supported E cells; R-pooled:
-E cells), over the COMMON targets where the truth row and every real model have a value. The
-tier 1 error of a diagnostic is evaluate.cell_errors on the very cells that diagnostic scored
-(same cells, same function as tier 1). Note: for D1 the reference cancels in D1 - D1_truth on
-the same cells, so U1 does not depend on the reference except through which cells are scored.
-
-U1  D1 warns about a zero shift. Per case, over the pairs of real models:
-    under-fill: sign of delta(D1 - D1_truth) vs sign of delta(MAE of p on truth > 0 cells);
-    over-fill:  sign of -delta(D1 - D1_truth) vs sign of delta(MAE of p on truth = 0 cells).
-U2  D2 as a proxy ranking: sign of delta|D2 - D2_truth| vs sign of delta(MAE of p). Regret = MAE of
-    the real model with the smallest |D2 - D2_truth| minus the smallest MAE of the case.
-U3  D3 flag: among E cells filled positive (count >= 0.5) by the real models (pooled over models
-    in a case), share of truth = 0 when flagged minus when not flagged.
-U4  decoys: does a diagnostic put zero_fill / mean_fill / marginal_sampler strictly worse than
-    EVERY real model in the case? Reported, no threshold.
-Pairs: |delta error| < TIE is a tie (reported, not in the rate); a delta of the diagnostic equal
-to 0 counts as a mismatch; a pair with a missing value is NA (reported, not in the rate).
-Pass (pragmatic, not universal):
-    U1 (each direction), U2: mean match rate >= PASS_RATE within EACH mask, and no case below
-        MIN_CASE_RATE; U2 also regret <= REGRET_MAX in >= GOOD_CASES of the 10 cases.
-    U3: gap >= U3_GAP in >= GOOD_CASES of the 10 cases.
-    Not enough support: fewer than MIN_CASES cases with a rate in a mask (U1, U2), or fewer than
-    GOOD_CASES cases with a gap (U3).
-Sensitivities (beside, never instead of, the main result): D1 with zero = c / N < PROP_ZERO_BELOW
-(U1); R-pooled instead of R-local (U1, U2).
+U1  D1 warns about a zero shift (under-fill / over-fill), U2 D2 as a proxy ranking (+ regret),
+U3  the D3 flag, U4 decoys put strictly worse than every real model (reported, no threshold).
+Pass: U1 / U2 mean match rate >= PASS_RATE within EACH mask and no case below MIN_CASE_RATE (U2 also
+regret <= REGRET_MAX in >= GOOD_CASES cases); U3 gap >= U3_GAP in >= GOOD_CASES cases.
+load_mask() checks a set of masked run directories (data, schema, group map, clean tree, model tables,
+saved masks = make_mask) before any case is scored.
 """
+import hashlib
 import itertools
+import json
 
 import numpy as np
 
-from .evaluate import cell_errors
-from . import tier2_diagnostics as t2
+from .report import ms, na, sha256, signed
+from .metrics import cell_errors, read_predictions
+from .tier0 import validate_pair
+from .tier2 import CONFIGS, DATA, GROUP_MAP, MAIN, OTHER, RESIDUAL, SCHEMA, ZERO_BELOW, calibration_cells, check_cells, diagnose, local_parts, local_support, recorded_table, temporal_support
+from ..data import make_mask, read_schema
+from ..run import read_models
+from . import tier1
+from .tier1 import load_run, table_runs
+from .report import find_run, shown
+
 
 REAL = ('hron', 'hron_cap', 'tsagris', 'micoda', 'micoda_other', 'same_day_mean')
 DECOYS = ('mean_fill', 'zero_fill', 'marginal_sampler')
@@ -132,10 +121,10 @@ def regret(diag, error, models):
 def flags(values, facts, eval_cells, ref_cells):
     """(positive, flagged): E cells filled >= 0.5, and those at a day outside T_j (T_j from V only)."""
     positive = np.zeros(eval_cells.shape, bool)
-    positive[eval_cells] = values[eval_cells] >= t2.ZERO_BELOW
+    positive[eval_cells] = values[eval_cells] >= ZERO_BELOW
     flagged = np.zeros_like(positive)
     for j in range(values.shape[1]):
-        span = t2.temporal_support(values, facts, ref_cells, j)
+        span = temporal_support(values, facts, ref_cells, j)
         outside = np.ones(len(facts.days), bool) if span is None else (facts.days < span[0]) | (facts.days > span[1])
         flagged[:, j] = positive[:, j] & outside
     return positive, flagged
@@ -169,12 +158,12 @@ def prop_zero_gap(eval_props, ref_props, weights=None):
 
 def d1_proportion(values, facts, eval_cells, ref_cells, support, targets):
     """Per target D1 (R-local and R-pooled) with the proportion threshold; shaped like diagnose()."""
-    values = t2.check_cells(values, eval_cells, ref_cells)
+    values = check_cells(values, eval_cells, ref_cells)
     props = values / facts.totals[:, None]
     out = {}
     for j, name in enumerate(targets):
         e, r = eval_cells[:, j], ref_cells[:, j]
-        parts = t2.local_parts(values, props, j, support[j])
+        parts = local_parts(values, props, j, support[j])
         out[name] = {'supported': parts[5], 'eval_cells': int(e.sum()),
                      'local': {'d1': prop_zero_gap(parts[1], parts[3], parts[4])},
                      'pooled': {'d1': prop_zero_gap(props[e, j], props[r, j])}}
@@ -205,3 +194,235 @@ def u3_verdict(gaps):
     if len(got) < GOOD_CASES:
         return good, 'insufficient'
     return good, 'pass' if good >= GOOD_CASES else 'fail'
+
+
+# ---------- cases and tables ----------
+
+MASKS, SEEDS, RATE = ('whole_feature', 'random_cell'), ('0', '1', '2', '3', '4'), .05
+SHORT = {'whole_feature': 'wf', 'random_cell': 'rc', 'whole_feature_matched': 'wfm'}
+MODELS = REAL + DECOYS
+RUNS = {MAIN: ({}, 'models_default_a17.toml', ('hron', 'tsagris', 'micoda', 'same_day_mean', *DECOYS)),
+        OTHER: ({'micoda': 'micoda_other'}, 'models_micoda_other.toml', ('micoda',)),
+        RESIDUAL: ({}, 'models_residual_rule.toml', ('hron_cap',))}
+DROPPED = {'tsagris_cap': 'trùng tsagris (`cap` ≡ `prop_other`, step 4–5)',
+           'micoda_other_cap': 'gần trùng micoda_other (step 4–5)'}
+LABEL = {'pass': 'đạt', 'fail': 'không đạt', 'insufficient': 'không đủ support'}
+
+
+def load_mask(data, mask, runs_of=None, pair_root=None, seeds=None, target=None, roots=None):
+    """Hidden masks, prediction tables {(model, seed): N x D}, tier 1 runs and provenance of one mask.
+
+    roots: directories holding <prefix>_<mask> (find_run). runs_of / pair_root / seeds / target default
+    to the exploratory passes main, micoda_other, residual on seeds 0-4."""
+    hidden, preds, runs, records, checked = {}, {}, {}, [], 0
+    use = tuple(str(s) for s in seeds) if seeds else SEEDS       # case seeds
+    validate_pair(pair_root or find_run(roots, f'main_{mask}').parent, mask, seeds or tier1.SEEDS[mask])   # F2
+    col = {t: j for j, t in enumerate(data.targets)}
+    for prefix, (rename, models_file, tables) in (runs_of or RUNS).items():
+        folder = find_run(roots, f'{prefix}_{mask}')
+        config = json.loads((folder / 'config.json').read_text(encoding='utf-8'))
+        expected = read_models(CONFIGS / models_file, list(tables))
+        problems = [text for bad, text in (
+            (config['data_sha256'] != sha256(DATA), 'data sha256'),
+            (config['schema'] != read_schema(SCHEMA), 'schema'),
+            ((config.get('group_map') or {}).get('sha256') != sha256(GROUP_MAP), 'group map'),
+            ((config.get('git') or {}).get('uncommitted_changes') is not False, 'unclean tree'),
+            (any(recorded_table(config, t) != expected[t] for t in tables), f'model tables vs {models_file}'),
+            (config['mask'] != mask or config['mask_rate'] != RATE, 'mask kind or rate')) if bad]
+        for seed in use:
+            saved = np.load(folder / f'mask_{mask}_seed{seed}.npy')
+            hidden.setdefault(seed, saved)
+            if not np.array_equal(saved, hidden[seed]) or not np.array_equal(saved, make_mask(data, mask, RATE,
+                                                                                             int(seed), target)[0]):
+                problems.append(f'mask seed {seed}')
+        if problems:
+            raise ValueError(f'{shown(folder)}: ' + ', '.join(problems) + ' differ')
+        status, scores, record, (values, _) = load_run(folder, rename, mask)
+        checked += values
+        for model, by_seed in table_runs(status, scores).items():
+            if model in MODELS:
+                runs[model] = {s: by_seed[s] for s in use}
+        for row in read_predictions(folder / f'predictions_{mask}.csv.gz'):
+            name, seed = rename.get(row['model'], row['model']), str(row['seed'])
+            if name in MODELS and seed in use:
+                table = preds.setdefault((name, seed), np.full(data.counts.shape, np.nan))
+                table[row['row_id'], col[row['target']]] = row['pred_count']
+        records.append({'dir': shown(folder), 'config_sha256': record['config_sha256'],
+                        'predictions_sha256': record['predictions_sha256'], 'git': (config.get('git') or {}).get(
+                            'commit')})
+    for (name, seed), table in preds.items():
+        if not np.array_equal(np.isfinite(table), hidden[seed]):
+            raise ValueError(f'{mask} {name} seed {seed}: long file does not cover exactly the hidden cells')
+    masks = {s: hashlib.sha256(np.ascontiguousarray(h).tobytes()).hexdigest() for s, h in hidden.items()}
+    return hidden, preds, runs, {'runs': records, 'mask_sha256': masks, 'regression_values_checked': checked}
+
+
+def scalars(diags, ref, key, models, data, support, cells, values, truth_key='truth'):
+    """Common targets, scored cells, per-model distance / raw values and tier 1 errors on those cells."""
+    # Real models that failed in this case are absent: their pairs become NA (step 6 rule), not an error.
+    common = common_targets(diags, ref, key, [truth_key, *(m for m in REAL if m in diags)])
+    scored = scored_cells(support, cells['eval'], ref, [data.targets.index(t) for t in common])
+    out = {'targets': len(common), 'cells': int(scored.sum()), 'dist': {}, 'raw': {}, 'abs_raw': {}, 'err': {}}
+    for m in models:
+        ok = all(diags[m]['targets'][t][ref][key] is not None for t in common) and common
+        out['dist'][m] = scalar(diags[m], ref, key, common, diags[truth_key]) if ok else None
+        out['raw'][m] = scalar(diags[m], ref, key, common) if ok else None
+        out['abs_raw'][m] = scalar(diags[m], ref, key, common, absolute=True) if ok else None
+        out['err'][m] = errors_on(data.counts, values[m], data.totals, scored) if common else None
+    return out
+
+
+def mae(err, group='all'):
+    return {m: (None if e is None else e[group]['mae_proportion']) for m, e in err.items()}
+
+
+def u_pair(d, direction, group, use='dist', absolute=False):
+    diag = {m: (None if v is None else abs(v) if absolute else v) for m, v in d[use].items()}
+    return pairwise(diag, mae(d['err'], group), list(REAL), direction)
+
+
+def one_case(data, facts, hidden, preds, runs, seed):
+    cells = calibration_cells(data, hidden)
+    support = local_support(facts, cells['eval'], cells['ref'])
+    targets = list(data.targets)
+    ok = [m for m in MODELS if runs.get(m, {}).get(seed, {}).get('eligible') and (m, seed) in preds]
+    values = {m: case_table(data.counts, hidden, preds[m, seed]) for m in ok}
+    values['truth'] = truth_table(data.counts, cells['eval'], cells['ref'])
+    diags = {m: diagnose(v, facts, cells['eval'], cells['ref'], support, targets) for m, v in values.items()}
+    out = {'seed': seed, 'models_ok': ok, 'E': int(cells['eval'].sum()), 'H': int(hidden.sum()),
+           'supported': int(sum(s['supported'].sum() for s in support.values())), 'diag': {}, 'u': {}}
+    for m in ok + ['truth']:
+        s = diags[m]['summary']
+        out['diag'][m] = {f'{r}_{d}': s[f'{r}_{d}']['weighted'] for r in ('local', 'pooled') for d in ('d1', 'd2')}
+        out['diag'][m]['d3'] = diags[m]['d3_cells']
+    for ref in ('local', 'pooled'):
+        d1 = scalars(diags, ref, 'd1', ok, data, support, cells, values)
+        d2 = scalars(diags, ref, 'd2', ok, data, support, cells, values)
+        full = {m: runs[m][seed]['mae_prop'] for m in ok}
+        u = {'d1': d1, 'd2': d2, 'u1_under': u_pair(d1, 1, 'truth_positive'),
+             'u1_over': u_pair(d1, -1, 'truth_zero'), 'u2': u_pair(d2, 1, 'all', absolute=True),
+             'u2_raw': u_pair(d2, 1, 'all', 'raw'), 'u2_full': pairwise(
+                 {m: abs(v) if v is not None else None for m, v in d2['dist'].items()}, full, list(REAL))}
+        u['regret'] = regret({m: abs(v) for m, v in d2['dist'].items() if v is not None}, mae(d2['err']),
+                                list(REAL))
+        u['regret_raw'] = regret({m: v for m, v in d2['raw'].items() if v is not None}, mae(d2['err']),
+                                    list(REAL))
+        u['regret_full'] = regret({m: abs(v) for m, v in d2['dist'].items() if v is not None}, full,
+                                     list(REAL))
+        out['u'][ref] = u
+    prop = {m: d1_proportion(values[m], facts, cells['eval'], cells['ref'], support, targets)
+            for m in [*REAL, 'truth'] if m in values}
+    if any(m in prop for m in REAL):
+        present = [m for m in REAL if m in prop]
+        out['u']['prop'] = {'d1': (p := scalars(prop, 'local', 'd1', present, data, support, cells, values))}
+        out['u']['prop'].update(u1_under=u_pair(p, 1, 'truth_positive'), u1_over=u_pair(p, -1, 'truth_zero'))
+    flagged = {m: flags(values[m], facts, cells['eval'], cells['ref']) for m in ok}
+    real = [m for m in REAL if m in flagged]
+    zero = data.counts == 0
+    out['u3'] = flag_precision(np.concatenate([zero[flagged[m][0]] for m in real]),
+                                  np.concatenate([flagged[m][1][flagged[m][0]] for m in real]))
+    out['u3_models'] = {m: flag_precision(zero[p], f[p]) for m, (p, f) in flagged.items()}
+    local = out['u']['local']
+    scores = {'d1_dist': {m: None if v is None else abs(v) for m, v in local['d1']['dist'].items()},
+              'd1_abs_raw': local['d1']['abs_raw'], 'd2_dist': {
+                  m: None if v is None else abs(v) for m, v in local['d2']['dist'].items()},
+              'd2_raw': local['d2']['raw'], 'd3_rate': {m: f[1].sum() / cells['eval'].sum()
+                                                        for m, f in flagged.items()}}
+    scores['tier1_mae'] = {m: runs[m][seed]['mae_prop'] for m in ok}     # reference row, not a diagnostic
+    out['u4'] = {name: {d: decoy_worse(s, d) for d in DECOYS} for name, s in scores.items()}
+    out['u4_scores'] = {name: {m: None if v is None else float(v) for m, v in s.items()} for name, s in scores.items()}
+    return out, cells, support
+
+
+U4_LABELS = {'d1_dist': '\\|D1 − D1_truth\\|', 'd1_abs_raw': '\\|D1\\| thô', 'd2_dist': '\\|D2 − D2_truth\\|',
+             'd2_raw': 'D2 thô', 'd3_rate': 'D3: ô cờ / ô E', 'tier1_mae': '*tham chiếu: MAE Tầng 1, toàn ô model*'}
+
+
+def rate_cell(p):
+    return 'NA' if p['rate'] is None else f"{p['rate']:.2f} ({p['match']}/{p['match'] + p['mismatch']}" + (
+        f", hòa {p['tie']}" if p['tie'] else '') + (f", NA {p['na']}" if p['na'] else '') + ')'
+
+
+def verdict_lines(cases, key, ref='local'):
+    rates = {mask: [c['u'][ref][key]['rate'] if key in c['u'].get(ref, {}) else None for c in cases[mask]]
+             for mask in cases}
+    per, verdict = rate_verdict(rates)
+    text = '; '.join(f"{mask}: TB {na(v['mean'], 2)}, min {na(v['min'], 2)} ({v['cases']} ca)" for mask, v in per.items())
+    return text, verdict
+
+
+def u1_table(cases, ref='local', block='u1'):
+    keys = ('u1_under', 'u1_over')
+    out = ['| Mask | Seed | thiếu: khớp (khớp/quyết định) | thừa: khớp |', '|---|---:|---|---|']
+    for mask in cases:
+        for c in cases[mask]:
+            u = c['u'].get(ref, {})
+            out.append(f"| {mask} | {c['seed']} | " + ' | '.join(rate_cell(u[k]) if k in u else 'NA' for k in keys) + ' |')
+    verdicts = {}
+    for key, label in zip(keys, ('thiếu (D1 cao ↔ MAE ô đáp án > 0)', 'thừa (D1 thấp ↔ MAE ô đáp án = 0)')):
+        text, verdicts[key] = verdict_lines(cases, key, ref)
+        out.append(f'- U1 {label}: {text} → **{LABEL[verdicts[key]]}**.')
+    return out, verdicts
+
+
+def u2_table(cases, ref='local'):
+    out = ['| Mask | Seed | khớp \\|D2 − D2t\\| | chọn → regret | khớp D2 thô | regret thô | khớp, MAE toàn ô model | '
+           'regret, MAE toàn ô model |', '|---|---:|---|---|---|---:|---|---:|']
+    regrets = []
+    for mask in cases:
+        for c in cases[mask]:
+            u = c['u'][ref]
+            regrets.append(u['regret'][1])
+            out.append(f"| {mask} | {c['seed']} | {rate_cell(u['u2'])} | {u['regret'][0]} → {na(u['regret'][1])} | "
+                       f"{rate_cell(u['u2_raw'])} | {na(u['regret_raw'][1])} | {rate_cell(u['u2_full'])} | "
+                       f"{na(u['regret_full'][1])} |")
+    text, verdict = verdict_lines(cases, 'u2', ref)
+    good, enough = regret_ok(regrets)
+    final = verdict if verdict != 'pass' else ('pass' if enough else 'fail')
+    out.append(f'- U2: {text}; regret ≤ {REGRET_MAX} ở {good}/10 ca → **{LABEL[final]}**.')
+    return out, final
+
+
+def u3_table(cases):
+    out = ['| Mask | Seed | ô dương bị cờ | tỷ lệ đáp án 0 khi bị cờ | ô dương không cờ | khi không cờ | chênh |',
+           '|---|---:|---:|---:|---:|---:|---:|']
+    gaps = []
+    for mask in cases:
+        for c in cases[mask]:
+            u = c['u3']
+            gaps.append(u['gap'])
+            out.append(f"| {mask} | {c['seed']} | {u['flagged']} | {na(u['p_flagged'], 3)} | {u['unflagged']} | "
+                       f"{na(u['p_unflagged'], 3)} | {signed(u['gap'])} |")
+    good, verdict = u3_verdict(gaps)
+    out.append(f'- U3: chênh ≥ {U3_GAP} ở {good}/10 ca → **{LABEL[verdict]}**.')
+    return out, verdict
+
+
+def u4_table(cases):
+    names = list(next(iter(cases.values()))[0]['u4'])
+    out = ['Số ca diagnostic xếp đối thủ giả kém hơn **mọi** model thật (trên số ca có giá trị), R-local.', '',
+           '| Đối thủ giả | Mask | ' + ' | '.join(U4_LABELS[n] for n in names) + ' |', '|---|---|' + ':---:|' * len(names)]
+    for d in DECOYS:
+        for mask in cases:
+            cells = []
+            for n in names:
+                got = [c['u4'][n][d] for c in cases[mask] if c['u4'][n][d] is not None]
+                cells.append(f'{sum(got)}/{len(got)}' if got else 'NA')
+            out.append(f'| {d} | {mask} | ' + ' | '.join(cells) + ' |')
+    out += ['', 'Giá trị trung bình qua 5 seed (R-local, trên target chung của model thật):', '',
+            '| Model | Mask | ' + ' | '.join(U4_LABELS[n] for n in names) + ' |', '|---|---|' + '---:|' * len(names)]
+    for m in MODELS:
+        for mask in cases:
+            out.append(f'| {m} | {mask} | ' + ' | '.join(
+                ms([c['u4_scores'][n].get(m) for c in cases[mask]], 4) for n in names) + ' |')
+    return out
+
+
+def sensitivity_lines(cases):
+    out, v = ['**D1 với ngưỡng zero c/N < 0.001 (R-local)**', ''], {}
+    lines, v['prop'] = u1_table(cases, 'prop')
+    out += lines + ['', '**D1 với R-pooled**', '']
+    lines, v['pooled_u1'] = u1_table(cases, 'pooled')
+    out += lines + ['', '**D2 với R-pooled**', '']
+    lines, v['pooled_u2'] = u2_table(cases, 'pooled')
+    return out + lines, v
