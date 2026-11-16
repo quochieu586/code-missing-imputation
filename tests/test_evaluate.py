@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 from longitudinal_impute.data import Dataset
-from longitudinal_impute.evaluate import masked_errors, summarize, wasserstein, wasserstein_scores
+from longitudinal_impute.evaluation.metrics import masked_errors, summarize, wasserstein, wasserstein_scores
 
 
 def dataset(counts, totals):

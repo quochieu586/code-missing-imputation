@@ -12,7 +12,7 @@ import pytest
 from longitudinal_impute import run
 from longitudinal_impute.baselines.micoda import MICoDaCovid
 from longitudinal_impute.data import Dataset, apply_residual_rule, check_completed, load_csv, make_mask
-from longitudinal_impute.evaluate import implied_other_errors
+from longitudinal_impute.evaluation.metrics import implied_other_errors
 from test_run import COVID_SCHEMA, FIXTURES, call, write
 
 # sha256[:16] of run_model(...) values + status, computed with the code BEFORE step 4 (commit

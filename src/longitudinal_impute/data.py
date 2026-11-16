@@ -220,7 +220,7 @@ def validate_mask(kind, rate):
 def make_mask(data, kind, rate, seed, target=None):
     """Hide a reproducible subset H of the observed cells. Returns (H, statistics).
 
-    whole_feature_matched (step 7) needs target = {'n_cuts', 'pi'}: see matched_mask.py.
+    whole_feature_matched (step 7) needs target = {'n_cuts', 'pi'}: see evaluation/masks.py.
     """
     validate_mask(kind, rate)
     if (kind == 'whole_feature_matched') != (target is not None):
@@ -247,7 +247,7 @@ def make_mask(data, kind, rate, seed, target=None):
         if kind == 'whole_feature':
             order = rng.permutation(len(pairs))
         else:
-            from .matched_mask import weights, draw_order
+            from .evaluation.masks import weights, draw_order
             w, info = weights(data, entities, observed, pairs, target)
             order = draw_order(rng, w)
             stats.update(info)

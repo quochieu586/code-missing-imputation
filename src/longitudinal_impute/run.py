@@ -12,7 +12,7 @@ after a registered model runs that model; any other name needs `model = "<regist
 --save-predictions also writes predictions_<mask>.csv.gz: one row per hidden cell of every
 completed masked run (see cells.py), for scoring outside this runner.
 --mask whole_feature_matched (step 7) needs --mask-target, the frozen strata target of
-matched_mask.py; its path, sha256 and content are written to config.json.
+evaluation/masks.py; its path, sha256 and content are written to config.json.
 """
 import argparse
 import csv
@@ -28,9 +28,9 @@ import numpy as np
 
 from .data import (load_csv, read_schema, make_mask, validate_mask, model_input, restore_counts, check_completed,
                    write_completed_csv, apply_residual_rule, RESIDUAL_RULES, MASK_KINDS)
-from .matched_mask import read_target
-from .evaluate import wasserstein_scores, masked_errors, summarize, paired_summary, forced_zero
-from .cells import prediction_rows, write_predictions
+from .evaluation.masks import read_target
+from .evaluation.metrics import wasserstein_scores, masked_errors, summarize, paired_summary, forced_zero
+from .evaluation.metrics import prediction_rows, write_predictions
 from .baselines.hron import HronKNN
 from .baselines.tsagris import TsagrisKNN
 from .baselines.micoda import MICoDaCovid
@@ -568,7 +568,7 @@ def main(argv=None):
     if args.stage == 'evaluate':
         config['compute_git'] = previous.get('compute_git', previous.get('git'))
         config['compute_stage'] = previous.get('compute_stage', previous['stage'])
-        config['evaluation_code_sha256'] = sha256(Path(__file__).with_name('evaluate.py'))
+        config['evaluation_code_sha256'] = sha256(Path(__file__).parent / 'evaluation' / 'metrics.py')
     if target is not None:
         config['mask_target'] = {'path': str(args.mask_target.resolve()),
                                  'sha256': hashlib.sha256(args.mask_target.read_bytes()).hexdigest(), **target}
