@@ -1,5 +1,7 @@
 # Step 6: Tầng 3, kiểm định diagnostic Tầng 2 trên ô che giả (exploratory)
 
+> **Ghi chú sau khi rebase lên main mới (PR #5):** micoda trong các step này = A17 (other=false); micoda_other = A18. Trên main sau PR #5, micoda mặc định = A18. Để chạy lại đúng A17, dùng `configs/models_default_a17.toml` (bảng `[micoda]` ghi tường minh `other = false`); tên model trong các bảng kết quả giữ nguyên như lúc chạy. Đường dẫn đã đổi theo cấu trúc mới (`nextgen/src` → `src`, `nextgen/configs` → `configs`, `nextgen/tests` → `tests`). Hash commit trong phần văn bản là hash sau rebase, hash cũ trong ngoặc; bảng đầy đủ ở [HASH_MAP.md](../tv2_step8/HASH_MAP.md). Khối sinh tự động và thư mục run vẫn ghi hash cũ (commit lúc chạy).
+
 Branch `step6-tier3-calibration` (từ `step5-tier2-native`). Không có `iterative_net` hay `framework/`. Không sửa baseline, không chạy seed mới. Định nghĩa D1/D2/D3 giữ nguyên như step 5. Mọi bảng số trong khối `auto:*` do `tier3.py` sinh, không sửa tay; bảng đầy đủ ở [tier3_results.md](tier3_results.md).
 
 Mọi kết luận dưới đây có dạng: **"trong 10 ca (whole_feature, random_cell × seed 0–4) và support đã kiểm, diagnostic X làm được / chưa làm được việc Y"**. Không kết luận nào là độ chính xác trên ô thiếu thật (F01).
@@ -58,13 +60,13 @@ Mọi kết luận dưới đây có dạng: **"trong 10 ca (whole_feature, rand
 - R-pooled thay R-local (U1, U2).
 
 **Commit:**
-- `bf4f096` đóng băng đặc tả, trước khi tính trên output nào.
-- `26ec4a8` thêm script. Tôi chạy thử script một lần vào thư mục tạm trước commit này.
-- `11bfcc9` sửa phần trình bày, không đổi định nghĩa nào:
+- `55507a0` (cũ `bf4f096`) đóng băng đặc tả, trước khi tính trên output nào.
+- `3a37d07` (cũ `26ec4a8`) thêm script. Tôi chạy thử script một lần vào thư mục tạm trước commit này.
+- `fcac0f3` (cũ `11bfcc9`) sửa phần trình bày, không đổi định nghĩa nào:
   - tiêu đề bảng 7 chứa `|` làm vỡ markdown;
   - ghi số ca khi có ca NA;
   - thêm dòng **tham chiếu MAE Tầng 1** vào bảng 7. Dòng này được thêm **sau khi thấy số**, để đọc kết quả đối thủ giả. Nó không phải diagnostic và không vào phần đạt/không đạt.
-- `b6f8799` commit số.
+- `b003882` (cũ `b6f8799`) commit số.
 
 ## 3. Kiểm tra
 

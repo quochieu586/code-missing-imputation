@@ -1,5 +1,7 @@
 # Step 8: đóng băng evaluation v1 và chạy lượt xác nhận (chỉ baseline)
 
+> **Ghi chú sau khi rebase lên main mới (PR #5):** micoda trong các step này = A17 (other=false); micoda_other = A18. Trên main sau PR #5, micoda mặc định = A18. Để chạy lại đúng A17, dùng `configs/models_default_a17.toml` (bảng `[micoda]` ghi tường minh `other = false`); tên model trong các bảng kết quả giữ nguyên như lúc chạy. Đường dẫn đã đổi theo cấu trúc mới (`nextgen/src` → `src`, `nextgen/configs` → `configs`, `nextgen/tests` → `tests`). Hash commit trong phần văn bản là hash sau rebase, hash cũ trong ngoặc; bảng đầy đủ ở [HASH_MAP.md](HASH_MAP.md). Khối sinh tự động và thư mục run vẫn ghi hash cũ (commit lúc chạy).
+
 Branch `step8-eval-v1-confirm` (từ `step7-matched-mask`). Không có `iterative_net` hay `framework/`. Không sửa baseline, không đổi metric, diagnostic, ngưỡng, use case, mask hay cấu hình model so với step 2–7. Mọi bảng số trong khối `auto:*` do `evaluate_v1.py` sinh, không sửa tay; bảng đầy đủ ở [v1_results.md](v1_results.md).
 
 Đây là **lượt xác nhận**: chạy một lần trên mask seed 200–209, chưa step nào dùng. Kết luận chỉ nói về **biến thiên theo mask trên một bảng cố định**. Không kết luận nào là độ chính xác trên ô thiếu thật, và không kết luận nào tổng quát hóa sang nước mới.
@@ -50,13 +52,13 @@ Branch `step8-eval-v1-confirm` (từ `step7-matched-mask`). Không có `iterativ
 - H7–H9: kết luận Tầng 3 trên mask chính.
 
 **Commit:**
-- `996feba` đóng băng Phần A + B, trước khi sinh mask;
-- `c13308b` sinh mask và commit hash;
-- `9954fd2` sửa bug Tầng 3 phát hiện sau bước 3 (mục 6);
-- `4b8c065` sửa phần trình bày của bảng 8 (mục 6);
-- `4535924` commit số của lượt chạy thứ hai.
+- `613612b` (cũ `996feba`) đóng băng Phần A + B, trước khi sinh mask;
+- `696f217` (cũ `c13308b`) sinh mask và commit hash;
+- `90e162f` (cũ `9954fd2`) sửa bug Tầng 3 phát hiện sau bước 3 (mục 6);
+- `35afaf0` (cũ `4b8c065`) sửa phần trình bày của bảng 8 (mục 6);
+- `581f1d1` (cũ `4535924`) commit số của lượt chạy thứ hai.
 
-Các run của lượt chạy thứ hai được chạy từ commit `6303a6d`, git tree sạch.
+Các run của lượt chạy thứ hai được chạy từ commit `4a59fd6` (cũ `6303a6d`), git tree sạch.
 
 ## 3. Kiểm tra
 
@@ -452,15 +454,15 @@ Mọi kết luận dưới đây chỉ nói về **biến thiên theo mask** (10
 
 ## 6. Sai lệch so với kế hoạch
 
-1. **Bug Tầng 3 sau bước 3** (`9954fd2`).
+1. **Bug Tầng 3 sau bước 3** (`90e162f`, cũ `9954fd2`).
    - **Bug:** `tier3.one_case` luôn đưa cả 6 model thật vào `common_targets`. Khi một model thật fail trong một ca (wf seed 200, 203), lần chạy `evaluate_v1.py` đầu tiên dừng vì `KeyError: 'hron'`, và không sinh bảng nào. Traceback nằm ở `attempt1_evaluate.txt`.
    - **Sửa:** chỉ lấy target chung trên các model có mặt. Cặp có model fail thành NA, đúng như đặc tả step 6 đã khai báo. Có test hồi quy. Output step 6 và step 7 sinh lại giống từng byte.
    - **Chạy lại theo C.5:** lượt chạy model thứ nhất được giữ ở `tv2_step8/runs_attempt1/` (không commit). Toàn bộ bước 3–4 được chạy lại. Output model của hai lượt giống từng byte (mục 3).
    - **Ảnh hưởng:** lượt thứ nhất không có kết quả nào, nên không có số "trước sửa" để so; kết quả trong báo cáo là của lượt thứ hai.
-2. **Hai sửa phần trình bày bảng 8, sau khi thấy số** (`4b8c065`). Không đổi giả thuyết, verdict hay cặp nào.
+2. **Hai sửa phần trình bày bảng 8, sau khi thấy số** (`35afaf0`, cũ `4b8c065`). Không đổi giả thuyết, verdict hay cặp nào.
    - Mỗi cặp giả thuyết giờ chỉ in một lần (trước đó same_day_mean vs hron lặp vì nằm trong cả H1 và H2).
    - Trung bình MAE theo model giờ lấy trên seed chung của mọi model (F07). Bản trước lấy trên các seed riêng của từng model, khiến ở wf có model tính trên 10 seed, có model trên 8.
-3. **`tv2_step6/tier3.py` được sửa hai lần** (`88caf34` nhận seed qua tham số, `9954fd2` sửa bug). Output step 6 và 7 không đổi, nhưng file không còn đúng như lúc các step đó commit số.
+3. **`tv2_step6/tier3.py` được sửa hai lần** (`fd8688e` (cũ `88caf34`) nhận seed qua tham số, `90e162f` (cũ `9954fd2`) sửa bug). Output step 6 và 7 không đổi, nhưng file không còn đúng như lúc các step đó commit số.
 
 ## 7. Giới hạn còn lại của evaluation v1
 

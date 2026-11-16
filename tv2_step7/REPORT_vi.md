@@ -1,5 +1,7 @@
 # Step 7: mask khớp support của ô thiếu thật, kiểm lại Tầng 0, 1, 3 (exploratory)
 
+> **Ghi chú sau khi rebase lên main mới (PR #5):** micoda trong các step này = A17 (other=false); micoda_other = A18. Trên main sau PR #5, micoda mặc định = A18. Để chạy lại đúng A17, dùng `configs/models_default_a17.toml` (bảng `[micoda]` ghi tường minh `other = false`); tên model trong các bảng kết quả giữ nguyên như lúc chạy. Đường dẫn đã đổi theo cấu trúc mới (`nextgen/src` → `src`, `nextgen/configs` → `configs`, `nextgen/tests` → `tests`). Hash commit trong phần văn bản là hash sau rebase, hash cũ trong ngoặc; bảng đầy đủ ở [HASH_MAP.md](../tv2_step8/HASH_MAP.md). Khối sinh tự động và thư mục run vẫn ghi hash cũ (commit lúc chạy).
+
 Branch `step7-matched-mask` (từ `step6-tier3-calibration`). Không có `iterative_net` hay `framework/`. Không sửa baseline, không đổi định nghĩa metric, diagnostic, use case hay ngưỡng nào, không dùng seed ≥ 100. Mọi bảng số trong khối `auto:*` do `matched.py` sinh, không sửa tay; bảng đầy đủ ở [matched_results.md](matched_results.md).
 
 `whole_feature_matched` vẫn là **ô quan sát được che lại**: đây là sensitivity, không phải native validation (review 7.2). Không kết quả nào dưới đây là độ chính xác trên ô thiếu thật.
@@ -29,12 +31,12 @@ Branch `step7-matched-mask` (từ `step6-tier3-calibration`). Không có `iterat
   - Tầng 1 theo tầng: `cell_errors` trên ô che nhóm model của tầng; tầng < 30 ô trong một seed thì NA ở seed đó.
   - Tầng 3 giữ nguyên đặc tả step 6. Bộ 10 ca là `whole_feature_matched` (5) cộng `random_cell` (5 ca của step 6, tính lại và kiểm khớp JSON đã commit), để quy tắc "trong từng mask" và "≥ 9/10 ca" giữ nguyên nghĩa.
 - **Commit:**
-  - `3bc59a9` đóng băng mask (hàm, runner, test), trước khi sinh mask nào;
-  - `a575ad6` sửa `tier3.py` (output step 6 không đổi);
-  - `2c21c8c` thêm script và các khai báo, trước khi sinh mask;
-  - `a9d7e90` đóng băng π;
-  - `53e6a8a` sửa phần trình bày (nhãn tầng chứa `|`) và thêm provenance của run vào manifest; không đổi định nghĩa nào;
-  - `0f495b7` commit số. Các run được chạy từ commit `a9d7e90`, git tree sạch.
+  - `157983d` (cũ `3bc59a9`) đóng băng mask (hàm, runner, test), trước khi sinh mask nào;
+  - `e3643dc` (cũ `a575ad6`) sửa `tier3.py` (output step 6 không đổi);
+  - `ebf2521` (cũ `2c21c8c`) thêm script và các khai báo, trước khi sinh mask;
+  - `7da9a1d` (cũ `a9d7e90`) đóng băng π;
+  - `f00f1e2` (cũ `53e6a8a`) sửa phần trình bày (nhãn tầng chứa `|`) và thêm provenance của run vào manifest; không đổi định nghĩa nào;
+  - `34db2f7` (cũ `0f495b7`) commit số. Các run được chạy từ commit `7da9a1d` (cũ `a9d7e90`), git tree sạch.
 
 ## 3. Kiểm tra
 
