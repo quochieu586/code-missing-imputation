@@ -1,6 +1,6 @@
 """Step 1 multi-seed tables from the run outputs in tv2_step1/runs/ (not tracked).
 
-    PYTHONPATH=nextgen/src python tv2_step1/summarize_runs.py [--runs DIR] [--out DIR]
+    PYTHONPATH=src python tv2_step1/summarize_runs.py [--runs DIR] [--out DIR]
 
 Reads summary.json of <runs>/main_<mask> (7 models) and <runs>/micoda_other_<mask> (MICoDa
 other = true, reported as micoda_other). Only metric groups already computed by
@@ -35,6 +35,32 @@ PAIR_METRICS = (('mae_proportion', 'MAE tỷ lệ'), ('mse_proportion', 'MSE t�
                 ('mae_count', 'MAE count'), ('mse_count', 'MSE count'))
 DOCS = ('REPORT_vi.md', 'PR_DESCRIPTION_vi.md')
 START, END = '<!-- auto:pairs:start -->', '<!-- auto:pairs:end -->'
+
+
+def current_path(recorded):
+    """Where a path recorded in a run's config.json lives in this checkout.
+
+    Runs made before the repository restructure (PR #5: nextgen/src, nextgen/configs,
+    nextgen/tests and nextgen/docs moved to the repository root) recorded paths under
+    .../nextgen/. Such a path maps to the same file under REPO; any other path is unchanged.
+    Only used to read files: recorded metadata is copied to manifests as it was written.
+    """
+    parts = Path(recorded).parts
+    for i in range(len(parts) - 1, -1, -1):
+        if parts[i] == 'nextgen' and i + 1 < len(parts) and parts[i + 1] in ('src', 'configs', 'tests', 'docs'):
+            return REPO.joinpath(*parts[i + 1:])
+    return Path(recorded)
+
+
+def micoda_other(config, table='micoda'):
+    """The `other` flag MICoDa ran with in a run directory's config.json.
+
+    An explicit key wins. Without it, the default of the runner that wrote the config applies:
+    runs written before PR #5 (no 'stage' key in config.json) used other = false (A17); the
+    runner of PR #5 and later defaults to other = true (A18).
+    """
+    params = config['models'].get(table) or {}
+    return params.get('other', 'stage' in config)
 
 
 def digest(value):
@@ -77,9 +103,11 @@ def validate_pair(root, mask):
     for seed in SEEDS:
         if not np.array_equal(main_masks[seed], other_masks[seed]):
             problems.append(f'seed {seed}: saved masks differ')
-    if 'micoda' not in main['models'] or main['models']['micoda'].get('other', False) is not False:
+    configs = {name: json.loads((root / f'{name}_{mask}' / 'config.json').read_text(encoding='utf-8'))
+               for name in ('main', 'micoda_other')}
+    if 'micoda' not in main['models'] or micoda_other(configs['main']) is not False:
         problems.append(f'main run must contain MICoDa with other = false, got {main["models"].get("micoda")}')
-    if set(other['models']) != {'micoda'} or other['models']['micoda'].get('other') is not True:
+    if set(other['models']) != {'micoda'} or micoda_other(configs['micoda_other']) is not True:
         problems.append(f'micoda_other run must contain only MICoDa with other = true, got {other["models"]}')
     if problems:
         raise ValueError(f'refusing to pair main_{mask} with micoda_other_{mask}:\n  ' + '\n  '.join(problems))
@@ -226,12 +254,12 @@ def truth_table(runs, out):
 
 
 def levels_table(root, mask, native, out):
-    sys.path.insert(0, str(REPO / 'nextgen/src'))
+    sys.path.insert(0, str(REPO / 'src'))
     from longitudinal_impute import run
     from longitudinal_impute.data import load_csv
     from longitudinal_impute.evaluate import forced_zero
     config = json.loads((root / f'main_{mask}' / 'config.json').read_text())
-    data = load_csv(config['data'], config['schema_path'])
+    data = load_csv(config['data'], current_path(config['schema_path']))
     # F3: recompute only from the same data and the same group map the run used.
     if hashlib.sha256(Path(config['data']).read_bytes()).hexdigest() != config['data_sha256']:
         raise ValueError(f"main_{mask}: {config['data']} changed since the run (data_sha256 differs)")
@@ -239,7 +267,7 @@ def levels_table(root, mask, native, out):
         raise ValueError(f'main_{mask}: config.json has no group_map provenance; rerun with the current run.py')
     recorded, current = config['group_map'], data.group_map
     if (recorded is None) != (current is None) or (recorded and (
-            recorded['path'], recorded['sha256']) != (current['path'], current['sha256'])):
+            current_path(recorded['path']), recorded['sha256']) != (Path(current['path']), current['sha256'])):
         raise ValueError(f'main_{mask}: group map differs from the one the run used: '
                          f'recorded {recorded}, current {current}')
     params = config['models']['same_day_mean']

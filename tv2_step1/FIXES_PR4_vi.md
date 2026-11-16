@@ -4,7 +4,7 @@ Branch `step1-decoys-sameday`. `main` chưa tiến (a5a918a), nên không cần 
 
 ## Tổng quan kiểm tra
 
-- **Test:** `PYTHONPATH=nextgen/src python -W error::RuntimeWarning -m pytest nextgen/tests tv2_step1` cho **185 passed**: 177 trong `nextgen/tests` (156 trước review + 21 mới) và 8 cho `tv2_step1/summarize_runs.py`.
+- **Test:** `PYTHONPATH=src python -W error::RuntimeWarning -m pytest tests tv2_step1` cho **185 passed**: 177 trong `tests` (156 trước review + 21 mới) và 8 cho `tv2_step1/summarize_runs.py`.
 - **Chạy lại cả 4 run** (main + micoda_other, whole_feature + random_cell, seed 0–4) sau F1/P3/F3. So với run trước review:
   - mọi `*_completed.csv` và `mask_*.npy` giống từng byte;
   - `summary.json` bằng nhau, trừ `seconds`;
@@ -23,7 +23,7 @@ Branch `step1-decoys-sameday`. `main` chưa tiến (a5a918a), nên không cần 
 | 2.000 | 46,62 MiB | 0,46 MiB | 93,29 MiB | 1,33 MiB |
 | 4.000 | 184,78 MiB | 0,91 MiB | 369,67 MiB | 2,65 MiB |
 
-- **Test** (`nextgen/tests/test_floor_and_same_day.py`):
+- **Test** (`tests/test_floor_and_same_day.py`):
   - `test_same_day_mean_matches_a_direct_donor_oracle`: 12 case ngẫu nhiên (3 nhóm, 40 mốc ngày, 8 entity, cả hai giá trị `exclude_same_location`, đủ các mức nới). Output và `levels_` khớp với một oracle vòng lặp trực tiếp trên donor.
   - `test_same_day_mean_predict_memory_does_not_grow_with_rows_times_days`: 4.000 dòng, 4.000 ngày, **ngưỡng 16 MiB** cho cả hai chế độ.
   - Test bộ nhớ fail trên code trước F1; oracle pass cả trước lẫn sau (kết quả không đổi).
@@ -49,11 +49,11 @@ Branch `step1-decoys-sameday`. `main` chưa tiến (a5a918a), nên không cần 
   - `load_csv` hash đúng những byte đã parse và lưu `Dataset.group_map = {path (đã resolve), sha256, entries, rows_resolved, groups}`; nếu nhóm lấy từ cột CSV hoặc không có `group_col` thì là `None`.
   - `run.py` ghi trường này vào `config.json` (`null` nếu không dùng map).
   - `summarize_runs.py` không tính lại bảng mức cửa sổ khi hash data hoặc hash map hiện tại khác `config.json`, hoặc khi run cũ chưa có trường này.
-- **Test** (`nextgen/tests/test_time_and_groups.py`):
+- **Test** (`tests/test_time_and_groups.py`):
   - provenance bằng hash của file;
   - chỉ đổi nội dung map thì sha256 trong `config.json` đổi, đường dẫn giữ nguyên;
   - không dùng map thì ghi `null`.
-- **COVID:** map `nextgen/configs/covid_location_continent.csv` có sha256 `5e0547a9…`, 150 dòng, 6 nhóm, đã resolve cho 11.671 dòng.
+- **COVID:** map `configs/covid_location_continent.csv` có sha256 `5e0547a9…`, 150 dòng, 6 nhóm, đã resolve cho 11.671 dòng.
 
 ## F4: sắp xếp bảng (commit bf14cc7)
 

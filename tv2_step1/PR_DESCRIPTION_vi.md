@@ -19,7 +19,7 @@ Không sửa `evaluate.py`. Hron/Tsagris/MICoDa không đổi: so với `main`, 
   - `zero_fill`, `mean_fill`, `marginal_sampler`: mức sàn, `enabled = false`. marginal_sampler bị co theo phần dư nên không đảm bảo Wasserstein ≈ 0.
 - **`run.py`:** đăng ký 4 model. Model cần ngữ cảnh nhận N, ngày, nhóm, entity (không nhận counts). Thêm khóa `enabled = false` và cờ `--only NAME ...`.
 - **Config:** `models_default.toml` (4 bảng mới); `baselines_covariants.toml` (`time_format`, `group_col`, `group_map`); `models_micoda_other.toml` (MICoDa `other = true` cho lượt so sánh riêng).
-- **Test:** 177 test trong `nextgen/tests` (115 cũ + 62 mới) và 8 test cho `tv2_step1/summarize_runs.py`. Có test "ô bị che = 1e100 không đổi output", tái lập theo seed, tham chiếu same_day_mean tính tay.
+- **Test:** 177 test trong `tests` (115 cũ + 62 mới) và 8 test cho `tv2_step1/summarize_runs.py`. Có test "ô bị che = 1e100 không đổi output", tái lập theo seed, tham chiếu same_day_mean tính tay.
 - **Docs:** README, mục mới trong `THREE_BASELINE_CONTRACT_VI.md`, báo cáo `tv2_step1/REPORT_vi.md`, bảng `tv2_step1/results_multiseed.md`, manifest `tv2_step1/results_manifest.json`; sửa theo review: `tv2_step1/FIXES_PR4_vi.md`.
 
 ## Kết quả chính

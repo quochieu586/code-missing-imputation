@@ -17,7 +17,7 @@ from longitudinal_impute.baselines.zero_fill import ZeroFill
 from longitudinal_impute.data import Dataset, load_csv, make_mask, model_input
 
 FIXTURES = Path(__file__).resolve().parent / 'fixtures'
-NEXTGEN = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]     # repository root (tests/ left nextgen/ in PR #5)
 SCHEMA = ('[dataset]\nentity="location"\ntime="date"\ntotal="total_sequence"\ntargets=["v1","v2","v3","v4"]\n'
           'group_col="continent"\ngroup_map="map.csv"\n')
 MAP = 'location,continent\nAvalon,North\nBrill,North\nCorin,South\n'
@@ -189,9 +189,9 @@ def test_same_day_mean_parameters_are_checked():
 # --- run.py: selection and end to end -------------------------------------------------------
 
 def test_default_config_runs_the_paper_baselines_and_same_day_mean_but_no_floor():
-    models = run.read_models(NEXTGEN / 'configs/models_default.toml')
+    models = run.read_models(ROOT / 'configs/models_default.toml')
     assert list(models) == ['hron', 'tsagris', 'micoda', 'same_day_mean']
-    picked = run.read_models(NEXTGEN / 'configs/models_default.toml', ['same_day_mean', 'hron'])
+    picked = run.read_models(ROOT / 'configs/models_default.toml', ['same_day_mean', 'hron'])
     assert list(picked) == ['same_day_mean', 'hron']
     assert picked['same_day_mean'] == {'window_days': 28, 'min_obs': 20, 'max_widen': 2,
                                        'exclude_same_location': False}

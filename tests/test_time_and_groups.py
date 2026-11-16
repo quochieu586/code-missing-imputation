@@ -7,8 +7,7 @@ import pytest
 from longitudinal_impute.data import load_csv
 
 FIXTURES = Path(__file__).resolve().parent / 'fixtures'
-NEXTGEN = Path(__file__).resolve().parents[1]
-REPO = NEXTGEN.parent
+ROOT = Path(__file__).resolve().parents[1]     # repository root (tests/ left nextgen/ in PR #5)
 COVID_SCHEMA = '[dataset]\nentity="location"\ntime="date"\ntotal="total_sequence"\ntargets=["v1","v2","v3","v4"]\n'
 MICROBIOME_SCHEMA = ('[dataset]\nentity="subject"\ntime="visit"\ntargets=["Bacteroides","Prevotella",'
                      '"Faecalibacterium","Akkermansia","Bifidobacterium"]\n')
@@ -107,9 +106,9 @@ def test_group_map_without_group_col_is_a_schema_error(tmp_path):
         load_csv(FIXTURES / 'covid_small.csv', write(tmp_path, 's.toml', COVID_SCHEMA + 'group_map="m.csv"\n'))
 
 
-@pytest.mark.skipif(not (REPO / 'data/covariants.csv').exists(), reason='full COVID table not in this checkout')
+@pytest.mark.skipif(not (ROOT / 'data/covariants.csv').exists(), reason='full COVID table not in this checkout')
 def test_shipped_covid_schema_maps_every_location_to_a_continent():
-    data = load_csv(REPO / 'data/covariants.csv', NEXTGEN / 'configs/baselines_covariants.toml')
+    data = load_csv(ROOT / 'data/covariants.csv', ROOT / 'configs/baselines_covariants.toml')
     assert data.time_kind == 'date' and data.days.min() == 0
     assert set(data.groups) == {'Africa', 'Asia', 'Europe', 'North America', 'Oceania', 'South America'}
 

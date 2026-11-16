@@ -1,5 +1,7 @@
 # Step 1: đối thủ giả + trung bình cùng ngày
 
+> **Ghi chú sau khi rebase lên main mới (PR #5):** micoda trong các step này = A17 (other=false); micoda_other = A18. Trên main sau PR #5, micoda mặc định = A18. Để chạy lại đúng A17, dùng `configs/models_default_a17.toml` (bảng `[micoda]` ghi tường minh `other = false`); tên model trong các bảng kết quả giữ nguyên như lúc chạy. Đường dẫn đã đổi theo cấu trúc mới (`nextgen/src` → `src`, `nextgen/configs` → `configs`, `nextgen/tests` → `tests`); hash commit nhắc trong báo cáo là hash trước khi rebase; bảng ánh xạ cũ → mới ở `tv2_step8/HASH_MAP.md` (PR step 5–8).
+
 Branch `step1-decoys-sameday` (từ `main` a5a918a). Không sửa `evaluate.py`; Hron/Tsagris/MICoDa không đổi hành vi.
 
 Phần đầu (đến mục *Quyết định thiết kế*) là lượt kiểm tra một seed khi thêm code. Phần **Hoàn thiện step 1** ở cuối có kết quả 5 seed, MICoDa `other = true` và kết luận.
@@ -8,7 +10,7 @@ Phần đầu (đến mục *Quyết định thiết kế*) là lượt kiểm t
 
 | File | Nội dung |
 |---|---|
-| `nextgen/src/longitudinal_impute/data.py` | `Dataset` thêm `days`, `week`, `time_kind`, `groups`. Ngày ISO (hoặc `time_format`) thành số ngày kể từ ngày nhỏ nhất, `week = days // 7`. Time dạng số (mốc 1, 2, 3) giữ nguyên giá trị, chữ khác thành nhãn. Ngày sai, hoặc trộn ngày ISO với giá trị khác, báo lỗi kèm dòng CSV. Thêm khóa schema `group_col`, `group_map`. |
+| `src/longitudinal_impute/data.py` | `Dataset` thêm `days`, `week`, `time_kind`, `groups`. Ngày ISO (hoặc `time_format`) thành số ngày kể từ ngày nhỏ nhất, `week = days // 7`. Time dạng số (mốc 1, 2, 3) giữ nguyên giá trị, chữ khác thành nhãn. Ngày sai, hoặc trộn ngày ISO với giá trị khác, báo lỗi kèm dòng CSV. Thêm khóa schema `group_col`, `group_map`. |
 | `baselines/common.py` | `fill_within_residual`: nếu tổng đề xuất của dòng vượt phần dư R thì co lại cho bằng R, phần còn lại vào Other. `observed_columns`: kiểm tra input. |
 | `baselines/zero_fill.py`, `mean_fill.py`, `marginal_sampler.py` | Ba đối thủ giả (docstring ghi rõ đây là mức sàn). |
 | `baselines/same_day_mean.py` | Trung bình cùng ngày, có nới cửa sổ và ghi nhận mức (`info_['cells_by_level']`, `levels_`). |
@@ -17,7 +19,7 @@ Phần đầu (đến mục *Quyết định thiết kế*) là lượt kiểm t
 | `configs/models_micoda_other.toml` | MICoDa `other = true` (A18/R2) cho lượt riêng `micoda_other`. |
 | `configs/baselines_covariants.toml` | Thêm `time_format`, `group_col = "continent"`, `group_map`. |
 | `configs/covid_location_continent.csv` | Map 150 location → 6 châu lục. |
-| `nextgen/README.md`, `docs/THREE_BASELINE_CONTRACT_VI.md` | Khóa schema mới, `enabled`, `--only`; mục same_day_mean và ba mức sàn. |
+| `README.md`, `docs/THREE_BASELINE_CONTRACT_VI.md` | Khóa schema mới, `enabled`, `--only`; mục same_day_mean và ba mức sàn. |
 | `tv2_step1/summarize_runs.py`, `results_multiseed.md/.csv` | Script và bảng tổng hợp 5 seed (output đầy đủ trong `tv2_step1/runs/`, không commit). |
 | `tests/test_time_and_groups.py`, `tests/test_floor_and_same_day.py` | 41 test mới. |
 
@@ -142,7 +144,7 @@ Seed 0: 4633 ô đáp án 0 (1603 trong nhóm model, phần còn lại là ô é
 
 ### MICoDa `other = true` (micoda_other)
 
-- Chạy bằng `nextgen/configs/models_micoda_other.toml`, lượt riêng, không sửa `run.py`. Mọi lượt đều `completed`, nên đã qua `check_completed`.
+- Chạy bằng `configs/models_micoda_other.toml`, lượt riêng, không sửa `run.py`. Mọi lượt đều `completed`, nên đã qua `check_completed`.
 - **Còn thua mean_fill không?** Về MAE tỷ lệ: không, thắng 5/5 seed ở cả hai mask (hiệu ~ −0.028). Về MSE tỷ lệ: gần như **hòa** (whole_feature thắng 4/5, hiệu −0.0020; random_cell thắng 1/5, hiệu +0.0003). Tức là chỉ nhỉnh hơn mức sàn một chút.
 - **So với micoda mặc định (A17/R1):** tốt hơn 5/5 seed ở cả hai mask trên MAE tỷ lệ (whole_feature −0.033, tức ×0.77; random_cell −0.024) và MSE tỷ lệ (−0.014, ×0.83; −0.011). MAE count giảm ~30–35%.
 - ⚠️ **Bất thường cần báo (chưa kiểm chứng độc lập):** MSE count của micoda_other trên whole_feature tốt hơn ở 4/5 seed, nhưng trung bình lại *cao hơn* (+7.5e6, tỷ số trung bình ×1.22), do một seed rất xấu (đuôi nặng ở các dòng N lớn). Trên random_cell tỷ số MSE count chỉ ×1.02. Con số này **không khớp** với ghi chú D08 ("random-cell MSE count ~×4.5"). Tôi chưa điều tra nguyên nhân, có thể khác thiết lập lúc chốt D08. Không sửa gì. Từ PR #4, MSE count được lấy từ chính các run đã kiểm tra bằng manifest và nằm trong `results_multiseed.csv` (cột `mse_count_*`) cùng khối thắng/thua tự sinh. Tuy vậy chưa có ai chạy lại độc lập, nên vẫn coi là chưa kiểm chứng.

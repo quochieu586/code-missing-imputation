@@ -27,7 +27,7 @@ Cảm ơn bạn đã review kỹ, kèm cả repro. Mình đã sửa đủ F1–F
 - marginal_sampler bị co theo phần dư nên không đảm bảo Wasserstein ≈ 0.
 - Tỷ số MSE count của MICoDa A18 so với D08 được đánh dấu "chưa kiểm chứng độc lập"; số này nay nằm trong CSV.
 
-Cả bốn run đã chạy lại bằng code mới: output giống từng byte bản trước, `summary.json` bằng nhau trừ thời gian chạy. Test: 185 passed với `-W error::RuntimeWarning` (177 trong `nextgen/tests` + 8 cho script tổng hợp).
+Cả bốn run đã chạy lại bằng code mới: output giống từng byte bản trước, `summary.json` bằng nhau trừ thời gian chạy. Test: 185 passed với `-W error::RuntimeWarning` (177 trong `tests` + 8 cho script tổng hợp).
 
 **Hai câu hỏi cho bạn**
 1. Bạn có đồng ý với kiến trúc evaluation 5 tầng không?

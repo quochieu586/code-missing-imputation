@@ -129,3 +129,18 @@ def test_win_counts_come_from_the_csv_per_metric(tmp_path):
     text = doc.read_text()
     assert 'hand typed' not in text and text.startswith('before\n') and text.endswith('\nafter\n')
     assert '\n'.join(block).strip() in text
+
+
+def test_recorded_paths_from_before_the_restructure_map_to_the_repository_root():
+    old = Path('/somewhere/repo/nextgen/configs/covid_location_continent.csv')
+    assert summarize_runs.current_path(old) == summarize_runs.REPO / 'configs/covid_location_continent.csv'
+    assert summarize_runs.current_path(str(old)) == summarize_runs.REPO / 'configs/covid_location_continent.csv'
+    other = Path('/somewhere/repo/data/covariants.csv')
+    assert summarize_runs.current_path(other) == other
+
+
+def test_micoda_other_default_follows_the_runner_that_wrote_the_config():
+    assert summarize_runs.micoda_other({'models': {'micoda': {}}}) is False                  # before PR #5: A17
+    assert summarize_runs.micoda_other({'models': {'micoda': {}}, 'stage': 'full'}) is True  # PR #5 runner: A18
+    assert summarize_runs.micoda_other({'models': {'micoda': {'other': False}}, 'stage': 'full'}) is False
+    assert summarize_runs.micoda_other({'models': {'micoda': {'other': True}}}) is True

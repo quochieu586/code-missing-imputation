@@ -124,6 +124,6 @@ def test_shipped_all_model_preset_preserves_baselines_and_main_recipe():
     baseline = run.read_models(root / 'configs/models_default.toml')
     main = run.read_models(root / 'configs/main.toml')
     combined = run.read_models(root / 'configs/models_all.toml')
-    assert set(combined) == {'hron', 'tsagris', 'micoda', 'main'}
+    assert set(combined) == {'hron', 'tsagris', 'micoda', 'same_day_mean', 'main'}
     assert {k: combined[k] for k in baseline} == baseline
     assert combined['main'] == main['main']
