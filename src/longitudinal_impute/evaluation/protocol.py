@@ -57,8 +57,8 @@ PATH_MOVES = (
 
 def frozen_bytes(path):
     """eval_v1.toml as frozen: without the amendment block, paths moved back. A file without the
-    block is returned unchanged."""
-    text = Path(path).read_bytes().decode('utf-8')
+    block is returned with LF line endings, matching the protocol's Git bytes."""
+    text = Path(path).read_bytes().decode('utf-8').replace('\r\n', '\n')
     start, end = AMENDMENT
     if start not in text:
         return text.encode('utf-8')
@@ -130,7 +130,7 @@ def used_seeds(root, patterns):
     for pattern in patterns:
         for path in sorted(Path(root).glob(pattern)):
             for seed in json_seeds(json.loads(path.read_text(encoding='utf-8'))):
-                found.setdefault(seed, []).append(str(path.relative_to(root)))
+                found.setdefault(seed, []).append(path.relative_to(root).as_posix())
     return found
 
 

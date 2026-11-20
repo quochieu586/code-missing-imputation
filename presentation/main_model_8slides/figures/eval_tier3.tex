@@ -1,0 +1,30 @@
+\documentclass[tikz,border=5pt]{standalone}
+\input{figure_style.tex}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\begin{document}\begin{tikzpicture}
+\begin{axis}[width=6cm,height=3.35cm,at={(0.0cm,0.0cm)},anchor=north west,title={U1: under-fill agreement},title style={font=\figfont},xmin=.5,xmax=3.5,ymin=0,ymax=1.04,xtick={1,2,3},xticklabels={Whole,Random,Matched},tick label style={font=\figsmall},yticklabel={$\mathsf{\pgfmathprintnumber{\tick}}$},yticklabel style={font=\figsmall},axis lines=left,ymajorgrids,grid style={draw=Rule}]
+\addplot[Muted,dashed,domain=.5:3.5] {0.8};
+\addplot[only marks,mark=*,mark size=1.8pt,draw=Observed,fill=Observed] table[x=x,y=value] {data/eval_tier3_u1_under_0.dat};
+\addplot[only marks,mark=*,mark size=1.8pt,draw=Teal,fill=Teal] table[x=x,y=value] {data/eval_tier3_u1_under_1.dat};
+\addplot[only marks,mark=*,mark size=1.8pt,draw=Orange,fill=Orange] table[x=x,y=value] {data/eval_tier3_u1_under_2.dat};
+\end{axis}
+\begin{axis}[width=6cm,height=3.35cm,at={(6.3cm,0.0cm)},anchor=north west,title={U1: over-fill agreement},title style={font=\figfont},xmin=.5,xmax=3.5,ymin=0,ymax=1.04,xtick={1,2,3},xticklabels={Whole,Random,Matched},tick label style={font=\figsmall},yticklabel={$\mathsf{\pgfmathprintnumber{\tick}}$},yticklabel style={font=\figsmall},axis lines=left,ymajorgrids,grid style={draw=Rule}]
+\addplot[Muted,dashed,domain=.5:3.5] {0.8};
+\addplot[only marks,mark=*,mark size=1.8pt,draw=Observed,fill=Observed] table[x=x,y=value] {data/eval_tier3_u1_over_0.dat};
+\addplot[only marks,mark=*,mark size=1.8pt,draw=Teal,fill=Teal] table[x=x,y=value] {data/eval_tier3_u1_over_1.dat};
+\addplot[only marks,mark=*,mark size=1.8pt,draw=Orange,fill=Orange] table[x=x,y=value] {data/eval_tier3_u1_over_2.dat};
+\end{axis}
+\begin{axis}[width=6cm,height=3.35cm,at={(0.0cm,-3.9cm)},anchor=north west,title={U2: D2 agreement},title style={font=\figfont},xmin=.5,xmax=3.5,ymin=0,ymax=1.04,xtick={1,2,3},xticklabels={Whole,Random,Matched},tick label style={font=\figsmall},yticklabel={$\mathsf{\pgfmathprintnumber{\tick}}$},yticklabel style={font=\figsmall},axis lines=left,ymajorgrids,grid style={draw=Rule}]
+\addplot[Muted,dashed,domain=.5:3.5] {0.8};
+\addplot[only marks,mark=*,mark size=1.8pt,draw=Observed,fill=Observed] table[x=x,y=value] {data/eval_tier3_u2_0.dat};
+\addplot[only marks,mark=*,mark size=1.8pt,draw=Teal,fill=Teal] table[x=x,y=value] {data/eval_tier3_u2_1.dat};
+\addplot[only marks,mark=*,mark size=1.8pt,draw=Orange,fill=Orange] table[x=x,y=value] {data/eval_tier3_u2_2.dat};
+\end{axis}
+\begin{axis}[width=6cm,height=3.35cm,at={(6.3cm,-3.9cm)},anchor=north west,title={U3: true-zero rate gap},title style={font=\figfont},xmin=.5,xmax=3.5,ymin=0,ymax=1.04,xtick={1,2,3},xticklabels={Whole,Random,Matched},tick label style={font=\figsmall},yticklabel={$\mathsf{\pgfmathprintnumber{\tick}}$},yticklabel style={font=\figsmall},axis lines=left,ymajorgrids,grid style={draw=Rule}]
+\addplot[Muted,dashed,domain=.5:3.5] {0.2};
+\addplot[only marks,mark=*,mark size=1.8pt,draw=Observed,fill=Observed] table[x=x,y=value] {data/eval_tier3_u3_0.dat};
+\addplot[only marks,mark=*,mark size=1.8pt,draw=Teal,fill=Teal] table[x=x,y=value] {data/eval_tier3_u3_1.dat};
+\addplot[only marks,mark=*,mark size=1.8pt,draw=Orange,fill=Orange] table[x=x,y=value] {data/eval_tier3_u3_2.dat};
+\end{axis}
+\end{tikzpicture}\end{document}

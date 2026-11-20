@@ -1,0 +1,16 @@
+\begin{frame}{Tier 1 measures hidden-value error --- exploratory}
+\fontsize{8.5}{10.3}\selectfont
+The hidden values provide known answers for the error test.
+\par\medskip
+Mean absolute error (MAE) is the mean absolute error in the count fraction $c/N$ on cells decided by the model. Here, $c$ is the feature count and $N$ is the total count. Lower values are better.\begin{center}\begin{tabular}{lrrr}\hline
+The model & Whole feature & Random cell & Matched \\\hline
+Hron & 0.0897 & 0.0906 & 0.1147 \\
+Tsagris & 0.1009 & 0.0993 & 0.1219 \\
+MICoDA & 0.1043 & 0.1069 & 0.1185 \\
+Same-day mean & 0.0311 & 0.0304 & 0.0364 \\
+Main & 0.0471 & 0.0237 & 0.0581 \\
+No metadata & 0.0516 & 0.0233 & 0.0644 \\
+\hline\end{tabular}\end{center}The table shows means over ten seeds. Mean squared error (MSE) is the mean squared error in the same fraction on the same cells.\par\medskip A paired sign test counts which method has lower error for each seed and tests equal chances. The metadata effect is not stable across seeds (MAE sign-test $p=0.754$ on each mask).
+\par\medskip
+\textbf{Same-day mean has lower error than Main on both whole-feature masks.}
+\end{frame}

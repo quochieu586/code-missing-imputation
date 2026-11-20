@@ -1,14 +1,5 @@
 # Chạy imputation trên bảng count
 
-> Phạm vi bản code này: promote package từ `nextgen` ra root, bổ sung main model
-> và CLI `full/init/refine/evaluate`. Không kèm bộ hình/LaTeX, raw data mới hay
-> toàn bộ archive/evidence cục bộ. Một số liên kết evidence `.harness` trong tài
-> liệu tiến độ là lịch sử local, không được phát hành cùng code.
-> [Audit hiện tại](docs/MAIN_MODEL_AUDIT_20261113_VI.md) còn hai lỗi P2; scaffold
-> này chưa được coi là sạch bug hoặc sẵn sàng mở rộng benchmark.
-> [Kiểm chứng trước PR](docs/MAIN_MODEL_PUBLICATION_CHECKS_VI.md): 257 tests pass
-> và subprocess staged CLI parity/no-torch trên fixture.
-
 Workflow hiện hành chạy ba baseline Hron, Tsagris và MICoDa trên toàn bộ bảng count. Source, cấu hình và tests đã chuyển từ `nextgen` ra gốc repo. Thuật toán và giả định ngân sách count giữ nguyên.
 
 ## Cài môi trường
@@ -47,14 +38,7 @@ Tham số:
 - **Schema** (`[dataset]`): `entity` và `targets` là bắt buộc; `time` và `total` là tùy chọn.
   - Thiếu `total` thì total của một dòng là tổng các target. Khi đó mọi ô target phải có giá trị.
   - Ô trống, `na`, `nan`, `none` được hiểu là thiếu.
-  - `time` được đọc thành `Dataset.days`: ngày ISO `YYYY-MM-DD` (hoặc theo `time_format`, cú pháp strptime) thành số ngày kể từ ngày nhỏ nhất, kèm `week = days // 7`; số (mốc thăm khám 1, 2, 3...) giữ nguyên giá trị; chữ khác thành nhãn. Ngày sai định dạng, hoặc trộn ngày ISO với giá trị khác, báo lỗi kèm dòng CSV.
-  - `group_col` (tùy chọn): cột nhóm lớn, ví dụ châu lục. Nếu CSV không có cột này thì `group_map` trỏ tới file CSV (đường dẫn tương đối theo file schema) có hai cột `<entity>,<group_col>`. Không khai báo thì cả bảng là một nhóm. Chỉ `same_day_mean` dùng `days`/`group_col`; Hron/Tsagris/MICoDa không đổi.
-- **`--models`**: mỗi bảng `[hron]`, `[tsagris]`, `[micoda]`, `[zero_fill]`, `[mean_fill]`, `[marginal_sampler]`, `[same_day_mean]` chứa tham số constructor; bảng rỗng dùng mặc định. Model không có trong file, hoặc có `enabled = false`, thì không chạy.
-  - `same_day_mean` là baseline chính thức, chạy mặc định cùng Hron/Tsagris/MICoDa. `zero_fill`, `mean_fill`, `marginal_sampler` là mức sàn (đối thủ giả), `enabled = false` trong `models_default.toml`. Chi tiết: [contract](docs/THREE_BASELINE_CONTRACT_VI.md#same_day_mean-và-ba-mức-sàn).
-  - **Tên biến thể:** một bảng có tên khác tên model phải khai báo `model = "<tên model đã đăng ký>"`. Ví dụ `[sdm_no_time]` với `model = "same_day_mean"` chạy `SameDayMean` với tham số trong bảng, còn output mang tên `sdm_no_time`. Tên model sai thì báo lỗi trước mọi output. `config.json` ghi `resolved_models` (bảng → model, class, tham số). Ví dụ: `configs/models_sameday_ablation.toml`.
-  - `same_day_mean` có thêm các công tắc ablation `use_time`, `use_group`, `weighting` (`"n"`/`"none"`), `residual_rule` (`"cap"`/`"rescale"`). Mặc định giữ nguyên phương pháp và tái lập output cũ đúng từng byte.
-  - **`residual_rule` (step 4, sensitivity):** với `hron`, `tsagris` và `micoda` có `other = true`, khóa này đổi cách runner chia phần dư R = N − V từ composition của model: `"prop_other"` (chia R theo tỷ lệ giữa target thiếu và Other), `"cap"` (co về R nếu vượt, phần còn lại vào Other) hoặc `"rescale"` (luôn chuẩn hóa về đúng R, Other = 0). Hàm dùng chung là `data.apply_residual_rule`, ghép `fill_within_residual` với `restore_counts`. Không có khóa thì mọi model giữ quy tắc hiện tại, giống từng byte. Với `same_day_mean`, khóa này là tham số của model (`cap`/`rescale`). Với `micoda` A17 và các mức sàn thì không áp dụng; config có khóa này sẽ báo lỗi trước mọi output.
-- **`--only NAME ...`**: chỉ chạy các bảng được liệt kê (kể cả bảng `enabled = false`), theo thứ tự đã cho.
+- **`--models`**: mỗi bảng `[hron]`, `[tsagris]`, `[micoda]` chứa tham số constructor; bảng rỗng dùng mặc định. Model không có trong file thì không chạy.
 - **`--mask`**:
   - `none` (mặc định): chỉ chạy lượt điền thật.
   - `random_cell`: che từng ô observed với xác suất `--mask-rate`.
@@ -75,11 +59,9 @@ Thư mục `--output` phải chưa tồn tại.
 | `summary.json` | Toàn bộ chi tiết: Wasserstein theo target của lượt thật, `info_` của model (với MICoDa gồm δ, reference, hội tụ, warning counts), thống kê mask, sai số theo nhóm, `coverage` của lượt che, `aggregate` (mean ± sd qua seed). |
 | `errors.log` | Chỉ xuất hiện khi có lỗi hoặc có run không `completed` (kèm trạng thái `partial`). |
 
-**Bảng tổng hợp của `run.py` không dùng để xếp hạng.** Bảng in ra màn hình, `aggregate` trong `summary.json` và `evaluation.metrics.summarize` lấy mean ± sd trên các seed mà *từng model* chạy xong. Vì vậy hai model có thể được tính trên hai tập seed khác nhau: một model fail ở seed khó sẽ trông tốt hơn thực tế (F07). Để xếp hạng hay so sánh model, dùng Tầng 1 của [module evaluation](src/longitudinal_impute/evaluation/README.md): bảng metric lấy trung bình trên tập seed chung của mọi model, mỗi cặp ghép trên tập seed chung của riêng cặp đó, và run fail vẫn có mặt trong bảng trạng thái.
-
 Ô "bị ép về 0" nằm ở dòng mà tổng các ô nhìn thấy đã bằng N. Phần dư của dòng đó là 0, nên model không quyết định được ô này. Định nghĩa metric nằm trong [`evaluation/metrics.py`](src/longitudinal_impute/evaluation/metrics.py).
 
-**Evaluation 5 tầng** (Tầng 0–3 đã hiện thực, Tầng 4 chưa làm) nằm trong một module: [`src/longitudinal_impute/evaluation/`](src/longitudinal_impute/evaluation/README.md), cấu hình đóng băng và ảnh chụp đầu vào ở `configs/evaluation/`. Chạy: `python -m longitudinal_impute.evaluation {check,masks,run,evaluate}`. Báo cáo và bảng đầy đủ của step 1–8: `git checkout evaluation-v1-results`.
+Module [evaluation](src/longitudinal_impute/evaluation/README.md) triển khai Tầng 0–3 (Tầng 4 chưa làm); CLI: `python -m longitudinal_impute.evaluation {check,masks,run,evaluate}`. Cấu hình lịch sử nằm ở `configs/evaluation/`, yêu cầu run đầu vào theo protocol riêng. `[runs.main]` trong protocol lịch sử là tên nhóm baseline, không phải neural `MainModel`. Để chạy neural model, dùng preset `configs/models_all.toml` và chọn bảng `main`.
 
 ## MICoDa và ngân sách Other chung
 
@@ -124,13 +106,13 @@ Kết quả migration và phạm vi kiểm chứng nằm trong [báo cáo audit 
 | `src/longitudinal_impute/data.py` | Đọc CSV, kiểm tra schema/count, mask và khôi phục counts |
 | `src/longitudinal_impute/baselines/` | Thuật toán Hron, Tsagris và MICoDa |
 | `src/longitudinal_impute/run.py` | CLI và điều phối native/masked |
-| `src/longitudinal_impute/evaluation/` | Evaluation 5 tầng: metric (MSE, MAE, Wasserstein, aggregate), mask matched, Tầng 0–3, protocol v1 |
+| `src/longitudinal_impute/evaluation/` | Metric, mask matched, báo cáo Tầng 0–3 và protocol v1 |
 | `src/longitudinal_impute/main_model.py` | MainModel, hai view an toàn và bounded refinement; torch import trễ |
 | `src/longitudinal_impute/network.py` | Network temporal/feature nhỏ, composition head |
 | `configs/`, `tests/`, `scripts/` | Cấu hình, kiểm thử và kiểm chứng bàn giao |
 | `data/` | Hai CSV nguồn dùng chung, không bị ghi đè khi chạy |
 | `outputs/` | Vị trí output theo các lệnh ví dụ, không đưa vào Git |
-| `archive/` | Runtime/scripts/tests cũ và lịch sử baseline đã được Git track; không phải toàn bộ archive nghiên cứu local |
+| `archive/` | Code, tài liệu và kết quả nghiên cứu cũ |
 
 ## Đọc `errors.log`
 
@@ -162,6 +144,14 @@ uv sync --frozen --extra main --extra test
 Main khởi tạo Tsagris → CLR → train/predict hai view → restore counts, lặp có giới hạn. Thông số nằm trong TOML; giảm `outer_iters`/`epochs_per_iter` trong bản config riêng khi debug. `[main].seed` là model/training seed, khác `--seeds` tạo evaluation masks. Không redraw Q khi Q rỗng/thiếu donor.
 
 Diagnostics trong `summary.json` → native/masked → main → info gồm `trained`, `iterations`, `converged`, `termination_reason`, `history`. Dừng khi max change proportion trên target thiếu **≤ tol**, hoặc hết vòng. `max_iter` với output hợp lệ vẫn completed nhưng `converged=false`; `no_missing` thì `trained=false`, không gọi network. Mỗi vòng ghi loss, change, seconds và converged. Lỗi neural/optional torch (kể cả DLL import trên Windows) được giữ nguyên nguyên nhân trong lỗi domain để baseline tiếp tục; không dùng fallback ngầm.
+
+Metadata is **on by default** in MainModel with four fields: continent, median_age,
+classification and group. The location embedding is optional via `metadata_location=true`
+(off by default because it risks memorising country ID).
+The schema must provide `metadata_path`; missing metadata
+is an error, not a fallback. In `models_all.toml`, `main_nometa` is the old skeleton
+ablation (`metadata=false`).
+Use `--stage full --only main main_nometa` to compare these aliases.
 
 ### Khởi tạo → refinement → chấm lại
 

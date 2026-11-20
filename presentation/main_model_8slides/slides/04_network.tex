@@ -1,0 +1,11 @@
+\begin{frame}{Network Architecture}
+\TightMath
+The network combines counts, time, parts, and static location facts.
+\SlideFigure[.98\linewidth]{04_network}
+\FigureCaption{Figure 3 shows one residual block and its inputs. Source: \texttt{network.py:29--32, 51--67}.}
+\begin{KeyPoints}
+\item The input is $h^{(0)}=\operatorname{Linear}(Z,m)+e_f+e_t+s$. The vector $s$ is the same at every time and part of a location.
+\item Attention exchanges information across time, then parts. The head produces $K$ weights that sum to one.
+\end{KeyPoints}
+\SmallLine{The mask $m$ marks observed values. The codes $e_f$ and $e_t$ identify parts and times. Each vector has $C=32$ numbers. Pre-LN means layer normalization before an operation.}
+\end{frame}

@@ -565,6 +565,8 @@ def main(argv=None):
               'models_sha256': sha256(args.models),
               'code_sha256': previous.get('code_sha256') if args.stage == 'evaluate' else code_hashes(),
               'from_run': str(source[0]) if source is not None else None}
+    if data.metadata_provenance is not None:
+        config['metadata'] = data.metadata_provenance
     if args.stage == 'evaluate':
         config['compute_git'] = previous.get('compute_git', previous.get('git'))
         config['compute_stage'] = previous.get('compute_stage', previous['stage'])

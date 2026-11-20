@@ -1,0 +1,274 @@
+{
+ "data": "C:\\Users\\admin\\Tai_lieu\\detaikhoahoc\\COVID19\\missing_impute\\code-missing-imputation\\data\\covariants.csv",
+ "data_sha256": "bbb1aacdf46ebef345ca818f086d5586f4aded45475b00b6ee9bd89fc94a90ab",
+ "rows": 11671,
+ "schema_path": "C:\\Users\\admin\\Tai_lieu\\detaikhoahoc\\COVID19\\missing_impute\\code-missing-imputation\\configs\\baselines_covariants.toml",
+ "schema": {
+  "metadata_path": "../data/original_long_format.csv",
+  "entity": "location",
+  "time": "date",
+  "time_format": "%Y-%m-%d",
+  "total": "total_sequence",
+  "targets": [
+   "recombinant",
+   "20A",
+   "20B",
+   "20C",
+   "20E",
+   "Beta",
+   "Alpha",
+   "Gamma",
+   "Delta",
+   "Kappa",
+   "Epsilon",
+   "Eta",
+   "Iota",
+   "Lambda",
+   "Mu",
+   "Omicron",
+   "S:677"
+  ],
+  "group_col": "continent",
+  "group_map": "covid_location_continent.csv"
+ },
+ "models_path": "C:\\Users\\admin\\Tai_lieu\\detaikhoahoc\\COVID19\\missing_impute\\code-missing-imputation\\configs\\models_all.toml",
+ "models": {
+  "hron": {
+   "k": 3,
+   "ties": "group",
+   "adjustment": "median"
+  },
+  "tsagris": {
+   "k": 3,
+   "alpha": 1.0,
+   "tune": false,
+   "zero_anchor": "global",
+   "zero_missing_mass": "uniform"
+  },
+  "micoda": {
+   "other": true,
+   "max_iter": 120,
+   "tol": 1e-08
+  },
+  "same_day_mean": {
+   "window_days": 28,
+   "min_obs": 20,
+   "max_widen": 2,
+   "exclude_same_location": false
+  },
+  "main": {
+   "outer_iters": 5,
+   "epochs_per_iter": 10,
+   "batch_size": 8,
+   "learning_rate": 0.001,
+   "tol": 0.0001,
+   "train_mask_rate": 0.1,
+   "seed": 0,
+   "device": "cpu"
+  },
+  "main_nometa": {
+   "model": "main",
+   "metadata": false,
+   "outer_iters": 5,
+   "epochs_per_iter": 10,
+   "batch_size": 8,
+   "learning_rate": 0.001,
+   "tol": 0.0001,
+   "train_mask_rate": 0.1,
+   "seed": 0,
+   "device": "cpu"
+  }
+ },
+ "resolved_models": {
+  "hron": {
+   "model": "hron",
+   "class": "HronKNN",
+   "params": {
+    "k": 3,
+    "ties": "group",
+    "adjustment": "median"
+   },
+   "effective_params": {
+    "k": 3,
+    "adjustment": "median",
+    "ties": "group"
+   }
+  },
+  "tsagris": {
+   "model": "tsagris",
+   "class": "TsagrisKNN",
+   "params": {
+    "k": 3,
+    "alpha": 1.0,
+    "tune": false,
+    "zero_anchor": "global",
+    "zero_missing_mass": "uniform"
+   },
+   "effective_params": {
+    "k": 3,
+    "alpha": 1.0,
+    "zero_anchor": "global",
+    "zero_missing_mass": "uniform",
+    "tune": false,
+    "ks": [
+     1,
+     3,
+     5,
+     10
+    ],
+    "alphas": [
+     0.25,
+     0.5,
+     0.75,
+     1.0
+    ],
+    "leave_n": null,
+    "repetitions": 5,
+    "seed": 0
+   }
+  },
+  "micoda": {
+   "model": "micoda",
+   "class": "MICoDaCovid",
+   "params": {
+    "other": true,
+    "max_iter": 120,
+    "tol": 1e-08
+   },
+   "effective_params": {
+    "max_iter": 120,
+    "tol": 1e-08,
+    "reference": null,
+    "other": true
+   }
+  },
+  "same_day_mean": {
+   "model": "same_day_mean",
+   "class": "SameDayMean",
+   "params": {
+    "window_days": 28,
+    "min_obs": 20,
+    "max_widen": 2,
+    "exclude_same_location": false
+   },
+   "effective_params": {
+    "window_days": 28,
+    "min_obs": 20,
+    "max_widen": 2,
+    "exclude_same_location": false,
+    "use_time": true,
+    "use_group": true,
+    "weighting": "n",
+    "residual_rule": "cap"
+   }
+  },
+  "main": {
+   "model": "main",
+   "class": "MainModel",
+   "params": {
+    "outer_iters": 5,
+    "epochs_per_iter": 10,
+    "batch_size": 8,
+    "learning_rate": 0.001,
+    "tol": 0.0001,
+    "train_mask_rate": 0.1,
+    "seed": 0,
+    "device": "cpu"
+   },
+   "effective_params": {
+    "init_k": 3,
+    "channels": 32,
+    "heads": 4,
+    "outer_iters": 5,
+    "epochs_per_iter": 10,
+    "batch_size": 8,
+    "learning_rate": 0.001,
+    "tol": 0.0001,
+    "train_mask_rate": 0.1,
+    "seed": 0,
+    "device": "cpu",
+    "metadata": true,
+    "metadata_location": false
+   }
+  },
+  "main_nometa": {
+   "model": "main",
+   "class": "MainModel",
+   "params": {
+    "metadata": false,
+    "outer_iters": 5,
+    "epochs_per_iter": 10,
+    "batch_size": 8,
+    "learning_rate": 0.001,
+    "tol": 0.0001,
+    "train_mask_rate": 0.1,
+    "seed": 0,
+    "device": "cpu"
+   },
+   "effective_params": {
+    "init_k": 3,
+    "channels": 32,
+    "heads": 4,
+    "outer_iters": 5,
+    "epochs_per_iter": 10,
+    "batch_size": 8,
+    "learning_rate": 0.001,
+    "tol": 0.0001,
+    "train_mask_rate": 0.1,
+    "seed": 0,
+    "device": "cpu",
+    "metadata": false,
+    "metadata_location": false
+   }
+  }
+ },
+ "only": [
+  "hron",
+  "tsagris",
+  "micoda",
+  "same_day_mean",
+  "main",
+  "main_nometa"
+ ],
+ "mask": "whole_feature",
+ "mask_rate": 0.05,
+ "seeds": [
+  300,
+  301,
+  302,
+  303,
+  304,
+  305,
+  306,
+  307,
+  308,
+  309
+ ],
+ "git": {
+  "commit": "59a7777f3bb72e1f0439eaf18f192a74232656b2",
+  "uncommitted_changes": true
+ },
+ "group_map": {
+  "path": "C:\\Users\\admin\\Tai_lieu\\detaikhoahoc\\COVID19\\missing_impute\\code-missing-imputation\\configs\\covid_location_continent.csv",
+  "sha256": "5e0547a924b2096070423de7267ee7508075a70a08ce6c1c6fd139b24f6935fc",
+  "entries": 150,
+  "rows_resolved": 11671,
+  "groups": 6
+ },
+ "save_predictions": true,
+ "stage": "full",
+ "pass": "masked",
+ "schema_sha256": "c5342a7393071d764621695f33ffc6ed43f4b2278a0cf46187a0501cd9c5dfc1",
+ "models_sha256": "8e71daaff1be32f0a57eadc30f8b212cbfaeeb572668545a2169dc79508d764b",
+ "code_sha256": {
+  "data.py": "de83331aa919670f85f6fda88ae556a618bddd0bac37207cb236fd27128658fc",
+  "main_model.py": "418a621fba28eb8ecbcdf33277110927685432ba8fb4196a59d7936bd0a250a9",
+  "network.py": "b3a06be5ae6acb59ac43db3cd3cb7b3c75f07be87e833609cbc921c99941a912",
+  "baselines/tsagris.py": "5de59f2944fbd835a69f97dcb87e977e851ff28c425efbfc98c85ffe1cefae01"
+ },
+ "from_run": null,
+ "metadata": {
+  "path": "C:\\Users\\admin\\Tai_lieu\\detaikhoahoc\\COVID19\\missing_impute\\code-missing-imputation\\data\\original_long_format.csv",
+  "sha256": "9eecf724ef34179ff5dbee4908a0bdf27fc63bc0f4e3aba3fa4e734e9f7fb7ac"
+ }
+}

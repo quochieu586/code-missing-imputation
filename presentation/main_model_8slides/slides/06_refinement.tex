@@ -1,0 +1,13 @@
+\begin{frame}{Iterative Refinement}
+\TightMath
+Each round fits the model and restores both views.
+\SlideFigure[.8\linewidth]{08_refinement}
+\FigureCaption{Figure 5 shows one round. Source: \texttt{main\_model.py:211--339}. Both views use the same weights.}
+\[
+\Delta_r=\max\nolimits_{(i,j)\in M_I}\frac{|x^{(r)}_{I,ij}-x^{(r-1)}_{I,ij}|}{T_i};\quad
+\text{stop if }\Delta_r\le\varepsilon\text{ or }r=R_{\max}.
+\]
+\SmallLine{$x_I$ contains inference counts. $M_I$ contains missing targets. Each round keeps model parameters, masks and labels.}
+\SmallLine{Initialization saves a state. Refinement updates its counts. Evaluation tests predictions without training. Source: \texttt{run.py:288--431}.}
+\SmallLine{Convergence is not guaranteed. Masks share random streams. Restoration can reject valid decimal counts. Source: project audit, 2026-11-13.}
+\end{frame}

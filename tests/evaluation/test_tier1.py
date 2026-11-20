@@ -107,7 +107,7 @@ def test_end_to_end_on_fixture_with_one_failing_run(tmp_path, monkeypatch):
     assert all(r['n'] == 2 for (a, b, m), r in pairs.items() if 'tsagris' not in (a, b) and m == 'mae_prop')
     with (tmp_path / 'out' / 'tier01_status.csv').open(newline='') as stream:
         assert sum(1 for r in csv.DictReader(stream)) == 5 * (1 + 2)
-    text = (tmp_path / 'out' / 'tier01_results.md').read_text()
+    text = (tmp_path / 'out' / 'tier01_results.md').read_text(encoding='utf-8')
     assert 'Seed 2 bị loại: tsagris failed (insufficient_data).' in text
 
 
@@ -129,5 +129,5 @@ def test_undeclared_seed_is_in_status_only(tmp_path, monkeypatch):
         ('tsagris', '2', 'failed')]
     assert {r['seed'] for r in run_rows} == {'1'}
     assert all(r['seeds_used'] == '1' and r['dropped'] == '' for r in pair_rows)
-    text = (tmp_path / 'out' / 'tier01_results.md').read_text()
+    text = (tmp_path / 'out' / 'tier01_results.md').read_text(encoding='utf-8')
     assert 'Seed không khai báo trước (2)' in text and 'Seed 2 bị loại' not in text

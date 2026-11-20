@@ -226,6 +226,7 @@ def train_one_round(network, view, train_mask, labels, *, epochs=10, batch_size=
         raise BaselineInputError('train: Q needs finite proportion labels in [0, 1]')
     tensors, indices = _network_inputs(network, view)
     features, observed, times, valid = tensors
+    metadata = _metadata_inputs(network, view.data)
     device = features.device
     optimizer = torch.optim.Adam(network.parameters(), lr=learning_rate)
     network.train()
@@ -239,7 +240,9 @@ def train_one_round(network, view, train_mask, labels, *, epochs=10, batch_size=
             if not q.any():
                 continue  # No labels in these entities, not a successful training step.
             optimizer.zero_grad(set_to_none=True)
-            proposals = network(features[start:end], observed[start:end], times[start:end], valid[start:end])
+            args = (features[start:end], observed[start:end], times[start:end], valid[start:end])
+            proposals = network(*args) if metadata is None else network(
+                *args, {key: value[start:end] for key, value in metadata.items()})
             proposals = proposals[valid[start:end]]
             loss = masked_composition_loss(
                 proposals, torch.as_tensor(view.data.counts[rows], dtype=torch.float64, device=device),
@@ -267,18 +270,46 @@ def predict_counts(network, view, *, batch_size=8):
         raise BaselineInputError('predict: batch_size must be a positive integer')
     tensors, indices = _network_inputs(network, view)
     features, observed, times, valid = tensors
+    metadata = _metadata_inputs(network, view.data)
     packed = np.zeros(features.shape, dtype=np.float64)
     network.eval()
     with torch.no_grad():
         for start in range(0, len(indices), batch_size):
             end = start + batch_size
-            p = network(features[start:end], observed[start:end], times[start:end], valid[start:end])
+            args = (features[start:end], observed[start:end], times[start:end], valid[start:end])
+            p = network(*args) if metadata is None else network(
+                *args, {key: value[start:end] for key, value in metadata.items()})
             packed[start:end] = p.cpu().numpy()
     proposals = unpack_sequences(packed, indices)
     nothing = np.zeros(view.data.counts.shape, dtype=bool)
     counts = restore_counts(view.data, proposals * view.data.totals[:, None], nothing)
     check_completed(view.data, counts, nothing)
     return counts
+
+
+def _metadata_inputs(network, data):
+    """Use the current view and precisely pack_sequences' sorted entity axis."""
+    import torch
+    spec = getattr(network, 'metadata_spec', None)
+    if spec is None:
+        return None
+    if data.metadata is None:
+        raise BaselineInputError('metadata: static entity records required')
+    parameter = next(network.parameters())
+    try:
+        records = [data.metadata[entity] for entity in sorted(set(data.entities))]
+        tensors = {field: torch.tensor([vocab[row[field]] for row in records],
+                                      dtype=torch.long, device=parameter.device)
+                   for field, vocab in spec['vocabularies'].items()}
+        ages = np.array([row['median_age'] for row in records], dtype=float)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise BaselineInputError(f'metadata: missing entity or unknown label: {exc}') from exc
+    if not np.isfinite(ages).all():
+        raise BaselineInputError('metadata: finite age required')
+    tensors['median_age'] = torch.as_tensor(
+        ((ages - spec['age_mean']) / spec['age_sd'])[:, None],
+        dtype=parameter.dtype, device=parameter.device)
+    return tensors
 
 
 def _network_inputs(network, view):
@@ -342,7 +373,8 @@ def refine(network, inference, training, train_mask, labels, *, outer_iters=5, t
 class MainModel:
     """Small counts-facing orchestrator; configuration must not import torch."""
     def __init__(self, *, init_k=3, channels=32, heads=4, outer_iters=5, epochs_per_iter=10,
-                 batch_size=8, learning_rate=1e-3, tol=1e-4, train_mask_rate=.1, seed=0, device='cpu'):
+                 batch_size=8, learning_rate=1e-3, tol=1e-4, train_mask_rate=.1, seed=0, device='cpu',
+                 metadata=True, metadata_location=False):
         integers = {'init_k': init_k, 'channels': channels, 'heads': heads,
                     'outer_iters': outer_iters, 'epochs_per_iter': epochs_per_iter, 'batch_size': batch_size}
         for name, value in integers.items():
@@ -363,7 +395,30 @@ class MainModel:
         self.outer_iters, self.epochs_per_iter, self.batch_size = outer_iters, epochs_per_iter, batch_size
         self.learning_rate, self.tol, self.train_mask_rate = learning_rate, tol, train_mask_rate
         self.seed, self.device = seed, device
+        if not isinstance(metadata, bool) or not isinstance(metadata_location, bool):
+            raise BaselineInputError('metadata flags must be boolean')
+        self.metadata, self.metadata_location = metadata, metadata_location
         self.network_, self.info_ = None, {}
+
+    def _fit_metadata(self, data):
+        if not self.metadata:
+            return None
+        if data.metadata is None:
+            raise BaselineInputError('metadata: static entity records required')
+        fields = ['continent', 'classification', 'group']
+        if self.metadata_location:
+            fields.insert(1, 'location')
+        try:
+            records = [data.metadata[entity] for entity in sorted(set(data.entities))]
+            vocabularies = {field: {label: i for i, label in enumerate(sorted({row[field] for row in records}))}
+                            for field in fields}
+            ages = np.array([row['median_age'] for row in records], dtype=float)
+        except (KeyError, TypeError, ValueError) as exc:
+            raise BaselineInputError(f'metadata: invalid entity records: {exc}') from exc
+        mean, sd = float(ages.mean()), float(ages.std())
+        if not np.isfinite(ages).all() or not np.isfinite(mean) or not np.isfinite(sd) or sd <= 0:
+            raise BaselineInputError('metadata: finite ages and positive sd required')
+        return {'vocabularies': vocabularies, 'age_mean': mean, 'age_sd': sd}
 
     def prepare(self, data, hidden=None):
         """Torch-free stage boundary, also used by the full path."""
@@ -387,6 +442,9 @@ class MainModel:
         stage = 'input'
         try:
             _time_values(data)
+            metadata_spec = self._fit_metadata(data)
+            if metadata_spec is not None:
+                self.info_['metadata'] = metadata_spec
             if hidden is None:
                 hidden = np.zeros(data.counts.shape, bool)
             values = model_input(data, hidden)  # validates H without exposing its truth
@@ -409,7 +467,9 @@ class MainModel:
             # Isolate construction RNG; training has no dropout or random batch shuffle.
             with torch.random.fork_rng(devices=[]):
                 torch.manual_seed(self.seed)
-                network = CompositionNet(len(data.targets) + 1, self.channels, self.heads)
+                args = (len(data.targets) + 1, self.channels, self.heads)
+                network = (CompositionNet(*args) if metadata_spec is None else
+                           CompositionNet(*args, metadata_spec=metadata_spec))
             stage = 'refine'
             completed, result = refine(network, inference, training, q, labels,
                                        outer_iters=self.outer_iters, tol=self.tol,

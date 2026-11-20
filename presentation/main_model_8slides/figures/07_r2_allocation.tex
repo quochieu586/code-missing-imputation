@@ -1,0 +1,52 @@
+\documentclass[tikz,border=5pt]{standalone}
+\input{figure_style.tex}
+% Exact installed CM size: avoid the shared 8.5 pt request substituting to 8 pt.
+\renewcommand{\figsmall}{\sffamily\fontsize{9}{10.5}\selectfont}
+\begin{document}
+\begin{tikzpicture}[y=.8cm]
+  % Original, exactly proportional illustration: 1 cm = 10 count units.
+  % The anchor proposal is excluded; only the three free weights are normalized.
+  \node[small] (excluded) at (1.5,3.88) {$p_1=.40$};
+  \draw[draw=Muted,line width=.6pt]
+    ($(excluded.west)+(0,.02)$) -- ($(excluded.east)+(0,-.02)$);
+  \node[small] at (6.5,3.88)
+    {$(.18,.12,.30)/.60=(.30,.20,.50)$};
+
+  \fill[Observed] (0,2.65) rectangle (3,3.35);
+  \path[fill=GrayFill] (3,2.65) rectangle (10,3.35);
+  \path[pattern=north east lines,pattern color=Rule]
+    (3,2.65) rectangle (10,3.35);
+  \draw[hair] (0,2.65) rectangle (10,3.35);
+  \node[label,text=white] at (1.5,3) {T1\; 30};
+  \node[label,fill=GrayFill,inner sep=1pt] at (6.5,3.0)
+    {T2 ?, T3 ?, Other ?\;\; Free 70};
+
+  % Same anchor width and fill in both rows; the lock is an original vector glyph.
+  \draw[hair,densely dashed] (3,1.2) -- (3,3.35);
+  \path[draw=Observed,fill=PaleBlue,line width=.65pt]
+    (1.08,2.12) rectangle (1.34,2.34);
+  \draw[draw=Observed,line width=.8pt]
+    (1.13,2.34) -- (1.13,2.44) arc (180:0:.08) -- (1.29,2.34);
+  \node[small,anchor=west] at (1.46,2.25) {anchor};
+  \draw[flow] (6.5,2.6) -- node[small,right=3pt] {$\times70$} (6.5,1.96);
+
+  % Exact final partition: 30 + 21 + 14 + 35 = 100.
+  \fill[Observed] (0,1.2) rectangle (3,1.9);
+  \fill[Teal!68] (3,1.2) rectangle (5.1,1.9);
+  \fill[Teal!28] (5.1,1.2) rectangle (6.5,1.9);
+  \fill[GrayFill] (6.5,1.2) rectangle (10,1.9);
+  \foreach \x in {3,5.1,6.5}
+    \draw[white,line width=.9pt] (\x,1.2) -- (\x,1.9);
+  \draw[hair] (0,1.2) rectangle (10,1.9);
+  \node[label,text=white] at (1.5,1.55) {T1\; 30};
+  \node[label] at (4.05,1.55) {T2\; 21};
+  \node[label] at (5.8,1.55) {T3\; 14};
+  \node[label] at (8.25,1.55) {Other\; 35};
+
+  \draw[hair] (0,1.05) -- (0,.88) -- (6.5,.88) -- (6.5,1.05);
+  \draw[hair] (6.5,1.05) -- (6.5,.88) -- (10,.88) -- (10,1.05);
+  \node[small] at (3.25,.57) {Targets: 65};
+  \node[small] at (8.25,.57) {internal};
+  \node[small] at (5,.02) {$\sum_{k=1}^{K}\widehat c_k=T=100$};
+\end{tikzpicture}
+\end{document}

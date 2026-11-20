@@ -1,4 +1,5 @@
 [dataset]
+metadata_path = "../data/original_long_format.csv"
 entity = "location"
 time = "date"
 time_format = "%Y-%m-%d"

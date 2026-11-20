@@ -1,0 +1,47 @@
+\documentclass[tikz,border=5pt]{standalone}
+\input{figure_style.tex}
+% Compact final-slide adaptation of v3 figure08; fonts are not scaled down.
+\newcommand{\StateGrid}[2]{%
+  \begin{scope}[scale=.58]
+    \DataGrid{2}
+    \foreach \c/\r in {3/0,0/1,2/2}{%
+      \fill[Teal!#2] (\c*.31,\r*.31) rectangle ++(.31,.31);
+      \draw[white,line width=.7pt] (\c*.31,\r*.31) rectangle ++(.31,.31);}
+    \ifnum#1=1
+      \foreach \c/\r in {1/0,4/3}{%
+        \fill[Teal!#2] (\c*.31,\r*.31) rectangle ++(.31,.31);
+        \draw[white,line width=.7pt] (\c*.31,\r*.31) rectangle ++(.31,.31);
+        \fill[Orange] (\c*.31+.02,\r*.31+.02) -- ++(.09,0) -- ++(-.09,.09) -- cycle;}
+    \fi
+  \end{scope}}
+\begin{document}
+\begin{tikzpicture}
+  \node[label,anchor=west,text=Orange] at (0,1.80) {Training};
+  \node[label,anchor=west,text=Observed] at (0,.45) {Inference};
+  \node[small] at (2.2,2.45) {$r-1$};
+  \node[small] at (10.25,2.45) {$r$};
+  \begin{scope}[shift={(1.75,1.44)}]\StateGrid{1}{32}\end{scope}
+  \begin{scope}[shift={(9.80,1.44)}]\StateGrid{1}{68}\end{scope}
+  \begin{scope}[shift={(1.75,.09)}]\StateGrid{0}{32}\end{scope}
+  \begin{scope}[shift={(9.80,.09)}]\StateGrid{0}{68}\end{scope}
+  \node[operator,draw=Orange!60,fill=PaleOrange] (fit) at (4.28,1.80) {1 Fit $\theta$};
+  \node[operator,draw=Orange!60] (ft) at (6.40,1.80) {$f_\theta$};
+  \node[operator,draw=Orange!60] (rt) at (8.23,1.80) {2 R2};
+  \node[operator,draw=Observed!60,fill=PaleBlue] (fi) at (6.40,.45) {$f_\theta$};
+  \node[operator,draw=Observed!60] (ri) at (8.23,.45) {3 R2};
+  \draw[flow,draw=Orange] (2.73,1.80) -- (fit.west);
+  % Data enter prediction from the OLD training completion, not a fit output.
+  \draw[flow,draw=Orange] (2.90,1.80) -- (2.90,2.60) -- (6.40,2.60) -- (ft.north);
+  \fill[Orange] (2.90,1.80) circle (.65pt);
+  \draw[weight] (fit.east) -- (ft.west);
+  \draw[flow,draw=Orange] (ft) -- (rt);
+  \draw[flow,draw=Orange] (rt) -- (9.72,1.80);
+  \draw[flow,draw=Observed] (2.73,.45) -- (fi);
+  \draw[flow,draw=Observed] (fi) -- (ri);
+  \draw[flow,draw=Observed] (ri) -- (9.72,.45);
+  \draw[weight] (ft.south) -- node[small,right=3pt] {$\theta$} (fi.north);
+  \draw[draw=Muted,line width=.55pt,decorate,decoration={brace,amplitude=3pt}]
+    (10.98,2.20) -- (10.98,.04);
+  \node[small] at (11.30,1.12) {$\circlearrowleft$};
+\end{tikzpicture}
+\end{document}

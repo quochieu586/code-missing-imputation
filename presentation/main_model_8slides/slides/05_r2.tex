@@ -1,0 +1,12 @@
+\begin{frame}{Restoring the Count Budget}
+\TightMath
+Count restoration keeps visible counts and shares the remaining total.
+\SmallLine{$V_i$ is the set of visible targets. $M_i$ is the set of missing targets and $o$ is Other, so $F_i=M_i\cup\{o\}$. The rule keeps $c_{ij}$ for every $j\in V_i$.}
+\[
+R_i=T_i-\sum\nolimits_{j\in V_i}c_{ij},\qquad
+\widehat c_{ij}=R_i\frac{p_{ij}}{\sum_{k\in F_i}p_{ik}},\quad j\in F_i.
+\]
+\SlideFigure[.77\linewidth]{07_r2_allocation}
+\FigureCaption{Figure 4 shows an illustrative allocation. Source: \texttt{data.py:337--364} and \texttt{main\_model.py:166--208}. The rule preserves the known count.}
+\SmallLine{The example uses $T=100$. The weights $.18,.12,.30$ become the shares $.30,.20,.50$ of the remaining 70. These values are not experimental results.}
+\end{frame}

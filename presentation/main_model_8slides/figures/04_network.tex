@@ -1,0 +1,88 @@
+\documentclass[tikz,border=5pt]{standalone}
+\input{figure_style.tex}
+% Exact operator trace: network.py:40--60. One block, three local residuals.
+\begin{document}
+\begin{tikzpicture}[y=.8cm]
+ \begin{scope}[shift={(0,.78)},scale=.38]\DataGrid{1}\end{scope}
+ \begin{scope}[shift={(.20,1.40)},scale=.38]\MaskGrid\end{scope}
+ \node[small] at (.38,.45) {$Z,m$};
+ \node[operator,minimum width=.86cm,minimum height=.74cm] (lift) at (1.55,1.30) {Linear};
+ \node[sum] (embedding) at (2.57,1.30) {$+$};
+ \draw[flow] (.85,1.30) -- (lift);
+ \draw[flow] (lift) -- (embedding);
+ \begin{scope}[shift={(2.10,3.05)}]\ChannelStrip{Observed}\end{scope}
+ \node[small] at (2.85,3.72) {$e_f+e_t$};
+ \draw[flow] (2.57,3.01) -- (embedding.north);
+ \node[small] at (2.84,.62) {$h^{(0)}$};
+
+
+ % Four static fields form one shared vector.
+ \foreach \y/\name in {4.9/continent,4.2/income,3.5/group}{
+  \node[small,anchor=east] at (-1.25,\y) {\name};
+  \foreach \r in {0,1,2} {
+   \ifnum\r=1 \def\rowfill{Observed!65}\else\def\rowfill{PaleBlue}\fi
+   \draw[draw=Rule,fill=\rowfill,line width=.35pt] (-1.12,\y-.22+\r*.16) rectangle ++(.50,.13);
+  }
+  \draw[draw=Ink,line width=.6pt] (-.60,\y) -- (.55,\y) -- (.55,4.2);
+ }
+ \node[small,anchor=east] at (-1.25,2.8) {median age};
+ \draw[draw=Rule,fill=PaleBlue] (-1.05,2.68) rectangle ++(.16,.24);
+ \node[operator,font=\figsmall,minimum width=.6cm,minimum height=.35cm,inner sep=1pt] (age) at (-.25,2.8) {Linear};
+ \draw[flow] (-.87,2.8) -- (age);
+ \draw[draw=Ink,line width=.6pt] (age.east) -- (.55,2.8) -- (.55,4.2);
+ \node[sum] (msum) at (.85,4.2) {$+$};
+ \draw[flow] (.55,4.2) -- (msum);
+ \begin{scope}[shift={(1.28,4.00)},scale=.65]\ChannelStrip{Observed}\end{scope}
+ \draw[flow] (msum.east) -- (1.27,4.2);
+ \node[small] at (1.58,4.65) {$s$};
+ \draw[flow] (1.90,4.2) -- (2.08,4.2) -- (2.08,2.25) -- (2.57,2.25);
+ \fill[Ink] (2.57,2.25) circle (.65pt);
+ % Visual operators carry the mechanism; detailed shapes belong to captions.
+ \path[draw=Rule,fill=PaleBlue!35,line width=.6pt] (3.27,.52) rectangle (4.57,2.05);
+ \begin{scope}[shift={(3.50,.96)},scale=.65]\AxisGrid{0}\end{scope}
+ \node[label,font=\fontsize{7.2}{8.2}\selectfont] at (3.92,2.27) {Time attention};
+ \node[small] at (3.92,.72) {Pre-LN};
+ \coordinate (tin) at (3.27,1.30);\coordinate (tout) at (4.57,1.30);
+ \node[sum] (tr) at (4.98,1.30) {$+$};
+ \draw[flow] (embedding.east) -- (tin);
+ \draw[flow] (tout) -- (tr);
+ \fill[Ink] (3.04,1.30) circle (.65pt);
+ \draw[flow] (3.04,1.30) -- (3.04,2.65) -- (4.98,2.65) -- (tr.north);
+
+ \path[draw=Rule,fill=PaleTeal!45,line width=.6pt] (5.50,.52) rectangle (6.80,2.05);
+ \begin{scope}[shift={(5.73,.96)},scale=.65]\AxisGrid{1}\end{scope}
+ \node[label,font=\fontsize{7.2}{8.2}\selectfont] at (6.15,2.27) {Part attention};
+ \node[small] at (6.15,.72) {Pre-LN};
+ \node[sum] (fr) at (7.21,1.30) {$+$};
+ \draw[flow] (tr) -- (5.50,1.30);
+ \draw[flow] (6.80,1.30) -- (fr);
+ \fill[Ink] (5.22,1.30) circle (.65pt);
+  \draw[flow] (5.22,1.30) -- (5.22,2.65) -- (7.21,2.65) -- (fr.north);
+  \node[small] at (7.21,3.10) {$h^{(2)}$};
+
+ \path[draw=Rule,fill=GrayFill,line width=.6pt] (7.72,.52) rectangle (9.02,2.05);
+ \node[label] at (8.37,2.27) {Gate};
+ \draw[Observed,line width=.9pt,domain=-1:1,samples=31,smooth]
+  plot ({8.37+.48*\x},{1.61+.20*tanh(2*\x)});
+ \draw[Teal,line width=.9pt,domain=-1:1,samples=31,smooth]
+  plot ({8.37+.48*\x},{1.11+.30/(1+exp(-4*\x))});
+ \node[small] at (8.37,.72) {Pre-LN};
+ \node[sum] (gr) at (9.43,1.30) {$+$};
+ \draw[flow] (fr) -- (7.72,1.30);
+ \draw[flow] (9.02,1.30) -- (gr);
+ \fill[Ink] (7.46,1.30) circle (.65pt);
+  \draw[flow] (7.46,1.30) -- (7.46,2.65) -- (9.43,2.65) -- (gr.north);
+  \node[small] at (9.43,3.10) {$h^{(3)}$};
+
+ \node[operator,font=\figsmall,minimum width=1.35cm,minimum height=1.12cm,inner sep=2pt]
+  (head) at (10.55,1.30) {Head\\[-1pt]Softmax$_K$};
+ \draw[flow] (gr) -- (head);
+ \draw[flow] (head.east) -- (11.44,1.30);
+ \foreach \x/\h in {11.53/.40,11.75/.82,11.97/.58,12.19/1.04}
+  \fill[Observed!65] (\x,.78) rectangle ++(.15,\h);
+ \node[small] at (11.90,.45) {$p$};
+ \draw[draw=Rule,decorate,decoration={brace,mirror,amplitude=3pt}]
+  (3.27,.30) -- (9.55,.30);
+ \node[small] at (6.41,-.02) {One residual block};
+\end{tikzpicture}
+\end{document}

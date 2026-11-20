@@ -7,7 +7,7 @@ from longitudinal_impute import run
 from longitudinal_impute.data import load_csv
 from test_run import FIXTURES, COVID_SCHEMA, MICROBIOME_SCHEMA, write
 
-MAIN = '[main]\nchannels=8\nheads=2\nouter_iters=1\nepochs_per_iter=1\nbatch_size=2\nseed=0\n'
+MAIN = '[main]\nmetadata=false\nchannels=8\nheads=2\nouter_iters=1\nepochs_per_iter=1\nbatch_size=2\nseed=0\n'
 
 
 def command(tmp_path, output, models='[hron]\n[tsagris]\n[micoda]\n', case='covid', *extra):

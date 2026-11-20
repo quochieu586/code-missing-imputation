@@ -31,7 +31,7 @@ def test_complete_input_skips_torch_and_training(monkeypatch):
             raise AssertionError('No torch import on no-missing case or constructor')
         return original(name, *args, **kwargs)
     monkeypatch.setattr(builtins, '__import__', guarded)
-    model = MainModel()
+    model = MainModel(metadata=False)
     data = data_for_main()
     data.counts[-1, 1] = 30.
     completed = model.impute(data)
@@ -51,14 +51,14 @@ def test_missing_torch_reports_actionable_error(monkeypatch, cause):
             raise ModuleNotFoundError('torch deliberately unavailable', name='torch')
         return original(name, *args, **kwargs)
     monkeypatch.setattr(builtins, '__import__', guarded)
-    model = MainModel()
+    model = MainModel(metadata=False)
     with pytest.raises(ValueError, match='extra main'):
         model.impute(data_for_main())
     assert model.network_ is None and model.info_['termination_reason'] == 'failed'
 
 
 def test_empty_q_is_not_silently_redrawn_or_reported_as_trained():
-    model = MainModel(train_mask_rate=0.)
+    model = MainModel(metadata=False, train_mask_rate=0.)
     with pytest.raises(ValueError, match='nonempty'):
         model.impute(data_for_main())
 
@@ -78,7 +78,7 @@ def test_one_outer_round_matches_existing_api_and_resets_each_call():
         train_one_round(expected_network, training, q, labels, epochs=1, batch_size=2)
         training.counts = predict_counts(expected_network, training, batch_size=2)
         expected = predict_counts(expected_network, inference, batch_size=2)
-        model = MainModel(channels=8, heads=2, outer_iters=1, epochs_per_iter=1, batch_size=2, tol=0.)
+        model = MainModel(metadata=False, channels=8, heads=2, outer_iters=1, epochs_per_iter=1, batch_size=2, tol=0.)
         before_rng = torch.get_rng_state().clone()
         actual = model.impute(data)
         np.testing.assert_array_equal(actual, expected)
@@ -104,7 +104,7 @@ def test_real_multi_rounds_keep_observations_and_isolate_hidden_truth():
         data = data_for_main()
         hidden = np.zeros_like(data.counts, bool)
         hidden[0, 1] = True
-        model = MainModel(channels=8, heads=2, outer_iters=3, epochs_per_iter=1, tol=0.)
+        model = MainModel(metadata=False, channels=8, heads=2, outer_iters=3, epochs_per_iter=1, tol=0.)
         first = model.impute(data, hidden)
         weights = [p.detach().clone() for p in model.network_.parameters()]
         first_info = model.info_

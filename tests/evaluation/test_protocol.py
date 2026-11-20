@@ -175,6 +175,9 @@ def test_amended_config_still_matches_the_frozen_hash_and_any_other_edit_does_no
     """eval_v1.toml after the restructure (paths moved, amendment block) is the frozen file once
     v1.frozen_bytes() undoes exactly those edits; masks_manifest.json keeps the frozen sha256."""
     frozen = json.loads((CONFIGS / 'masks_manifest.json').read_text(encoding='utf-8'))['config_sha256']
+    crlf = tmp_path / 'windows.toml'
+    crlf.write_bytes(TEXT.replace('\n', '\r\n').encode('utf-8'))
+    assert v1.frozen_sha256(crlf) == frozen
     assert v1.frozen_sha256(CONFIGS / 'eval_v1.toml') == frozen
     text = TEXT
     for old, new in (('min_wins = 8', 'min_wins = 7'), ('# --- end of amendment ---\n', '# --- end of amendment ---\n#\n')):

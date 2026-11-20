@@ -1,0 +1,14 @@
+\begin{frame}{Tier 0 checks the saved runs --- exploratory}
+\fontsize{9}{11}\selectfont
+The checks cover six models, three masks, and seeds 300--309.
+\par\medskip
+\begin{center}\begin{tabular}{lr}\hline
+The check & The result \\\hline
+The runs completed. & 180 of 180 \\
+The coverage is complete. & 100\% \\
+The models keep visible cells. & All runs \\
+The checks accept the outputs. & All runs \\
+\hline\end{tabular}\end{center}We hide 5\% of values. Whole-feature masks hide a feature; random-cell masks hide individual cells. Matched masks hide whole country--variant series, weighted toward the continent and total-count strata of truly missing, model-decided cells.\par\medskip Main uses continent, median age, income classification, and group. No metadata uses the same model without these fields. Hron, Tsagris, and MICoDA are comparison methods. Same-day mean uses the total-weighted mean fraction for that variant in the same continent within $\pm28$ days; sparse windows widen, then fall back to the global mean.\par\medskip The seeds were seen during development. These results are not confirmatory.
+\par\medskip
+\textbf{All 180 runs pass the output checks.}
+\end{frame}
