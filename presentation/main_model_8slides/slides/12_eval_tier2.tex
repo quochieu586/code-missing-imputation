@@ -1,0 +1,16 @@
+\begin{frame}{Tier 2 describes truly missing cells --- exploratory}
+\fontsize{9}{11}\selectfont
+These diagnostics describe filled cells; they do not measure true error.
+\par\medskip
+D1 subtracts the reference zero fraction from the filled zero fraction. D2 measures the Wasserstein distance between positive count fractions: it measures how far their distributions move. The local reference uses nearby observed data. The table gives equal weight to each variant (target feature).\par\medskip D3 counts positive fills outside the time range with observed data for a feature; its mass sums their count fractions.\begin{center}\begin{tabular}{lrrrr}\hline
+The model & D1 & D2 & D3 cells & D3 mass \\\hline
+Hron & +0.054 & 0.0485 & 102 & 6.947 \\
+Tsagris & -0.052 & 0.0646 & 589 & 18.441 \\
+MICoDA & -0.055 & 0.0652 & 1259 & 24.028 \\
+Same-day mean & +0.066 & 0.0565 & 83 & 0.362 \\
+Main & -0.005 & 0.0591 & 433 & 72.654 \\
+No metadata & -0.062 & 0.0598 & 793 & 106.732 \\
+\hline\end{tabular}\end{center}
+\par\medskip
+\textbf{Main has a small zero-fraction gap, but its out-of-range mass exceeds every comparison method except No metadata.}
+\end{frame}

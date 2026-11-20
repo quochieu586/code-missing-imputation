@@ -1,0 +1,12 @@
+\begin{frame}{Separate Training and Evaluation}
+\TightMath
+$H$ marks evaluation cells. $Q$ marks training cells. The sets do not overlap.
+\SlideFigure[.86\linewidth]{03_two_views}
+\FigureCaption{Figure 2 shows separate views. Source: \texttt{main\_model.py}, training and prediction. Both views share weights, not completions. MSE means mean squared error.}
+\SmallLine{The training view hides training cells $Q$ before initialization. Both views hide evaluation cells $H$. The model cannot see the true values used to score it.}
+\[
+\mathcal L_{\mathcal B}(\theta)=\frac1{|Q_{\mathcal B}|}\sum\nolimits_{(i,j)\in Q_{\mathcal B}}
+\left(\frac{\widehat c^T_{ij}(\theta)}{T_i}-y_{ij}\right)^2.
+\]
+\SmallLine{$Q_{\mathcal B}$ contains training cells in entity batch $\mathcal B$. The label is $y_{ij}=c_{ij}/T_i$. $T_i$ is the row total. $\widehat c^T$ contains restored training counts.}
+\end{frame}

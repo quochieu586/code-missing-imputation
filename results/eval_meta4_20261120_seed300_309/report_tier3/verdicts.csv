@@ -1,0 +1,16 @@
+mask,case,verdict
+whole_feature,u1_under,fail
+whole_feature,u1_over,fail
+whole_feature,u2,fail
+whole_feature,u3,pass
+whole_feature,u4,descriptive_no_frozen_threshold
+random_cell,u1_under,fail
+random_cell,u1_over,fail
+random_cell,u2,fail
+random_cell,u3,pass
+random_cell,u4,descriptive_no_frozen_threshold
+whole_feature_matched,u1_under,fail
+whole_feature_matched,u1_over,fail
+whole_feature_matched,u2,fail
+whole_feature_matched,u3,pass
+whole_feature_matched,u4,descriptive_no_frozen_threshold

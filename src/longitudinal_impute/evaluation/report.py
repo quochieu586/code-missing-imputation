@@ -25,7 +25,8 @@ def find_run(roots, name):
 def shown(path):
     """A path as written to tables and manifests: relative to ROOT when inside it."""
     path = Path(path)
-    return path.relative_to(ROOT).as_posix() if path.resolve().is_relative_to(ROOT) else str(path)
+    resolved = path.resolve()
+    return resolved.relative_to(ROOT).as_posix() if resolved.is_relative_to(ROOT) else str(path)
 
 
 

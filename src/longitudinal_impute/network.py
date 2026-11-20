@@ -5,7 +5,7 @@ from torch import nn
 
 
 class CompositionNet(nn.Module):
-    def __init__(self, components, channels=32, heads=4):
+    def __init__(self, components, channels=32, heads=4, *, metadata_spec=None):
         super().__init__()
         if (not isinstance(components, int) or isinstance(components, bool) or components < 2
                 or not isinstance(channels, int) or isinstance(channels, bool) or channels < 2
@@ -24,8 +24,14 @@ class CompositionNet(nn.Module):
         self.gate_norm = nn.LayerNorm(channels)
         self.gate = nn.Linear(channels, 2 * channels)
         self.head = nn.Sequential(nn.Linear(channels, channels), nn.ReLU(), nn.Linear(channels, 1))
+        self.metadata_spec = metadata_spec
+        if metadata_spec is not None:
+            self.metadata_embeddings = nn.ModuleDict({
+                field: nn.Embedding(len(vocab), channels)
+                for field, vocab in metadata_spec['vocabularies'].items()})
+            self.metadata_age = nn.Linear(1, channels)
 
-    def forward(self, features, observed_mask, times, valid_steps):
+    def forward(self, features, observed_mask, times, valid_steps, metadata=None):
         if (features.ndim != 3 or features.shape[-1] != self.components
                 or observed_mask.shape != features.shape or observed_mask.dtype != torch.bool
                 or times.shape != features.shape[:2] or valid_steps.shape != times.shape
@@ -44,6 +50,21 @@ class CompositionNet(nn.Module):
         time_embedding = torch.cat((phase.sin(), phase.cos()), dim=-1)
         h = self.input(torch.stack((z, observed.to(z.dtype)), dim=-1))
         h = h + self.feature.weight[None, None] + time_embedding[:, :, None]
+        if self.metadata_spec is not None:
+            expected = set(self.metadata_embeddings) | {'median_age'}
+            if not isinstance(metadata, dict) or set(metadata) != expected:
+                raise ValueError('network: metadata tensors required')
+            age = metadata['median_age']
+            if age.shape != (b, 1) or not torch.isfinite(age).all():
+                raise ValueError('network: invalid metadata age shape or values')
+            m = self.metadata_age(age)
+            for field, encoder in self.metadata_embeddings.items():
+                codes = metadata[field]
+                if (codes.shape != (b,) or codes.dtype != torch.long
+                        or (codes < 0).any() or (codes >= encoder.num_embeddings).any()):
+                    raise ValueError(f'network: invalid metadata {field}')
+                m = m + encoder(codes)
+            h = h + m[:, None, None, :]
 
         # Temporal attention: independent sequences for each entity x component.
         a = self.time_norm(h).permute(0, 2, 1, 3).reshape(b * k, length, -1)

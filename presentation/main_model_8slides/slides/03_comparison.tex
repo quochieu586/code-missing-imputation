@@ -1,0 +1,28 @@
+\begin{frame}{Comparing Sequence Backbones}
+{\fontsize{10}{12}\selectfont We compare how four network designs use time-ordered data.\par}
+\vspace{0pt}
+\begingroup
+\fontsize{9.2}{10}\selectfont
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{0.96}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{.31\linewidth}>{\raggedright\arraybackslash}p{.25\linewidth}>{\raggedright\arraybackslash}p{\dimexpr.44\linewidth-20pt\relax}@{}}
+\textbf{Main idea} & \textbf{Advantage} & \textbf{Weakness} \\ [0pt]\hline
+\textbf{Vanilla recurrent neural network} \RefLink{bengio1994}{1}\newline
+The network reads time-ordered data.
+& It carries information from earlier steps.
+& The gradient vanishes in long sequences, so the network forgets early steps. \\[2pt]\hline
+\textbf{Long short-term memory} \RefLink{hochreiter1997}{2}\newline
+Gates control what the memory keeps and forgets.
+& The gates help the network retain earlier information.
+& It processes steps one by one, so training is slow. It also has more parameters. \\[2pt]\hline
+\textbf{Convolutional / temporal convolutional network} \RefLink{bai2018}{3}\newline
+Filters read a fixed window of nearby steps.
+& The filters process steps in parallel.
+& The network sees only as far as its effective window. \\[2pt]\hline
+\textbf{Transformer} \RefLink{vaswani2017}{4}\newline
+Attention links any two time steps directly.
+& It connects distant steps without a recurrent chain.
+& Its attention cost grows with the square of sequence length. It needs a time encoding. \\[2pt]\hline
+\end{tabular}
+\endgroup
+\end{frame}

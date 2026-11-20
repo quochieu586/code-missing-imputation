@@ -1,0 +1,1609 @@
+mask,model,seed,kind,stratum,mae_prop
+whole_feature,hron,300,continent,Africa,0.11974873620854187
+whole_feature,hron,300,continent,Asia,0.06324585750899916
+whole_feature,hron,300,continent,Europe,0.06728681659568278
+whole_feature,hron,300,continent,North America,0.05549421555380996
+whole_feature,hron,300,continent,Oceania,0.013538615735810725
+whole_feature,hron,300,continent,South America,0.1946797330007713
+whole_feature,hron,300,n,N1,0.16876192113567945
+whole_feature,hron,300,n,N2,0.1265918417122591
+whole_feature,hron,300,n,N3,0.048921267464441934
+whole_feature,tsagris,300,continent,Africa,0.12482360311134755
+whole_feature,tsagris,300,continent,Asia,0.07827115385667066
+whole_feature,tsagris,300,continent,Europe,0.05643139361772195
+whole_feature,tsagris,300,continent,North America,0.0745710779568219
+whole_feature,tsagris,300,continent,Oceania,0.014168355383162577
+whole_feature,tsagris,300,continent,South America,0.12524351180003646
+whole_feature,tsagris,300,n,N1,0.1453649346131936
+whole_feature,tsagris,300,n,N2,0.11755301626634783
+whole_feature,tsagris,300,n,N3,0.03491443453629105
+whole_feature,micoda,300,continent,Africa,0.11963625376875588
+whole_feature,micoda,300,continent,Asia,0.10740749001925062
+whole_feature,micoda,300,continent,Europe,0.06681239498404111
+whole_feature,micoda,300,continent,North America,0.06415835300422956
+whole_feature,micoda,300,continent,Oceania,0.015393519760722245
+whole_feature,micoda,300,continent,South America,0.1379922301449613
+whole_feature,micoda,300,n,N1,0.12528315234572807
+whole_feature,micoda,300,n,N2,0.1439855390354912
+whole_feature,micoda,300,n,N3,0.04864911562483554
+whole_feature,same_day_mean,300,continent,Africa,0.06760693453120126
+whole_feature,same_day_mean,300,continent,Asia,0.04026894332386107
+whole_feature,same_day_mean,300,continent,Europe,0.02488359934519381
+whole_feature,same_day_mean,300,continent,North America,0.06064785778659042
+whole_feature,same_day_mean,300,continent,Oceania,0.027027077198849326
+whole_feature,same_day_mean,300,continent,South America,0.009662076603534945
+whole_feature,same_day_mean,300,n,N1,0.04898223337019075
+whole_feature,same_day_mean,300,n,N2,0.040848661940358584
+whole_feature,same_day_mean,300,n,N3,0.019605038338749565
+whole_feature,main,300,continent,Africa,0.15528089746698512
+whole_feature,main,300,continent,Asia,0.057736464757552494
+whole_feature,main,300,continent,Europe,0.0318779050463417
+whole_feature,main,300,continent,North America,0.08984329225360592
+whole_feature,main,300,continent,Oceania,0.132234279847503
+whole_feature,main,300,continent,South America,0.012715167698777211
+whole_feature,main,300,n,N1,0.09016058641041806
+whole_feature,main,300,n,N2,0.06285086415214422
+whole_feature,main,300,n,N3,0.029742173643102034
+whole_feature,main_nometa,300,continent,Africa,0.08882084403799653
+whole_feature,main_nometa,300,continent,Asia,0.05624923975803739
+whole_feature,main_nometa,300,continent,Europe,0.031925601687344124
+whole_feature,main_nometa,300,continent,North America,0.11751144228945294
+whole_feature,main_nometa,300,continent,Oceania,0.06021017996360864
+whole_feature,main_nometa,300,continent,South America,0.06730688782950962
+whole_feature,main_nometa,300,n,N1,0.10986554510974914
+whole_feature,main_nometa,300,n,N2,0.07433394875538249
+whole_feature,main_nometa,300,n,N3,0.026050775583931617
+whole_feature,hron,301,continent,Africa,0.17957858445143055
+whole_feature,hron,301,continent,Asia,0.08336805486592543
+whole_feature,hron,301,continent,Europe,0.053101305313062695
+whole_feature,hron,301,continent,North America,0.15856863407718078
+whole_feature,hron,301,continent,Oceania,0.02887667932234159
+whole_feature,hron,301,continent,South America,0.04148126829264197
+whole_feature,hron,301,n,N1,0.13237216760786713
+whole_feature,hron,301,n,N2,0.13020593359770982
+whole_feature,hron,301,n,N3,0.0504521628521159
+whole_feature,tsagris,301,continent,Africa,0.2306121785678872
+whole_feature,tsagris,301,continent,Asia,0.08234443450934492
+whole_feature,tsagris,301,continent,Europe,0.052925498595309324
+whole_feature,tsagris,301,continent,North America,0.10721609518861216
+whole_feature,tsagris,301,continent,Oceania,0.014740946483916014
+whole_feature,tsagris,301,continent,South America,0.08353138058919643
+whole_feature,tsagris,301,n,N1,0.20203354504122828
+whole_feature,tsagris,301,n,N2,0.10006482662798118
+whole_feature,tsagris,301,n,N3,0.03941380853540852
+whole_feature,micoda,301,continent,Africa,0.21713430161433941
+whole_feature,micoda,301,continent,Asia,0.10355091377635381
+whole_feature,micoda,301,continent,Europe,0.06388089188239215
+whole_feature,micoda,301,continent,North America,0.09611899195432384
+whole_feature,micoda,301,continent,Oceania,0.007538688931745804
+whole_feature,micoda,301,continent,South America,0.054912571229353294
+whole_feature,micoda,301,n,N1,0.14297114028555696
+whole_feature,micoda,301,n,N2,0.11766048548164934
+whole_feature,micoda,301,n,N3,0.06327180776559022
+whole_feature,same_day_mean,301,continent,Africa,0.08300338663625542
+whole_feature,same_day_mean,301,continent,Asia,0.010480197715438015
+whole_feature,same_day_mean,301,continent,Europe,0.02212001713065151
+whole_feature,same_day_mean,301,continent,North America,0.02112344875819106
+whole_feature,same_day_mean,301,continent,Oceania,0.008578143673539398
+whole_feature,same_day_mean,301,continent,South America,0.024342072951724886
+whole_feature,same_day_mean,301,n,N1,0.03161364263106628
+whole_feature,same_day_mean,301,n,N2,0.03316928729666377
+whole_feature,same_day_mean,301,n,N3,0.02493252469476315
+whole_feature,main,301,continent,Africa,0.1266466528357922
+whole_feature,main,301,continent,Asia,0.005047262583426113
+whole_feature,main,301,continent,Europe,0.021529038987725457
+whole_feature,main,301,continent,North America,0.08010303748340872
+whole_feature,main,301,continent,Oceania,0.010930532040637533
+whole_feature,main,301,continent,South America,0.011206520499854891
+whole_feature,main,301,n,N1,0.0704859146509303
+whole_feature,main,301,n,N2,0.05518885381717194
+whole_feature,main,301,n,N3,0.020050134180896
+whole_feature,main_nometa,301,continent,Africa,0.1349855283663174
+whole_feature,main_nometa,301,continent,Asia,0.008972420042950567
+whole_feature,main_nometa,301,continent,Europe,0.025409531483124588
+whole_feature,main_nometa,301,continent,North America,0.06068552280658462
+whole_feature,main_nometa,301,continent,Oceania,0.0045803185858525955
+whole_feature,main_nometa,301,continent,South America,0.03932724974345358
+whole_feature,main_nometa,301,n,N1,0.05099866324990839
+whole_feature,main_nometa,301,n,N2,0.05473885394304332
+whole_feature,main_nometa,301,n,N3,0.036832841875851896
+whole_feature,hron,302,continent,Africa,0.17226538309990577
+whole_feature,hron,302,continent,Asia,0.10372279067708627
+whole_feature,hron,302,continent,Europe,0.06150475564976642
+whole_feature,hron,302,continent,North America,0.14159358810704342
+whole_feature,hron,302,continent,Oceania,0.0013630811488383886
+whole_feature,hron,302,continent,South America,0.15794574285313184
+whole_feature,hron,302,n,N1,0.17169788710422865
+whole_feature,hron,302,n,N2,0.11864326532816526
+whole_feature,hron,302,n,N3,0.05262514897060952
+whole_feature,tsagris,302,continent,Africa,0.18693587715244198
+whole_feature,tsagris,302,continent,Asia,0.11375260633456813
+whole_feature,tsagris,302,continent,Europe,0.07259831611393232
+whole_feature,tsagris,302,continent,North America,0.11349556097165962
+whole_feature,tsagris,302,continent,Oceania,0.005829740915441619
+whole_feature,tsagris,302,continent,South America,0.1517913236563177
+whole_feature,tsagris,302,n,N1,0.1818544514676105
+whole_feature,tsagris,302,n,N2,0.11194355514630319
+whole_feature,tsagris,302,n,N3,0.057843640734181856
+whole_feature,micoda,302,continent,Africa,0.197450618096458
+whole_feature,micoda,302,continent,Asia,0.12025553665584253
+whole_feature,micoda,302,continent,Europe,0.09764484111209042
+whole_feature,micoda,302,continent,North America,0.10008780694043654
+whole_feature,micoda,302,continent,Oceania,0.054501797055330176
+whole_feature,micoda,302,continent,South America,0.14737235874115978
+whole_feature,micoda,302,n,N1,0.1470185354581888
+whole_feature,micoda,302,n,N2,0.12616666658517184
+whole_feature,micoda,302,n,N3,0.09354661922300118
+whole_feature,same_day_mean,302,continent,Africa,0.07742394266371545
+whole_feature,same_day_mean,302,continent,Asia,0.027192166578128157
+whole_feature,same_day_mean,302,continent,Europe,0.017063167604588696
+whole_feature,same_day_mean,302,continent,North America,0.029557143321391963
+whole_feature,same_day_mean,302,continent,Oceania,0.048322924938404455
+whole_feature,same_day_mean,302,continent,South America,0.051574616239547115
+whole_feature,same_day_mean,302,n,N1,0.03855052610196626
+whole_feature,same_day_mean,302,n,N2,0.028369429827817406
+whole_feature,same_day_mean,302,n,N3,0.031583842654638365
+whole_feature,main,302,continent,Africa,0.13599916357339345
+whole_feature,main,302,continent,Asia,0.05201767792470681
+whole_feature,main,302,continent,Europe,0.017478101457559955
+whole_feature,main,302,continent,North America,0.024131709359447064
+whole_feature,main,302,continent,Oceania,0.02572079431657515
+whole_feature,main,302,continent,South America,0.05724762121920337
+whole_feature,main,302,n,N1,0.05964489431987666
+whole_feature,main,302,n,N2,0.044475169972450164
+whole_feature,main,302,n,N3,0.03223538487747431
+whole_feature,main_nometa,302,continent,Africa,0.10867005267457244
+whole_feature,main_nometa,302,continent,Asia,0.042926144972999056
+whole_feature,main_nometa,302,continent,Europe,0.023286783128035046
+whole_feature,main_nometa,302,continent,North America,0.026637873664689542
+whole_feature,main_nometa,302,continent,Oceania,0.006877890276879075
+whole_feature,main_nometa,302,continent,South America,0.08001797326507426
+whole_feature,main_nometa,302,n,N1,0.05773227303195023
+whole_feature,main_nometa,302,n,N2,0.04385224392267199
+whole_feature,main_nometa,302,n,N3,0.03307138515826279
+whole_feature,hron,303,continent,Africa,0.17723788342578023
+whole_feature,hron,303,continent,Asia,0.08757350856811051
+whole_feature,hron,303,continent,Europe,0.05870600551733575
+whole_feature,hron,303,continent,North America,0.043996649301716206
+whole_feature,hron,303,continent,Oceania,0.142685568595874
+whole_feature,hron,303,continent,South America,0.007992800511136029
+whole_feature,hron,303,n,N1,0.13120602210631158
+whole_feature,hron,303,n,N2,0.09651504158262458
+whole_feature,hron,303,n,N3,0.027666321322373663
+whole_feature,tsagris,303,continent,Africa,0.2420794061755264
+whole_feature,tsagris,303,continent,Asia,0.12906637790742473
+whole_feature,tsagris,303,continent,Europe,0.07472339328397369
+whole_feature,tsagris,303,continent,North America,0.0675856493497658
+whole_feature,tsagris,303,continent,Oceania,0.25415372871737746
+whole_feature,tsagris,303,continent,South America,0.06520052950359538
+whole_feature,tsagris,303,n,N1,0.1932294713758486
+whole_feature,tsagris,303,n,N2,0.13399518348668563
+whole_feature,tsagris,303,n,N3,0.041517857121461596
+whole_feature,micoda,303,continent,Africa,0.18824272395274272
+whole_feature,micoda,303,continent,Asia,0.10226891188162623
+whole_feature,micoda,303,continent,Europe,0.07896976152954589
+whole_feature,micoda,303,continent,North America,0.04609505722188528
+whole_feature,micoda,303,continent,Oceania,0.2084093160744452
+whole_feature,micoda,303,continent,South America,0.018152598564714528
+whole_feature,micoda,303,n,N1,0.1387775695136331
+whole_feature,micoda,303,n,N2,0.1027072112746643
+whole_feature,micoda,303,n,N3,0.05442696179544428
+whole_feature,same_day_mean,303,continent,Africa,0.06362380597508015
+whole_feature,same_day_mean,303,continent,Asia,0.022921060455284577
+whole_feature,same_day_mean,303,continent,Europe,0.0262058896593121
+whole_feature,same_day_mean,303,continent,North America,0.022966880718277342
+whole_feature,same_day_mean,303,continent,Oceania,0.2080840756532748
+whole_feature,same_day_mean,303,continent,South America,0.006417162214757925
+whole_feature,same_day_mean,303,n,N1,0.04591112241562266
+whole_feature,same_day_mean,303,n,N2,0.029906863765597397
+whole_feature,same_day_mean,303,n,N3,0.02256122159188164
+whole_feature,main,303,continent,Africa,0.06962569440363497
+whole_feature,main,303,continent,Asia,0.028225704634437382
+whole_feature,main,303,continent,Europe,0.04065202171264278
+whole_feature,main,303,continent,North America,0.07040835444454185
+whole_feature,main,303,continent,Oceania,0.2016766948484342
+whole_feature,main,303,continent,South America,0.04001010583382883
+whole_feature,main,303,n,N1,0.059680077308567385
+whole_feature,main,303,n,N2,0.05139455661838695
+whole_feature,main,303,n,N3,0.03745537910234307
+whole_feature,main_nometa,303,continent,Africa,0.05507761246570489
+whole_feature,main_nometa,303,continent,Asia,0.028527666737869415
+whole_feature,main_nometa,303,continent,Europe,0.035957381396757526
+whole_feature,main_nometa,303,continent,North America,0.0528323502320298
+whole_feature,main_nometa,303,continent,Oceania,0.13806110691179715
+whole_feature,main_nometa,303,continent,South America,0.024688961144726605
+whole_feature,main_nometa,303,n,N1,0.04966910433815911
+whole_feature,main_nometa,303,n,N2,0.03880928487020971
+whole_feature,main_nometa,303,n,N3,0.03355284545842613
+whole_feature,hron,304,continent,Africa,0.1345667269225411
+whole_feature,hron,304,continent,Asia,0.027830089685052482
+whole_feature,hron,304,continent,Europe,0.05372962989074406
+whole_feature,hron,304,continent,North America,0.10250198475830852
+whole_feature,hron,304,continent,Oceania,0.03527913793633984
+whole_feature,hron,304,continent,South America,0.01721284410863463
+whole_feature,hron,304,n,N1,0.10846756416478052
+whole_feature,hron,304,n,N2,0.06843557482356513
+whole_feature,hron,304,n,N3,0.042090257177438146
+whole_feature,tsagris,304,continent,Africa,0.14559057743658355
+whole_feature,tsagris,304,continent,Asia,0.1167580668080596
+whole_feature,tsagris,304,continent,Europe,0.0795238853060593
+whole_feature,tsagris,304,continent,North America,0.16681692622684016
+whole_feature,tsagris,304,continent,Oceania,0.12119247101069971
+whole_feature,tsagris,304,continent,South America,0.01340705665755644
+whole_feature,tsagris,304,n,N1,0.16108426830171643
+whole_feature,tsagris,304,n,N2,0.10963095506404459
+whole_feature,tsagris,304,n,N3,0.07323943302692262
+whole_feature,micoda,304,continent,Africa,0.1526112055399659
+whole_feature,micoda,304,continent,Asia,0.11478405739162137
+whole_feature,micoda,304,continent,Europe,0.09011654980752437
+whole_feature,micoda,304,continent,North America,0.16179837317442702
+whole_feature,micoda,304,continent,Oceania,0.047026465468916125
+whole_feature,micoda,304,continent,South America,0.023008728471558736
+whole_feature,micoda,304,n,N1,0.12915800920377482
+whole_feature,micoda,304,n,N2,0.12396352300009598
+whole_feature,micoda,304,n,N3,0.08197870647966982
+whole_feature,same_day_mean,304,continent,Africa,0.049257507724932564
+whole_feature,same_day_mean,304,continent,Asia,0.014867772824604244
+whole_feature,same_day_mean,304,continent,Europe,0.017883873360998514
+whole_feature,same_day_mean,304,continent,North America,0.025619031107929447
+whole_feature,same_day_mean,304,continent,Oceania,0.02187093965715118
+whole_feature,same_day_mean,304,continent,South America,0.008468603400819815
+whole_feature,same_day_mean,304,n,N1,0.03168837374120928
+whole_feature,same_day_mean,304,n,N2,0.03559165877977998
+whole_feature,same_day_mean,304,n,N3,0.01080971419937717
+whole_feature,main,304,continent,Africa,0.19303074225081832
+whole_feature,main,304,continent,Asia,0.03574271251462373
+whole_feature,main,304,continent,Europe,0.045123695595803925
+whole_feature,main,304,continent,North America,0.08135861859469579
+whole_feature,main,304,continent,Oceania,0.022144312921311998
+whole_feature,main,304,continent,South America,0.08213085208291646
+whole_feature,main,304,n,N1,0.10696414663277846
+whole_feature,main,304,n,N2,0.0827505656929851
+whole_feature,main,304,n,N3,0.04573156886922007
+whole_feature,main_nometa,304,continent,Africa,0.15893526193561802
+whole_feature,main_nometa,304,continent,Asia,0.045845189303713244
+whole_feature,main_nometa,304,continent,Europe,0.05112487794634517
+whole_feature,main_nometa,304,continent,North America,0.15899926734126707
+whole_feature,main_nometa,304,continent,Oceania,0.08310551143589204
+whole_feature,main_nometa,304,continent,South America,0.11725052305700347
+whole_feature,main_nometa,304,n,N1,0.14865573842236593
+whole_feature,main_nometa,304,n,N2,0.12007232527714601
+whole_feature,main_nometa,304,n,N3,0.04842438150012031
+whole_feature,hron,305,continent,Africa,0.16831820257295518
+whole_feature,hron,305,continent,Asia,0.19006977274935252
+whole_feature,hron,305,continent,Europe,0.07000226645193747
+whole_feature,hron,305,continent,North America,0.0056250836487423996
+whole_feature,hron,305,continent,South America,0.013355580396782495
+whole_feature,hron,305,n,N1,0.18570009631857523
+whole_feature,hron,305,n,N2,0.1022130629746527
+whole_feature,hron,305,n,N3,0.049666266602124094
+whole_feature,tsagris,305,continent,Africa,0.18127490365663715
+whole_feature,tsagris,305,continent,Asia,0.154872673888284
+whole_feature,tsagris,305,continent,Europe,0.06317874655385838
+whole_feature,tsagris,305,continent,North America,0.02014791491775853
+whole_feature,tsagris,305,continent,South America,0.019515759554748355
+whole_feature,tsagris,305,n,N1,0.18175786379848127
+whole_feature,tsagris,305,n,N2,0.10678699571330623
+whole_feature,tsagris,305,n,N3,0.03797014868155591
+whole_feature,micoda,305,continent,Africa,0.1609382904568869
+whole_feature,micoda,305,continent,Asia,0.1584708434415279
+whole_feature,micoda,305,continent,Europe,0.08048242531687366
+whole_feature,micoda,305,continent,North America,0.009842552337022767
+whole_feature,micoda,305,continent,South America,0.011665763781757203
+whole_feature,micoda,305,n,N1,0.14449001438256895
+whole_feature,micoda,305,n,N2,0.12191546624697926
+whole_feature,micoda,305,n,N3,0.05923821778174197
+whole_feature,same_day_mean,305,continent,Africa,0.04656741051583915
+whole_feature,same_day_mean,305,continent,Asia,0.02758725149716743
+whole_feature,same_day_mean,305,continent,Europe,0.017936678076280823
+whole_feature,same_day_mean,305,continent,North America,0.00744187318816689
+whole_feature,same_day_mean,305,continent,South America,0.0025588216175327703
+whole_feature,same_day_mean,305,n,N1,0.03728453740445373
+whole_feature,same_day_mean,305,n,N2,0.023443003252234303
+whole_feature,same_day_mean,305,n,N3,0.014338034758389575
+whole_feature,main,305,continent,Africa,0.05628861234060951
+whole_feature,main,305,continent,Asia,0.02169133191524857
+whole_feature,main,305,continent,Europe,0.021801803008629096
+whole_feature,main,305,continent,North America,0.03615111286762657
+whole_feature,main,305,continent,South America,0.17738080968336548
+whole_feature,main,305,n,N1,0.05065222885386563
+whole_feature,main,305,n,N2,0.052394744663164634
+whole_feature,main,305,n,N3,0.022157788370700395
+whole_feature,main_nometa,305,continent,Africa,0.04080245195681535
+whole_feature,main_nometa,305,continent,Asia,0.047404852640175674
+whole_feature,main_nometa,305,continent,Europe,0.02386459816771216
+whole_feature,main_nometa,305,continent,North America,0.03932844387057103
+whole_feature,main_nometa,305,continent,South America,0.10619073390409256
+whole_feature,main_nometa,305,n,N1,0.04031337773136761
+whole_feature,main_nometa,305,n,N2,0.04851188685845491
+whole_feature,main_nometa,305,n,N3,0.02802927315860187
+whole_feature,hron,306,continent,Africa,0.2493272966336734
+whole_feature,hron,306,continent,Asia,0.11673831732149854
+whole_feature,hron,306,continent,Europe,0.039033543744622645
+whole_feature,hron,306,continent,North America,0.05460097293603459
+whole_feature,hron,306,continent,Oceania,0.004043936701940734
+whole_feature,hron,306,continent,South America,0.07310941475229871
+whole_feature,hron,306,n,N1,0.12881787692733102
+whole_feature,hron,306,n,N2,0.13165512194211984
+whole_feature,hron,306,n,N3,0.04517781456141198
+whole_feature,tsagris,306,continent,Africa,0.21773042861552844
+whole_feature,tsagris,306,continent,Asia,0.1410076370418095
+whole_feature,tsagris,306,continent,Europe,0.05466359424429505
+whole_feature,tsagris,306,continent,North America,0.06854098878472765
+whole_feature,tsagris,306,continent,Oceania,0.00820320774083571
+whole_feature,tsagris,306,continent,South America,0.14555567869687314
+whole_feature,tsagris,306,n,N1,0.18855652913184698
+whole_feature,tsagris,306,n,N2,0.12537218965882482
+whole_feature,tsagris,306,n,N3,0.05951325022098206
+whole_feature,micoda,306,continent,Africa,0.21479321264038265
+whole_feature,micoda,306,continent,Asia,0.1266947292095491
+whole_feature,micoda,306,continent,Europe,0.09549336062276294
+whole_feature,micoda,306,continent,North America,0.06862444448522916
+whole_feature,micoda,306,continent,Oceania,0.006142496724710745
+whole_feature,micoda,306,continent,South America,0.11147487696031545
+whole_feature,micoda,306,n,N1,0.1252791052952496
+whole_feature,micoda,306,n,N2,0.13831093373334769
+whole_feature,micoda,306,n,N3,0.08699830216912191
+whole_feature,same_day_mean,306,continent,Africa,0.07177854581538302
+whole_feature,same_day_mean,306,continent,Asia,0.042818293215397554
+whole_feature,same_day_mean,306,continent,Europe,0.019238477966935227
+whole_feature,same_day_mean,306,continent,North America,0.019559857761517745
+whole_feature,same_day_mean,306,continent,Oceania,0.0029612035402448457
+whole_feature,same_day_mean,306,continent,South America,0.06314108273339676
+whole_feature,same_day_mean,306,n,N1,0.042411226714479375
+whole_feature,same_day_mean,306,n,N2,0.0463831132393666
+whole_feature,same_day_mean,306,n,N3,0.02605780075264226
+whole_feature,main,306,continent,Africa,0.08025459062515942
+whole_feature,main,306,continent,Asia,0.05065488432530353
+whole_feature,main,306,continent,Europe,0.026944065614849216
+whole_feature,main,306,continent,North America,0.0227549747071676
+whole_feature,main,306,continent,Oceania,0.027726865140618593
+whole_feature,main,306,continent,South America,0.04680710940363517
+whole_feature,main,306,n,N1,0.04689194187239873
+whole_feature,main,306,n,N2,0.0576650357861998
+whole_feature,main,306,n,N3,0.026388513358632903
+whole_feature,main_nometa,306,continent,Africa,0.08759931949506505
+whole_feature,main_nometa,306,continent,Asia,0.07669471029815962
+whole_feature,main_nometa,306,continent,Europe,0.03719622081896049
+whole_feature,main_nometa,306,continent,North America,0.058570032261400874
+whole_feature,main_nometa,306,continent,Oceania,0.038277524828968866
+whole_feature,main_nometa,306,continent,South America,0.05576883780675189
+whole_feature,main_nometa,306,n,N1,0.05315869289220354
+whole_feature,main_nometa,306,n,N2,0.07951150141178841
+whole_feature,main_nometa,306,n,N3,0.049188683974363066
+whole_feature,hron,307,continent,Africa,0.16369935564156643
+whole_feature,hron,307,continent,Asia,0.12875578338615382
+whole_feature,hron,307,continent,Europe,0.043017434357487096
+whole_feature,hron,307,continent,North America,0.040340910710621056
+whole_feature,hron,307,continent,Oceania,0.24963235570239892
+whole_feature,hron,307,continent,South America,0.06571007303186223
+whole_feature,hron,307,n,N1,0.1806429222850714
+whole_feature,hron,307,n,N2,0.07801774198993416
+whole_feature,hron,307,n,N3,0.05332349811665284
+whole_feature,tsagris,307,continent,Africa,0.19331779779868494
+whole_feature,tsagris,307,continent,Asia,0.12951667330081132
+whole_feature,tsagris,307,continent,Europe,0.050591390349589614
+whole_feature,tsagris,307,continent,North America,0.07327586715640944
+whole_feature,tsagris,307,continent,Oceania,0.23305813546990975
+whole_feature,tsagris,307,continent,South America,0.05572376429285339
+whole_feature,tsagris,307,n,N1,0.2167626733143604
+whole_feature,tsagris,307,n,N2,0.09389633409881686
+whole_feature,tsagris,307,n,N3,0.0517740390687901
+whole_feature,micoda,307,continent,Africa,0.17042635510154294
+whole_feature,micoda,307,continent,Asia,0.1151921740798082
+whole_feature,micoda,307,continent,Europe,0.07564964038476132
+whole_feature,micoda,307,continent,North America,0.11081994300118944
+whole_feature,micoda,307,continent,Oceania,0.3177410046152592
+whole_feature,micoda,307,continent,South America,0.08520023879534758
+whole_feature,micoda,307,n,N1,0.17770632064979533
+whole_feature,micoda,307,n,N2,0.09769258986482118
+whole_feature,micoda,307,n,N3,0.08733306029511578
+whole_feature,same_day_mean,307,continent,Africa,0.09614052499843256
+whole_feature,same_day_mean,307,continent,Asia,0.03303119029444478
+whole_feature,same_day_mean,307,continent,Europe,0.022334536151752696
+whole_feature,same_day_mean,307,continent,North America,0.026943644209599108
+whole_feature,same_day_mean,307,continent,Oceania,0.09017470381688432
+whole_feature,same_day_mean,307,continent,South America,0.011359199983322427
+whole_feature,same_day_mean,307,n,N1,0.07763030220132518
+whole_feature,same_day_mean,307,n,N2,0.04112541291950972
+whole_feature,same_day_mean,307,n,N3,0.016939873402510585
+whole_feature,main,307,continent,Africa,0.06574925696826554
+whole_feature,main,307,continent,Asia,0.06999168274940697
+whole_feature,main,307,continent,Europe,0.019928535726474638
+whole_feature,main,307,continent,North America,0.04555440020334273
+whole_feature,main,307,continent,Oceania,0.025576403929032425
+whole_feature,main,307,continent,South America,0.03756246887754825
+whole_feature,main,307,n,N1,0.09073057441214448
+whole_feature,main,307,n,N2,0.057513475011807896
+whole_feature,main,307,n,N3,0.020673985597039483
+whole_feature,main_nometa,307,continent,Africa,0.04636207000064137
+whole_feature,main_nometa,307,continent,Asia,0.04512452481734248
+whole_feature,main_nometa,307,continent,Europe,0.032258601912187
+whole_feature,main_nometa,307,continent,North America,0.08002566881161509
+whole_feature,main_nometa,307,continent,Oceania,0.02648549501381386
+whole_feature,main_nometa,307,continent,South America,0.09403789890724322
+whole_feature,main_nometa,307,n,N1,0.06893405204550541
+whole_feature,main_nometa,307,n,N2,0.04138922494709768
+whole_feature,main_nometa,307,n,N3,0.04992632909480942
+whole_feature,hron,308,continent,Africa,0.12834146742320296
+whole_feature,hron,308,continent,Asia,0.17502448441358093
+whole_feature,hron,308,continent,Europe,0.04555661479796114
+whole_feature,hron,308,continent,North America,0.04597647617302426
+whole_feature,hron,308,continent,Oceania,0.2713718223459028
+whole_feature,hron,308,continent,South America,0.07867682266992686
+whole_feature,hron,308,n,N1,0.15520230136909455
+whole_feature,hron,308,n,N2,0.10253717173950154
+whole_feature,hron,308,n,N3,0.062382504017842816
+whole_feature,tsagris,308,continent,Africa,0.15371415927290644
+whole_feature,tsagris,308,continent,Asia,0.16660174026177585
+whole_feature,tsagris,308,continent,Europe,0.04686735324316644
+whole_feature,tsagris,308,continent,North America,0.07101343333700395
+whole_feature,tsagris,308,continent,Oceania,0.24895767757225098
+whole_feature,tsagris,308,continent,South America,0.10586258619064531
+whole_feature,tsagris,308,n,N1,0.19552894378923216
+whole_feature,tsagris,308,n,N2,0.10653679307697955
+whole_feature,tsagris,308,n,N3,0.056232336355931084
+whole_feature,micoda,308,continent,Africa,0.1314723443235583
+whole_feature,micoda,308,continent,Asia,0.15923157656815504
+whole_feature,micoda,308,continent,Europe,0.06667439513547725
+whole_feature,micoda,308,continent,North America,0.0774216410582435
+whole_feature,micoda,308,continent,Oceania,0.35075343279633564
+whole_feature,micoda,308,continent,South America,0.0973939451032036
+whole_feature,micoda,308,n,N1,0.15398325587062897
+whole_feature,micoda,308,n,N2,0.10572689014245171
+whole_feature,micoda,308,n,N3,0.08667291555885877
+whole_feature,same_day_mean,308,continent,Africa,0.09415375442927
+whole_feature,same_day_mean,308,continent,Asia,0.0286116042389641
+whole_feature,same_day_mean,308,continent,Europe,0.017879897928006355
+whole_feature,same_day_mean,308,continent,North America,0.03869278945195467
+whole_feature,same_day_mean,308,continent,Oceania,0.15685317709342325
+whole_feature,same_day_mean,308,continent,South America,0.009519929479488242
+whole_feature,same_day_mean,308,n,N1,0.05700223797646349
+whole_feature,same_day_mean,308,n,N2,0.038859606817798056
+whole_feature,same_day_mean,308,n,N3,0.02133996983691079
+whole_feature,main,308,continent,Africa,0.08887638909675533
+whole_feature,main,308,continent,Asia,0.02851983683920189
+whole_feature,main,308,continent,Europe,0.023882652524370586
+whole_feature,main,308,continent,North America,0.05033747291664645
+whole_feature,main,308,continent,Oceania,0.02065878417109056
+whole_feature,main,308,continent,South America,0.02353154124465048
+whole_feature,main,308,n,N1,0.0568870245248602
+whole_feature,main,308,n,N2,0.04539241369123889
+whole_feature,main,308,n,N3,0.020288001347411558
+whole_feature,main_nometa,308,continent,Africa,0.05634289323591993
+whole_feature,main_nometa,308,continent,Asia,0.04356117701648783
+whole_feature,main_nometa,308,continent,Europe,0.030013795221876017
+whole_feature,main_nometa,308,continent,North America,0.0518816095982887
+whole_feature,main_nometa,308,continent,Oceania,0.060860560472633725
+whole_feature,main_nometa,308,continent,South America,0.03487164797669011
+whole_feature,main_nometa,308,n,N1,0.056123357027815186
+whole_feature,main_nometa,308,n,N2,0.036794845595899836
+whole_feature,main_nometa,308,n,N3,0.03393712074259115
+whole_feature,hron,309,continent,Africa,0.16502632226611194
+whole_feature,hron,309,continent,Asia,0.13807871860038626
+whole_feature,hron,309,continent,Europe,0.08002383836835668
+whole_feature,hron,309,continent,North America,0.07167584060154873
+whole_feature,hron,309,continent,Oceania,0.04427131340378331
+whole_feature,hron,309,continent,South America,0.040841223582120376
+whole_feature,hron,309,n,N1,0.15127098149034124
+whole_feature,hron,309,n,N2,0.11070648836128953
+whole_feature,hron,309,n,N3,0.07069452074848823
+whole_feature,tsagris,309,continent,Africa,0.16613267389459138
+whole_feature,tsagris,309,continent,Asia,0.18199223672105572
+whole_feature,tsagris,309,continent,Europe,0.07429494283080275
+whole_feature,tsagris,309,continent,North America,0.12468258022222446
+whole_feature,tsagris,309,continent,Oceania,0.1084594647206752
+whole_feature,tsagris,309,continent,South America,0.08256356212215922
+whole_feature,tsagris,309,n,N1,0.19584707437256865
+whole_feature,tsagris,309,n,N2,0.11898254323850245
+whole_feature,tsagris,309,n,N3,0.08618901492611977
+whole_feature,micoda,309,continent,Africa,0.19267027948877802
+whole_feature,micoda,309,continent,Asia,0.1391415591665946
+whole_feature,micoda,309,continent,Europe,0.08428126730006306
+whole_feature,micoda,309,continent,North America,0.20736456189903824
+whole_feature,micoda,309,continent,Oceania,0.0726557822043518
+whole_feature,micoda,309,continent,South America,0.03717408430616244
+whole_feature,micoda,309,n,N1,0.14754643881032362
+whole_feature,micoda,309,n,N2,0.11269769588819697
+whole_feature,micoda,309,n,N3,0.10955344859654893
+whole_feature,same_day_mean,309,continent,Africa,0.06135465859827623
+whole_feature,same_day_mean,309,continent,Asia,0.06038980088566847
+whole_feature,same_day_mean,309,continent,Europe,0.02321027784800498
+whole_feature,same_day_mean,309,continent,North America,0.03598628555868754
+whole_feature,same_day_mean,309,continent,Oceania,0.06540362368365067
+whole_feature,same_day_mean,309,continent,South America,0.01106357087726966
+whole_feature,same_day_mean,309,n,N1,0.04124914139333146
+whole_feature,same_day_mean,309,n,N2,0.03819222390765329
+whole_feature,same_day_mean,309,n,N3,0.035853848882514146
+whole_feature,main,309,continent,Africa,0.07625077489814375
+whole_feature,main,309,continent,Asia,0.08035191862568537
+whole_feature,main,309,continent,Europe,0.03315099747018169
+whole_feature,main,309,continent,North America,0.03927071941343222
+whole_feature,main,309,continent,Oceania,0.05125205114748321
+whole_feature,main,309,continent,South America,0.1165934755102106
+whole_feature,main,309,n,N1,0.07446477288633037
+whole_feature,main,309,n,N2,0.06811218703316997
+whole_feature,main,309,n,N3,0.054505728240752914
+whole_feature,main_nometa,309,continent,Africa,0.09270436183397057
+whole_feature,main_nometa,309,continent,Asia,0.09354141029085611
+whole_feature,main_nometa,309,continent,Europe,0.03447699288352368
+whole_feature,main_nometa,309,continent,North America,0.04021546712522752
+whole_feature,main_nometa,309,continent,Oceania,0.04049535809140428
+whole_feature,main_nometa,309,continent,South America,0.0521138558006527
+whole_feature,main_nometa,309,n,N1,0.08872470383097499
+whole_feature,main_nometa,309,n,N2,0.06091284451434509
+whole_feature,main_nometa,309,n,N3,0.046327077076660256
+random_cell,hron,300,continent,Africa,0.17806871167219068
+random_cell,hron,300,continent,Asia,0.11470222393169159
+random_cell,hron,300,continent,Europe,0.05754340468296028
+random_cell,hron,300,continent,North America,0.08701719047020555
+random_cell,hron,300,continent,Oceania,0.09117266439109142
+random_cell,hron,300,continent,South America,0.09421283575962856
+random_cell,hron,300,n,N1,0.1730548828774556
+random_cell,hron,300,n,N2,0.12313624930415108
+random_cell,hron,300,n,N3,0.03836842499079837
+random_cell,tsagris,300,continent,Africa,0.195610539827573
+random_cell,tsagris,300,continent,Asia,0.11556018980447208
+random_cell,tsagris,300,continent,Europe,0.05852036981980568
+random_cell,tsagris,300,continent,North America,0.10276680384944825
+random_cell,tsagris,300,continent,Oceania,0.09733966557637107
+random_cell,tsagris,300,continent,South America,0.1103240250596594
+random_cell,tsagris,300,n,N1,0.19630287848408604
+random_cell,tsagris,300,n,N2,0.12568145716732848
+random_cell,tsagris,300,n,N3,0.03925302613272011
+random_cell,micoda,300,continent,Africa,0.1823300312319735
+random_cell,micoda,300,continent,Asia,0.1251813486195626
+random_cell,micoda,300,continent,Europe,0.08073260123488599
+random_cell,micoda,300,continent,North America,0.08718397722468627
+random_cell,micoda,300,continent,Oceania,0.11749038910491812
+random_cell,micoda,300,continent,South America,0.09853327990438798
+random_cell,micoda,300,n,N1,0.15843685940673102
+random_cell,micoda,300,n,N2,0.12449463922636153
+random_cell,micoda,300,n,N3,0.07192828571069848
+random_cell,same_day_mean,300,continent,Africa,0.0722354085644123
+random_cell,same_day_mean,300,continent,Asia,0.032656506421729264
+random_cell,same_day_mean,300,continent,Europe,0.02049874064754696
+random_cell,same_day_mean,300,continent,North America,0.02284408719860617
+random_cell,same_day_mean,300,continent,Oceania,0.035311188076141
+random_cell,same_day_mean,300,continent,South America,0.01795037417527719
+random_cell,same_day_mean,300,n,N1,0.049814214628562524
+random_cell,same_day_mean,300,n,N2,0.03608812903405525
+random_cell,same_day_mean,300,n,N3,0.017325429766292727
+random_cell,main,300,continent,Africa,0.05029438812181765
+random_cell,main,300,continent,Asia,0.02825356932923112
+random_cell,main,300,continent,Europe,0.014652272072908036
+random_cell,main,300,continent,North America,0.016355465977330754
+random_cell,main,300,continent,Oceania,0.0256146117342544
+random_cell,main,300,continent,South America,0.014876189138628319
+random_cell,main,300,n,N1,0.03653143553874201
+random_cell,main,300,n,N2,0.02489114388351736
+random_cell,main,300,n,N3,0.014660709769565494
+random_cell,main_nometa,300,continent,Africa,0.050626802474218
+random_cell,main_nometa,300,continent,Asia,0.03491643488547145
+random_cell,main_nometa,300,continent,Europe,0.02142852261963993
+random_cell,main_nometa,300,continent,North America,0.013425468933781493
+random_cell,main_nometa,300,continent,Oceania,0.0375136791524538
+random_cell,main_nometa,300,continent,South America,0.032595024423316
+random_cell,main_nometa,300,n,N1,0.03591272862924529
+random_cell,main_nometa,300,n,N2,0.034505433772093516
+random_cell,main_nometa,300,n,N3,0.021708257970610694
+random_cell,hron,301,continent,Africa,0.17596639769364875
+random_cell,hron,301,continent,Asia,0.10339680151066759
+random_cell,hron,301,continent,Europe,0.060241820323081334
+random_cell,hron,301,continent,North America,0.0933343768260671
+random_cell,hron,301,continent,Oceania,0.0651922623132904
+random_cell,hron,301,continent,South America,0.10587029605354165
+random_cell,hron,301,n,N1,0.175302384407678
+random_cell,hron,301,n,N2,0.10810175728984647
+random_cell,hron,301,n,N3,0.044094317958437726
+random_cell,tsagris,301,continent,Africa,0.19277833132716019
+random_cell,tsagris,301,continent,Asia,0.12304590370545819
+random_cell,tsagris,301,continent,Europe,0.06365817531105679
+random_cell,tsagris,301,continent,North America,0.09950894062267336
+random_cell,tsagris,301,continent,Oceania,0.08065876769734667
+random_cell,tsagris,301,continent,South America,0.12088307501261411
+random_cell,tsagris,301,n,N1,0.20185006838288314
+random_cell,tsagris,301,n,N2,0.11569245599008904
+random_cell,tsagris,301,n,N3,0.04786325784905163
+random_cell,micoda,301,continent,Africa,0.18122985473977113
+random_cell,micoda,301,continent,Asia,0.1127538790000686
+random_cell,micoda,301,continent,Europe,0.08850798091624508
+random_cell,micoda,301,continent,North America,0.10226393580804673
+random_cell,micoda,301,continent,Oceania,0.1155236436500141
+random_cell,micoda,301,continent,South America,0.09986625840973685
+random_cell,micoda,301,n,N1,0.17228183840625505
+random_cell,micoda,301,n,N2,0.12120759441265301
+random_cell,micoda,301,n,N3,0.0717580189832431
+random_cell,same_day_mean,301,continent,Africa,0.07517238558147867
+random_cell,same_day_mean,301,continent,Asia,0.03024671038690669
+random_cell,same_day_mean,301,continent,Europe,0.02334552161639444
+random_cell,same_day_mean,301,continent,North America,0.02556854912636201
+random_cell,same_day_mean,301,continent,Oceania,0.016185671657750117
+random_cell,same_day_mean,301,continent,South America,0.022357290012480165
+random_cell,same_day_mean,301,n,N1,0.04709465183937761
+random_cell,same_day_mean,301,n,N2,0.03788209681729956
+random_cell,same_day_mean,301,n,N3,0.020433588135533483
+random_cell,main,301,continent,Africa,0.05475972458652053
+random_cell,main,301,continent,Asia,0.0200016336490473
+random_cell,main,301,continent,Europe,0.01985171828239524
+random_cell,main,301,continent,North America,0.02252394951037087
+random_cell,main,301,continent,Oceania,0.007002051087141834
+random_cell,main,301,continent,South America,0.015424214695494584
+random_cell,main,301,n,N1,0.0407214171353697
+random_cell,main,301,n,N2,0.02878949721952892
+random_cell,main,301,n,N3,0.013315959811921168
+random_cell,main_nometa,301,continent,Africa,0.04490844014974548
+random_cell,main_nometa,301,continent,Asia,0.020031232513775907
+random_cell,main_nometa,301,continent,Europe,0.017541134674300345
+random_cell,main_nometa,301,continent,North America,0.020789716338111865
+random_cell,main_nometa,301,continent,Oceania,0.008381765143693912
+random_cell,main_nometa,301,continent,South America,0.025258484652411074
+random_cell,main_nometa,301,n,N1,0.03513895414828958
+random_cell,main_nometa,301,n,N2,0.027329150772668835
+random_cell,main_nometa,301,n,N3,0.013611285083678905
+random_cell,hron,302,continent,Africa,0.1446388110499134
+random_cell,hron,302,continent,Asia,0.10514451572656779
+random_cell,hron,302,continent,Europe,0.05648320845535025
+random_cell,hron,302,continent,North America,0.08329347540064194
+random_cell,hron,302,continent,Oceania,0.06624214037664305
+random_cell,hron,302,continent,South America,0.0851857577420621
+random_cell,hron,302,n,N1,0.15890565145296345
+random_cell,hron,302,n,N2,0.09926909721721508
+random_cell,hron,302,n,N3,0.03852023022380112
+random_cell,tsagris,302,continent,Africa,0.1631805024783288
+random_cell,tsagris,302,continent,Asia,0.12948963105300973
+random_cell,tsagris,302,continent,Europe,0.05471558126162071
+random_cell,tsagris,302,continent,North America,0.09252019149092139
+random_cell,tsagris,302,continent,Oceania,0.08813653979914743
+random_cell,tsagris,302,continent,South America,0.11313727010696555
+random_cell,tsagris,302,n,N1,0.18742961296500432
+random_cell,tsagris,302,n,N2,0.10675351875668668
+random_cell,tsagris,302,n,N3,0.04249801763421393
+random_cell,micoda,302,continent,Africa,0.15817511944322196
+random_cell,micoda,302,continent,Asia,0.12176296408218786
+random_cell,micoda,302,continent,Europe,0.08223049783711824
+random_cell,micoda,302,continent,North America,0.09636949705640062
+random_cell,micoda,302,continent,Oceania,0.1110340972995944
+random_cell,micoda,302,continent,South America,0.11428009779809743
+random_cell,micoda,302,n,N1,0.16217446564617594
+random_cell,micoda,302,n,N2,0.1189137339415355
+random_cell,micoda,302,n,N3,0.06956781457501567
+random_cell,same_day_mean,302,continent,Africa,0.04974326013484859
+random_cell,same_day_mean,302,continent,Asia,0.032641051121814396
+random_cell,same_day_mean,302,continent,Europe,0.020509114014857468
+random_cell,same_day_mean,302,continent,North America,0.026543505728086097
+random_cell,same_day_mean,302,continent,Oceania,0.026634968969315408
+random_cell,same_day_mean,302,continent,South America,0.021784077320816247
+random_cell,same_day_mean,302,n,N1,0.04027498988664573
+random_cell,same_day_mean,302,n,N2,0.034841427186656754
+random_cell,same_day_mean,302,n,N3,0.017574578311346886
+random_cell,main,302,continent,Africa,0.055152554441592255
+random_cell,main,302,continent,Asia,0.025645945813537848
+random_cell,main,302,continent,Europe,0.014822974922251132
+random_cell,main,302,continent,North America,0.018447743213730664
+random_cell,main,302,continent,Oceania,0.02255594643086023
+random_cell,main,302,continent,South America,0.027289079849603718
+random_cell,main,302,n,N1,0.0413300203129915
+random_cell,main,302,n,N2,0.023702708898044735
+random_cell,main,302,n,N3,0.014902823592935146
+random_cell,main_nometa,302,continent,Africa,0.033950926869816996
+random_cell,main_nometa,302,continent,Asia,0.03011584459928491
+random_cell,main_nometa,302,continent,Europe,0.01650993359921745
+random_cell,main_nometa,302,continent,North America,0.019981491498070145
+random_cell,main_nometa,302,continent,Oceania,0.01859880202988256
+random_cell,main_nometa,302,continent,South America,0.02176678609171987
+random_cell,main_nometa,302,n,N1,0.03445958281790926
+random_cell,main_nometa,302,n,N2,0.025054356804926722
+random_cell,main_nometa,302,n,N3,0.015232635385258047
+random_cell,hron,303,continent,Africa,0.16485286982911415
+random_cell,hron,303,continent,Asia,0.12078430897211417
+random_cell,hron,303,continent,Europe,0.05662828043944309
+random_cell,hron,303,continent,North America,0.08906703133538833
+random_cell,hron,303,continent,Oceania,0.05868878413674228
+random_cell,hron,303,continent,South America,0.09820990729620467
+random_cell,hron,303,n,N1,0.16287953401541405
+random_cell,hron,303,n,N2,0.1127436957602353
+random_cell,hron,303,n,N3,0.041786568171929585
+random_cell,tsagris,303,continent,Africa,0.2084183791883059
+random_cell,tsagris,303,continent,Asia,0.13081292453178014
+random_cell,tsagris,303,continent,Europe,0.05273803700052131
+random_cell,tsagris,303,continent,North America,0.0826441169240106
+random_cell,tsagris,303,continent,Oceania,0.049990522929602946
+random_cell,tsagris,303,continent,South America,0.10709013658854162
+random_cell,tsagris,303,n,N1,0.19642461233753458
+random_cell,tsagris,303,n,N2,0.11669220437575033
+random_cell,tsagris,303,n,N3,0.03436912646138973
+random_cell,micoda,303,continent,Africa,0.18222125159791835
+random_cell,micoda,303,continent,Asia,0.12520713545831827
+random_cell,micoda,303,continent,Europe,0.08627979560488219
+random_cell,micoda,303,continent,North America,0.07765320168225576
+random_cell,micoda,303,continent,Oceania,0.0766153051897547
+random_cell,micoda,303,continent,South America,0.10084101588890168
+random_cell,micoda,303,n,N1,0.15204232221296088
+random_cell,micoda,303,n,N2,0.12525899392791937
+random_cell,micoda,303,n,N3,0.07113687715926015
+random_cell,same_day_mean,303,continent,Africa,0.06158774804444047
+random_cell,same_day_mean,303,continent,Asia,0.027076003338494324
+random_cell,same_day_mean,303,continent,Europe,0.024191494883135472
+random_cell,same_day_mean,303,continent,North America,0.02516054632844809
+random_cell,same_day_mean,303,continent,Oceania,0.014059333840366565
+random_cell,same_day_mean,303,continent,South America,0.020507812762734178
+random_cell,same_day_mean,303,n,N1,0.04939475085049146
+random_cell,same_day_mean,303,n,N2,0.03188825685342021
+random_cell,same_day_mean,303,n,N3,0.01686652305743227
+random_cell,main,303,continent,Africa,0.05146603939609642
+random_cell,main,303,continent,Asia,0.01917930965513985
+random_cell,main,303,continent,Europe,0.019837909019192888
+random_cell,main,303,continent,North America,0.03192263185580246
+random_cell,main,303,continent,Oceania,0.023253486984150275
+random_cell,main,303,continent,South America,0.021088498384506823
+random_cell,main,303,n,N1,0.04889416887521515
+random_cell,main,303,n,N2,0.02489744530120292
+random_cell,main,303,n,N3,0.014071172989202447
+random_cell,main_nometa,303,continent,Africa,0.0389208253891602
+random_cell,main_nometa,303,continent,Asia,0.019778607240335835
+random_cell,main_nometa,303,continent,Europe,0.019152594867705222
+random_cell,main_nometa,303,continent,North America,0.01688243452795132
+random_cell,main_nometa,303,continent,Oceania,0.022031712172621887
+random_cell,main_nometa,303,continent,South America,0.027688386897566725
+random_cell,main_nometa,303,n,N1,0.0366885785606882
+random_cell,main_nometa,303,n,N2,0.02225619386387732
+random_cell,main_nometa,303,n,N3,0.015304365901891725
+random_cell,hron,304,continent,Africa,0.17606982586911207
+random_cell,hron,304,continent,Asia,0.10958982536083094
+random_cell,hron,304,continent,Europe,0.04926712588832376
+random_cell,hron,304,continent,North America,0.1003987667446233
+random_cell,hron,304,continent,Oceania,0.07541815487079437
+random_cell,hron,304,continent,South America,0.05640472917439444
+random_cell,hron,304,n,N1,0.16804905345348695
+random_cell,hron,304,n,N2,0.12219136258632095
+random_cell,hron,304,n,N3,0.030094303133137795
+random_cell,tsagris,304,continent,Africa,0.20117379196058227
+random_cell,tsagris,304,continent,Asia,0.13268148493392248
+random_cell,tsagris,304,continent,Europe,0.057719463226066275
+random_cell,tsagris,304,continent,North America,0.11211555285697253
+random_cell,tsagris,304,continent,Oceania,0.09236297621274485
+random_cell,tsagris,304,continent,South America,0.09400567282320844
+random_cell,tsagris,304,n,N1,0.20636475640731622
+random_cell,tsagris,304,n,N2,0.1305437964515758
+random_cell,tsagris,304,n,N3,0.04164303634856309
+random_cell,micoda,304,continent,Africa,0.17473063349748227
+random_cell,micoda,304,continent,Asia,0.11781327600096887
+random_cell,micoda,304,continent,Europe,0.08030146031011388
+random_cell,micoda,304,continent,North America,0.10882983739651923
+random_cell,micoda,304,continent,Oceania,0.12145615062994192
+random_cell,micoda,304,continent,South America,0.08912479391176344
+random_cell,micoda,304,n,N1,0.16117397904536362
+random_cell,micoda,304,n,N2,0.13135112425631787
+random_cell,micoda,304,n,N3,0.0674077453659885
+random_cell,same_day_mean,304,continent,Africa,0.07013615010823145
+random_cell,same_day_mean,304,continent,Asia,0.03123182479836941
+random_cell,same_day_mean,304,continent,Europe,0.026639549512064174
+random_cell,same_day_mean,304,continent,North America,0.02625577561427582
+random_cell,same_day_mean,304,continent,Oceania,0.03538279648961712
+random_cell,same_day_mean,304,continent,South America,0.02129300771335923
+random_cell,same_day_mean,304,n,N1,0.050514914356031206
+random_cell,same_day_mean,304,n,N2,0.041200250784468415
+random_cell,same_day_mean,304,n,N3,0.020438293095341533
+random_cell,main,304,continent,Africa,0.05297384913579591
+random_cell,main,304,continent,Asia,0.018682901878715134
+random_cell,main,304,continent,Europe,0.017479618061479768
+random_cell,main,304,continent,North America,0.025551101083577835
+random_cell,main,304,continent,Oceania,0.02644733420183102
+random_cell,main,304,continent,South America,0.013278784988046015
+random_cell,main,304,n,N1,0.04170349354528668
+random_cell,main,304,n,N2,0.02688931686049929
+random_cell,main,304,n,N3,0.013046975018159813
+random_cell,main_nometa,304,continent,Africa,0.04273564417244653
+random_cell,main_nometa,304,continent,Asia,0.017559739475262556
+random_cell,main_nometa,304,continent,Europe,0.017920822603248062
+random_cell,main_nometa,304,continent,North America,0.014844979877542927
+random_cell,main_nometa,304,continent,Oceania,0.029365418824741488
+random_cell,main_nometa,304,continent,South America,0.01227710095337717
+random_cell,main_nometa,304,n,N1,0.035389917051200134
+random_cell,main_nometa,304,n,N2,0.024576065575754612
+random_cell,main_nometa,304,n,N3,0.011502874096370134
+random_cell,hron,305,continent,Africa,0.17245887470541404
+random_cell,hron,305,continent,Asia,0.12496199430058615
+random_cell,hron,305,continent,Europe,0.049531078548951085
+random_cell,hron,305,continent,North America,0.08747454478623297
+random_cell,hron,305,continent,Oceania,0.05754895459663962
+random_cell,hron,305,continent,South America,0.10267851187668485
+random_cell,hron,305,n,N1,0.18541430693486
+random_cell,hron,305,n,N2,0.10006549290139817
+random_cell,hron,305,n,N3,0.038596559034703735
+random_cell,tsagris,305,continent,Africa,0.18809905499271726
+random_cell,tsagris,305,continent,Asia,0.1285326419247479
+random_cell,tsagris,305,continent,Europe,0.04779586987788354
+random_cell,tsagris,305,continent,North America,0.09266718713232515
+random_cell,tsagris,305,continent,Oceania,0.10028763195158685
+random_cell,tsagris,305,continent,South America,0.11315544770275199
+random_cell,tsagris,305,n,N1,0.20062801486357537
+random_cell,tsagris,305,n,N2,0.1074689937544388
+random_cell,tsagris,305,n,N3,0.036892434398243856
+random_cell,micoda,305,continent,Africa,0.15873398043255083
+random_cell,micoda,305,continent,Asia,0.13306174398341744
+random_cell,micoda,305,continent,Europe,0.07733017843022696
+random_cell,micoda,305,continent,North America,0.08985459143434228
+random_cell,micoda,305,continent,Oceania,0.14869222372655747
+random_cell,micoda,305,continent,South America,0.09417586522672683
+random_cell,micoda,305,n,N1,0.16859193023564764
+random_cell,micoda,305,n,N2,0.11447207254433026
+random_cell,micoda,305,n,N3,0.06582107078020545
+random_cell,same_day_mean,305,continent,Africa,0.06237488225659043
+random_cell,same_day_mean,305,continent,Asia,0.026909609202943323
+random_cell,same_day_mean,305,continent,Europe,0.018846534397720716
+random_cell,same_day_mean,305,continent,North America,0.025779014400429737
+random_cell,same_day_mean,305,continent,Oceania,0.044317480401276976
+random_cell,same_day_mean,305,continent,South America,0.02318499319530094
+random_cell,same_day_mean,305,n,N1,0.04941427922491578
+random_cell,same_day_mean,305,n,N2,0.03152810871600625
+random_cell,same_day_mean,305,n,N3,0.015130043360303214
+random_cell,main,305,continent,Africa,0.05474256924023888
+random_cell,main,305,continent,Asia,0.01910106193962643
+random_cell,main,305,continent,Europe,0.016298982489870092
+random_cell,main,305,continent,North America,0.03144776966958479
+random_cell,main,305,continent,Oceania,0.044317613090065995
+random_cell,main,305,continent,South America,0.02462465326033881
+random_cell,main,305,n,N1,0.04169564365550456
+random_cell,main,305,n,N2,0.031195929038990575
+random_cell,main,305,n,N3,0.013622725375457383
+random_cell,main_nometa,305,continent,Africa,0.04414537523043407
+random_cell,main_nometa,305,continent,Asia,0.01513677880890957
+random_cell,main_nometa,305,continent,Europe,0.0142907460625787
+random_cell,main_nometa,305,continent,North America,0.0208021953922096
+random_cell,main_nometa,305,continent,Oceania,0.03209678059531017
+random_cell,main_nometa,305,continent,South America,0.02678265910784567
+random_cell,main_nometa,305,n,N1,0.0352386392676486
+random_cell,main_nometa,305,n,N2,0.02470038237849052
+random_cell,main_nometa,305,n,N3,0.011413932225226403
+random_cell,hron,306,continent,Africa,0.16271589101564074
+random_cell,hron,306,continent,Asia,0.11422421533187674
+random_cell,hron,306,continent,Europe,0.057401467405767494
+random_cell,hron,306,continent,North America,0.09110329209505146
+random_cell,hron,306,continent,Oceania,0.08583002839089127
+random_cell,hron,306,continent,South America,0.10111302207008849
+random_cell,hron,306,n,N1,0.17754861464998134
+random_cell,hron,306,n,N2,0.12661512341866235
+random_cell,hron,306,n,N3,0.03635247733269046
+random_cell,tsagris,306,continent,Africa,0.19285988399170284
+random_cell,tsagris,306,continent,Asia,0.12793902178847452
+random_cell,tsagris,306,continent,Europe,0.05074705552275448
+random_cell,tsagris,306,continent,North America,0.082151233981143
+random_cell,tsagris,306,continent,Oceania,0.12552470199778198
+random_cell,tsagris,306,continent,South America,0.11383064512449861
+random_cell,tsagris,306,n,N1,0.19758189806738516
+random_cell,tsagris,306,n,N2,0.13386069024312097
+random_cell,tsagris,306,n,N3,0.035047956542023306
+random_cell,micoda,306,continent,Africa,0.17085874819617156
+random_cell,micoda,306,continent,Asia,0.11511660491241867
+random_cell,micoda,306,continent,Europe,0.08814260384978288
+random_cell,micoda,306,continent,North America,0.1007076354160874
+random_cell,micoda,306,continent,Oceania,0.14615056194569676
+random_cell,micoda,306,continent,South America,0.11746538568606678
+random_cell,micoda,306,n,N1,0.17048476699823112
+random_cell,micoda,306,n,N2,0.13753685984145658
+random_cell,micoda,306,n,N3,0.0706826223042622
+random_cell,same_day_mean,306,continent,Africa,0.05668886524157852
+random_cell,same_day_mean,306,continent,Asia,0.026855196025666307
+random_cell,same_day_mean,306,continent,Europe,0.02300977224515768
+random_cell,same_day_mean,306,continent,North America,0.03174493264764794
+random_cell,same_day_mean,306,continent,Oceania,0.04592187985516346
+random_cell,same_day_mean,306,continent,South America,0.0234086789537608
+random_cell,same_day_mean,306,n,N1,0.048460999091559945
+random_cell,same_day_mean,306,n,N2,0.042983853905286175
+random_cell,same_day_mean,306,n,N3,0.015050352713539942
+random_cell,main,306,continent,Africa,0.04387501305599952
+random_cell,main,306,continent,Asia,0.014823378760294048
+random_cell,main,306,continent,Europe,0.015548439006749947
+random_cell,main,306,continent,North America,0.025276025226342057
+random_cell,main,306,continent,Oceania,0.03128681136394022
+random_cell,main,306,continent,South America,0.02688863626780029
+random_cell,main,306,n,N1,0.036675078421399186
+random_cell,main,306,n,N2,0.028484653334782627
+random_cell,main,306,n,N3,0.012047801008753673
+random_cell,main_nometa,306,continent,Africa,0.03672629621894342
+random_cell,main_nometa,306,continent,Asia,0.021906236045729385
+random_cell,main_nometa,306,continent,Europe,0.014459639463267537
+random_cell,main_nometa,306,continent,North America,0.03337764798175171
+random_cell,main_nometa,306,continent,Oceania,0.030745164374239756
+random_cell,main_nometa,306,continent,South America,0.02995306250937267
+random_cell,main_nometa,306,n,N1,0.03741146963049527
+random_cell,main_nometa,306,n,N2,0.031146418645854424
+random_cell,main_nometa,306,n,N3,0.01269417754892898
+random_cell,hron,307,continent,Africa,0.16525683768464008
+random_cell,hron,307,continent,Asia,0.1251953752370197
+random_cell,hron,307,continent,Europe,0.05978305753950809
+random_cell,hron,307,continent,North America,0.08451484711487685
+random_cell,hron,307,continent,Oceania,0.04997604525313548
+random_cell,hron,307,continent,South America,0.0909518392729427
+random_cell,hron,307,n,N1,0.17763236849653727
+random_cell,hron,307,n,N2,0.11126827581574038
+random_cell,hron,307,n,N3,0.04165386732718758
+random_cell,tsagris,307,continent,Africa,0.17943042276924764
+random_cell,tsagris,307,continent,Asia,0.13978469710127847
+random_cell,tsagris,307,continent,Europe,0.057577084846700134
+random_cell,tsagris,307,continent,North America,0.09954890602294593
+random_cell,tsagris,307,continent,Oceania,0.09068714076617782
+random_cell,tsagris,307,continent,South America,0.10707066974892955
+random_cell,tsagris,307,n,N1,0.20996175148327653
+random_cell,tsagris,307,n,N2,0.11197130160191163
+random_cell,tsagris,307,n,N3,0.04334744964110725
+random_cell,micoda,307,continent,Africa,0.1650149525005649
+random_cell,micoda,307,continent,Asia,0.12592149278949216
+random_cell,micoda,307,continent,Europe,0.08647205201947651
+random_cell,micoda,307,continent,North America,0.0912258399664739
+random_cell,micoda,307,continent,Oceania,0.08728064988836189
+random_cell,micoda,307,continent,South America,0.11004309963327102
+random_cell,micoda,307,n,N1,0.1712000361882697
+random_cell,micoda,307,n,N2,0.12249161740341764
+random_cell,micoda,307,n,N3,0.06800630094263996
+random_cell,same_day_mean,307,continent,Africa,0.05749844638524146
+random_cell,same_day_mean,307,continent,Asia,0.02943206587891884
+random_cell,same_day_mean,307,continent,Europe,0.0212066251009743
+random_cell,same_day_mean,307,continent,North America,0.020051080060545377
+random_cell,same_day_mean,307,continent,Oceania,0.03181649773355681
+random_cell,same_day_mean,307,continent,South America,0.03643864694503289
+random_cell,same_day_mean,307,n,N1,0.049561066193518855
+random_cell,same_day_mean,307,n,N2,0.03542420377871215
+random_cell,same_day_mean,307,n,N3,0.015133192209837928
+random_cell,main,307,continent,Africa,0.04766697309684768
+random_cell,main,307,continent,Asia,0.02179105056783345
+random_cell,main,307,continent,Europe,0.015880465320023737
+random_cell,main,307,continent,North America,0.013903597684261266
+random_cell,main,307,continent,Oceania,0.018679462179936424
+random_cell,main,307,continent,South America,0.03720787623301338
+random_cell,main,307,n,N1,0.04092683494808174
+random_cell,main,307,n,N2,0.022729201169582398
+random_cell,main,307,n,N3,0.014008665967010378
+random_cell,main_nometa,307,continent,Africa,0.05685154262910918
+random_cell,main_nometa,307,continent,Asia,0.01809120340726177
+random_cell,main_nometa,307,continent,Europe,0.017236840882117358
+random_cell,main_nometa,307,continent,North America,0.01594749245026374
+random_cell,main_nometa,307,continent,Oceania,0.01790025028715257
+random_cell,main_nometa,307,continent,South America,0.045959991853963024
+random_cell,main_nometa,307,n,N1,0.03655369321957076
+random_cell,main_nometa,307,n,N2,0.03135959290851452
+random_cell,main_nometa,307,n,N3,0.01510330539937668
+random_cell,hron,308,continent,Africa,0.1591805810447942
+random_cell,hron,308,continent,Asia,0.12188601538176055
+random_cell,hron,308,continent,Europe,0.059203067569558156
+random_cell,hron,308,continent,North America,0.087632882675154
+random_cell,hron,308,continent,Oceania,0.08754698231595341
+random_cell,hron,308,continent,South America,0.08906565270258296
+random_cell,hron,308,n,N1,0.16008646947707053
+random_cell,hron,308,n,N2,0.11753717542848331
+random_cell,hron,308,n,N3,0.044844064363920105
+random_cell,tsagris,308,continent,Africa,0.18755513391620904
+random_cell,tsagris,308,continent,Asia,0.1293604709385779
+random_cell,tsagris,308,continent,Europe,0.05829761882735762
+random_cell,tsagris,308,continent,North America,0.09407478396438784
+random_cell,tsagris,308,continent,Oceania,0.10457120523839221
+random_cell,tsagris,308,continent,South America,0.12127177309216633
+random_cell,tsagris,308,n,N1,0.1946868671827932
+random_cell,tsagris,308,n,N2,0.11797077704701096
+random_cell,tsagris,308,n,N3,0.047377891902947146
+random_cell,micoda,308,continent,Africa,0.15585715259684435
+random_cell,micoda,308,continent,Asia,0.11963806743550615
+random_cell,micoda,308,continent,Europe,0.08217228111569333
+random_cell,micoda,308,continent,North America,0.10202297370911988
+random_cell,micoda,308,continent,Oceania,0.13817325621337206
+random_cell,micoda,308,continent,South America,0.08039655828458786
+random_cell,micoda,308,n,N1,0.1530883346156675
+random_cell,micoda,308,n,N2,0.11985965212111717
+random_cell,micoda,308,n,N3,0.07059061865772406
+random_cell,same_day_mean,308,continent,Africa,0.0669339658673854
+random_cell,same_day_mean,308,continent,Asia,0.036121870174156016
+random_cell,same_day_mean,308,continent,Europe,0.023027320152487003
+random_cell,same_day_mean,308,continent,North America,0.036695274273430674
+random_cell,same_day_mean,308,continent,Oceania,0.037014465841057866
+random_cell,same_day_mean,308,continent,South America,0.02714068694335073
+random_cell,same_day_mean,308,n,N1,0.051901630369038804
+random_cell,same_day_mean,308,n,N2,0.04219470913145358
+random_cell,same_day_mean,308,n,N3,0.020505143407207056
+random_cell,main,308,continent,Africa,0.04546843789545144
+random_cell,main,308,continent,Asia,0.022037560306110187
+random_cell,main,308,continent,Europe,0.021916941972361045
+random_cell,main,308,continent,North America,0.019489776548146428
+random_cell,main,308,continent,Oceania,0.039229776744620054
+random_cell,main,308,continent,South America,0.03414722371632731
+random_cell,main,308,n,N1,0.044346909971068486
+random_cell,main,308,n,N2,0.02874501814118855
+random_cell,main,308,n,N3,0.016479634284585026
+random_cell,main_nometa,308,continent,Africa,0.05201930784121925
+random_cell,main_nometa,308,continent,Asia,0.031486399628816414
+random_cell,main_nometa,308,continent,Europe,0.022511897377998073
+random_cell,main_nometa,308,continent,North America,0.0170611027678307
+random_cell,main_nometa,308,continent,Oceania,0.03489673507909339
+random_cell,main_nometa,308,continent,South America,0.02237042870283987
+random_cell,main_nometa,308,n,N1,0.04514943847133153
+random_cell,main_nometa,308,n,N2,0.02995065801439146
+random_cell,main_nometa,308,n,N3,0.018152983301999482
+random_cell,hron,309,continent,Africa,0.16908064246509485
+random_cell,hron,309,continent,Asia,0.12835165548120817
+random_cell,hron,309,continent,Europe,0.05325884433615514
+random_cell,hron,309,continent,North America,0.08750494694999118
+random_cell,hron,309,continent,Oceania,0.10111596817481813
+random_cell,hron,309,continent,South America,0.07182035781682357
+random_cell,hron,309,n,N1,0.17777646930150962
+random_cell,hron,309,n,N2,0.10534278286836135
+random_cell,hron,309,n,N3,0.03984047963407029
+random_cell,tsagris,309,continent,Africa,0.2048188228108927
+random_cell,tsagris,309,continent,Asia,0.13074160515540034
+random_cell,tsagris,309,continent,Europe,0.053106792034468775
+random_cell,tsagris,309,continent,North America,0.09621139225613633
+random_cell,tsagris,309,continent,Oceania,0.10047330904982821
+random_cell,tsagris,309,continent,South America,0.09531314950761366
+random_cell,tsagris,309,n,N1,0.2079556376627248
+random_cell,tsagris,309,n,N2,0.11330438168764895
+random_cell,tsagris,309,n,N3,0.03784971253538878
+random_cell,micoda,309,continent,Africa,0.1755988077196322
+random_cell,micoda,309,continent,Asia,0.12809517296383305
+random_cell,micoda,309,continent,Europe,0.08529562332588568
+random_cell,micoda,309,continent,North America,0.10120114405302975
+random_cell,micoda,309,continent,Oceania,0.15189042694567023
+random_cell,micoda,309,continent,South America,0.08990947712468564
+random_cell,micoda,309,n,N1,0.1711717890259455
+random_cell,micoda,309,n,N2,0.11784370489364644
+random_cell,micoda,309,n,N3,0.07530813063053353
+random_cell,same_day_mean,309,continent,Africa,0.06745040068478873
+random_cell,same_day_mean,309,continent,Asia,0.03187881953869906
+random_cell,same_day_mean,309,continent,Europe,0.023741585457622134
+random_cell,same_day_mean,309,continent,North America,0.030553999604634827
+random_cell,same_day_mean,309,continent,Oceania,0.0282888822083682
+random_cell,same_day_mean,309,continent,South America,0.019762643108770413
+random_cell,same_day_mean,309,n,N1,0.057343591322785006
+random_cell,same_day_mean,309,n,N2,0.03723801313304437
+random_cell,same_day_mean,309,n,N3,0.016500556753779944
+random_cell,main,309,continent,Africa,0.044500656280762996
+random_cell,main,309,continent,Asia,0.020898139099418612
+random_cell,main,309,continent,Europe,0.013886818252063487
+random_cell,main,309,continent,North America,0.022939108703144195
+random_cell,main,309,continent,Oceania,0.030017232783057714
+random_cell,main,309,continent,South America,0.013748247181057187
+random_cell,main,309,n,N1,0.04036377392081931
+random_cell,main,309,n,N2,0.022567856645149126
+random_cell,main,309,n,N3,0.010488256400954509
+random_cell,main_nometa,309,continent,Africa,0.03423592511075856
+random_cell,main_nometa,309,continent,Asia,0.023880869610070167
+random_cell,main_nometa,309,continent,Europe,0.014462043405840938
+random_cell,main_nometa,309,continent,North America,0.021851700906578602
+random_cell,main_nometa,309,continent,Oceania,0.025009195571612415
+random_cell,main_nometa,309,continent,South America,0.01434429008242445
+random_cell,main_nometa,309,n,N1,0.03657279332759328
+random_cell,main_nometa,309,n,N2,0.02341958858894294
+random_cell,main_nometa,309,n,N3,0.010397342625716005
+whole_feature_matched,hron,300,continent,Africa,0.15357218250976923
+whole_feature_matched,hron,300,continent,Asia,0.07655017037049183
+whole_feature_matched,hron,300,continent,Europe,0.07093847359878529
+whole_feature_matched,hron,300,continent,North America,0.15501970906410975
+whole_feature_matched,hron,300,continent,Oceania,0.058646715306288066
+whole_feature_matched,hron,300,continent,South America,0.08037774983141137
+whole_feature_matched,hron,300,n,N1,0.15384856272841582
+whole_feature_matched,hron,300,n,N2,0.08920026943117415
+whole_feature_matched,hron,300,n,N3,0.06405073277313862
+whole_feature_matched,tsagris,300,continent,Africa,0.18740111385253502
+whole_feature_matched,tsagris,300,continent,Asia,0.10245237877196531
+whole_feature_matched,tsagris,300,continent,Europe,0.056188311538323855
+whole_feature_matched,tsagris,300,continent,North America,0.18232016913748206
+whole_feature_matched,tsagris,300,continent,Oceania,0.09566210714120334
+whole_feature_matched,tsagris,300,continent,South America,0.09119402872269214
+whole_feature_matched,tsagris,300,n,N1,0.19820374345590877
+whole_feature_matched,tsagris,300,n,N2,0.10623300326136598
+whole_feature_matched,tsagris,300,n,N3,0.05613196197268582
+whole_feature_matched,micoda,300,continent,Africa,0.16108821477892657
+whole_feature_matched,micoda,300,continent,Asia,0.07621771911258217
+whole_feature_matched,micoda,300,continent,Europe,0.07678057296054412
+whole_feature_matched,micoda,300,continent,North America,0.18363424828740582
+whole_feature_matched,micoda,300,continent,Oceania,0.0331526599878366
+whole_feature_matched,micoda,300,continent,South America,0.07951222068641696
+whole_feature_matched,micoda,300,n,N1,0.16373099597249502
+whole_feature_matched,micoda,300,n,N2,0.08793654778842357
+whole_feature_matched,micoda,300,n,N3,0.06765137551272626
+whole_feature_matched,same_day_mean,300,continent,Africa,0.05317085052650418
+whole_feature_matched,same_day_mean,300,continent,Asia,0.02207946632729667
+whole_feature_matched,same_day_mean,300,continent,Europe,0.02227084619777706
+whole_feature_matched,same_day_mean,300,continent,North America,0.15356198701613016
+whole_feature_matched,same_day_mean,300,continent,Oceania,0.035346551185997895
+whole_feature_matched,same_day_mean,300,continent,South America,0.00451098378530079
+whole_feature_matched,same_day_mean,300,n,N1,0.05705821077078179
+whole_feature_matched,same_day_mean,300,n,N2,0.04170365108946427
+whole_feature_matched,same_day_mean,300,n,N3,0.01375350056467017
+whole_feature_matched,main,300,continent,Africa,0.1708582163082174
+whole_feature_matched,main,300,continent,Asia,0.027492978830363928
+whole_feature_matched,main,300,continent,Europe,0.019781877172967133
+whole_feature_matched,main,300,continent,North America,0.16508257020950315
+whole_feature_matched,main,300,continent,Oceania,0.0678365547624406
+whole_feature_matched,main,300,continent,South America,0.020306551634260046
+whole_feature_matched,main,300,n,N1,0.14070781363467805
+whole_feature_matched,main,300,n,N2,0.06705691374426544
+whole_feature_matched,main,300,n,N3,0.01643429204045655
+whole_feature_matched,main_nometa,300,continent,Africa,0.1705299881289196
+whole_feature_matched,main_nometa,300,continent,Asia,0.061578488982613346
+whole_feature_matched,main_nometa,300,continent,Europe,0.024994272105460985
+whole_feature_matched,main_nometa,300,continent,North America,0.19994122255006408
+whole_feature_matched,main_nometa,300,continent,Oceania,0.0816557369001157
+whole_feature_matched,main_nometa,300,continent,South America,0.2105262782767004
+whole_feature_matched,main_nometa,300,n,N1,0.14576415450008331
+whole_feature_matched,main_nometa,300,n,N2,0.09536370677332244
+whole_feature_matched,main_nometa,300,n,N3,0.08225333509460284
+whole_feature_matched,hron,301,continent,Africa,0.16213848731186564
+whole_feature_matched,hron,301,continent,Asia,0.10144305875166403
+whole_feature_matched,hron,301,continent,Europe,0.031793724157721984
+whole_feature_matched,hron,301,continent,North America,0.31483574374946444
+whole_feature_matched,hron,301,continent,Oceania,0.0004178516706568958
+whole_feature_matched,hron,301,continent,South America,0.20531905387380925
+whole_feature_matched,hron,301,n,N1,0.19050854107456056
+whole_feature_matched,hron,301,n,N2,0.16496366378845836
+whole_feature_matched,hron,301,n,N3,0.052231323886611856
+whole_feature_matched,tsagris,301,continent,Africa,0.21017360961587955
+whole_feature_matched,tsagris,301,continent,Asia,0.1270153039697642
+whole_feature_matched,tsagris,301,continent,Europe,0.041423571927280134
+whole_feature_matched,tsagris,301,continent,North America,0.17248917549374104
+whole_feature_matched,tsagris,301,continent,Oceania,0.005533666342401745
+whole_feature_matched,tsagris,301,continent,South America,0.0921384791103214
+whole_feature_matched,tsagris,301,n,N1,0.19204584680856795
+whole_feature_matched,tsagris,301,n,N2,0.1440644842047916
+whole_feature_matched,tsagris,301,n,N3,0.0470921504872465
+whole_feature_matched,micoda,301,continent,Africa,0.18439098410746008
+whole_feature_matched,micoda,301,continent,Asia,0.11073719023705443
+whole_feature_matched,micoda,301,continent,Europe,0.07203069210862156
+whole_feature_matched,micoda,301,continent,North America,0.18875978866414694
+whole_feature_matched,micoda,301,continent,Oceania,0.05786495433007996
+whole_feature_matched,micoda,301,continent,South America,0.1075894506770961
+whole_feature_matched,micoda,301,n,N1,0.16129630510856732
+whole_feature_matched,micoda,301,n,N2,0.15667247848578406
+whole_feature_matched,micoda,301,n,N3,0.07296073772796964
+whole_feature_matched,same_day_mean,301,continent,Africa,0.10100855758166152
+whole_feature_matched,same_day_mean,301,continent,Asia,0.038096642968676805
+whole_feature_matched,same_day_mean,301,continent,Europe,0.015717151351686217
+whole_feature_matched,same_day_mean,301,continent,North America,0.048941343009464476
+whole_feature_matched,same_day_mean,301,continent,Oceania,0.0509640831474297
+whole_feature_matched,same_day_mean,301,continent,South America,0.006681170485695832
+whole_feature_matched,same_day_mean,301,n,N1,0.061923452379997024
+whole_feature_matched,same_day_mean,301,n,N2,0.05345633703669894
+whole_feature_matched,same_day_mean,301,n,N3,0.029770075553479946
+whole_feature_matched,main,301,continent,Africa,0.15117116374762862
+whole_feature_matched,main,301,continent,Asia,0.04290352447503011
+whole_feature_matched,main,301,continent,Europe,0.017881986145893054
+whole_feature_matched,main,301,continent,North America,0.036733495812507615
+whole_feature_matched,main,301,continent,Oceania,0.005516479451990278
+whole_feature_matched,main,301,continent,South America,0.07025521524779774
+whole_feature_matched,main,301,n,N1,0.09578260205623201
+whole_feature_matched,main,301,n,N2,0.07470748175000785
+whole_feature_matched,main,301,n,N3,0.03544735583751888
+whole_feature_matched,main_nometa,301,continent,Africa,0.12833628233096342
+whole_feature_matched,main_nometa,301,continent,Asia,0.04098301483956746
+whole_feature_matched,main_nometa,301,continent,Europe,0.028642480690033174
+whole_feature_matched,main_nometa,301,continent,North America,0.03921976913161506
+whole_feature_matched,main_nometa,301,continent,Oceania,0.016045358395268397
+whole_feature_matched,main_nometa,301,continent,South America,0.0335806261564555
+whole_feature_matched,main_nometa,301,n,N1,0.07960488146983566
+whole_feature_matched,main_nometa,301,n,N2,0.06264209193117556
+whole_feature_matched,main_nometa,301,n,N3,0.040966497748288803
+whole_feature_matched,hron,302,continent,Africa,0.14401473022009514
+whole_feature_matched,hron,302,continent,Asia,0.11792769230624167
+whole_feature_matched,hron,302,continent,Europe,0.08184369061455152
+whole_feature_matched,hron,302,continent,North America,0.392658852314845
+whole_feature_matched,hron,302,continent,Oceania,0.04541567265739956
+whole_feature_matched,hron,302,continent,South America,0.05553984052354802
+whole_feature_matched,hron,302,n,N1,0.1795258365879524
+whole_feature_matched,hron,302,n,N2,0.13940518644359082
+whole_feature_matched,hron,302,n,N3,0.05907719812401463
+whole_feature_matched,tsagris,302,continent,Africa,0.19129415455618007
+whole_feature_matched,tsagris,302,continent,Asia,0.14670027594658416
+whole_feature_matched,tsagris,302,continent,Europe,0.08381107042409353
+whole_feature_matched,tsagris,302,continent,North America,0.25605915653322153
+whole_feature_matched,tsagris,302,continent,Oceania,0.06782894211328558
+whole_feature_matched,tsagris,302,continent,South America,0.08714866199031066
+whole_feature_matched,tsagris,302,n,N1,0.22203195127602934
+whole_feature_matched,tsagris,302,n,N2,0.1451301573134203
+whole_feature_matched,tsagris,302,n,N3,0.06611493821590922
+whole_feature_matched,micoda,302,continent,Africa,0.16037846042066495
+whole_feature_matched,micoda,302,continent,Asia,0.12623846760666416
+whole_feature_matched,micoda,302,continent,Europe,0.11657888346712525
+whole_feature_matched,micoda,302,continent,North America,0.24465380720594396
+whole_feature_matched,micoda,302,continent,Oceania,0.01102458519341586
+whole_feature_matched,micoda,302,continent,South America,0.08320969911952722
+whole_feature_matched,micoda,302,n,N1,0.19011109087464403
+whole_feature_matched,micoda,302,n,N2,0.12283623750738476
+whole_feature_matched,micoda,302,n,N3,0.0838665939914828
+whole_feature_matched,same_day_mean,302,continent,Africa,0.06182971074000003
+whole_feature_matched,same_day_mean,302,continent,Asia,0.03218732826920565
+whole_feature_matched,same_day_mean,302,continent,Europe,0.012860961522072946
+whole_feature_matched,same_day_mean,302,continent,North America,0.018965221073783886
+whole_feature_matched,same_day_mean,302,continent,Oceania,0.014409203146280027
+whole_feature_matched,same_day_mean,302,continent,South America,0.027300398218746136
+whole_feature_matched,same_day_mean,302,n,N1,0.037448438289017096
+whole_feature_matched,same_day_mean,302,n,N2,0.034184011938433075
+whole_feature_matched,same_day_mean,302,n,N3,0.03165771859051538
+whole_feature_matched,main,302,continent,Africa,0.10380144838329305
+whole_feature_matched,main,302,continent,Asia,0.04009849924179826
+whole_feature_matched,main,302,continent,Europe,0.015027209260551145
+whole_feature_matched,main,302,continent,North America,0.06345682070419006
+whole_feature_matched,main,302,continent,Oceania,0.05991120542263839
+whole_feature_matched,main,302,continent,South America,0.07958271799840753
+whole_feature_matched,main,302,n,N1,0.06587372258070645
+whole_feature_matched,main,302,n,N2,0.07744081838942378
+whole_feature_matched,main,302,n,N3,0.04993982990791698
+whole_feature_matched,main_nometa,302,continent,Africa,0.07357372061000562
+whole_feature_matched,main_nometa,302,continent,Asia,0.05970262675002854
+whole_feature_matched,main_nometa,302,continent,Europe,0.0214328023485591
+whole_feature_matched,main_nometa,302,continent,North America,0.08526953237525875
+whole_feature_matched,main_nometa,302,continent,Oceania,0.03706624094113851
+whole_feature_matched,main_nometa,302,continent,South America,0.08623623880972096
+whole_feature_matched,main_nometa,302,n,N1,0.05247887640036725
+whole_feature_matched,main_nometa,302,n,N2,0.0656135487208132
+whole_feature_matched,main_nometa,302,n,N3,0.06848220464213918
+whole_feature_matched,hron,303,continent,Africa,0.08898474437458659
+whole_feature_matched,hron,303,continent,Asia,0.060503400063966886
+whole_feature_matched,hron,303,continent,Europe,0.052291289564566315
+whole_feature_matched,hron,303,continent,North America,0.1536911245356206
+whole_feature_matched,hron,303,continent,Oceania,0.043489572265202774
+whole_feature_matched,hron,303,continent,South America,0.08889872494965988
+whole_feature_matched,hron,303,n,N1,0.09869944431447872
+whole_feature_matched,hron,303,n,N2,0.07996780130334351
+whole_feature_matched,hron,303,n,N3,0.054660291447466224
+whole_feature_matched,tsagris,303,continent,Africa,0.11087177677817579
+whole_feature_matched,tsagris,303,continent,Asia,0.0731932481605387
+whole_feature_matched,tsagris,303,continent,Europe,0.07425230992499299
+whole_feature_matched,tsagris,303,continent,North America,0.14634200547987591
+whole_feature_matched,tsagris,303,continent,Oceania,0.072638894038937
+whole_feature_matched,tsagris,303,continent,South America,0.09862660674103406
+whole_feature_matched,tsagris,303,n,N1,0.13512031041272826
+whole_feature_matched,tsagris,303,n,N2,0.10035317885898053
+whole_feature_matched,tsagris,303,n,N3,0.04548658348478209
+whole_feature_matched,micoda,303,continent,Africa,0.10848852112374376
+whole_feature_matched,micoda,303,continent,Asia,0.0627603247583358
+whole_feature_matched,micoda,303,continent,Europe,0.11215752556617141
+whole_feature_matched,micoda,303,continent,North America,0.12681197503639405
+whole_feature_matched,micoda,303,continent,Oceania,0.03927802228784174
+whole_feature_matched,micoda,303,continent,South America,0.11614156764025937
+whole_feature_matched,micoda,303,n,N1,0.1049134327425032
+whole_feature_matched,micoda,303,n,N2,0.098848494414586
+whole_feature_matched,micoda,303,n,N3,0.10427618767884167
+whole_feature_matched,same_day_mean,303,continent,Africa,0.053989348832888626
+whole_feature_matched,same_day_mean,303,continent,Asia,0.009072289062203524
+whole_feature_matched,same_day_mean,303,continent,Europe,0.028209081795245262
+whole_feature_matched,same_day_mean,303,continent,North America,0.039001504182037613
+whole_feature_matched,same_day_mean,303,continent,Oceania,0.03808894108829339
+whole_feature_matched,same_day_mean,303,continent,South America,0.07296099399891412
+whole_feature_matched,same_day_mean,303,n,N1,0.05017109655432627
+whole_feature_matched,same_day_mean,303,n,N2,0.036776997021582186
+whole_feature_matched,same_day_mean,303,n,N3,0.02908624628621334
+whole_feature_matched,main,303,continent,Africa,0.1270224257732399
+whole_feature_matched,main,303,continent,Asia,0.029293185580394086
+whole_feature_matched,main,303,continent,Europe,0.024214752396668964
+whole_feature_matched,main,303,continent,North America,0.06665444632953461
+whole_feature_matched,main,303,continent,Oceania,0.18734750810103123
+whole_feature_matched,main,303,continent,South America,0.1237905220172282
+whole_feature_matched,main,303,n,N1,0.10317106952710683
+whole_feature_matched,main,303,n,N2,0.08335691726239168
+whole_feature_matched,main,303,n,N3,0.037738163993737354
+whole_feature_matched,main_nometa,303,continent,Africa,0.1162056805647922
+whole_feature_matched,main_nometa,303,continent,Asia,0.05344914413394863
+whole_feature_matched,main_nometa,303,continent,Europe,0.02567125214139825
+whole_feature_matched,main_nometa,303,continent,North America,0.056925508332861766
+whole_feature_matched,main_nometa,303,continent,Oceania,0.0979114346466195
+whole_feature_matched,main_nometa,303,continent,South America,0.14819385919603906
+whole_feature_matched,main_nometa,303,n,N1,0.10063524681034167
+whole_feature_matched,main_nometa,303,n,N2,0.08030516050180544
+whole_feature_matched,main_nometa,303,n,N3,0.03958310309332019
+whole_feature_matched,hron,304,continent,Africa,0.1589861409583995
+whole_feature_matched,hron,304,continent,Asia,0.09976509053205246
+whole_feature_matched,hron,304,continent,Europe,0.033988506752567704
+whole_feature_matched,hron,304,continent,North America,0.07625397989636518
+whole_feature_matched,hron,304,continent,Oceania,0.003884677282644036
+whole_feature_matched,hron,304,continent,South America,0.18389487024546464
+whole_feature_matched,hron,304,n,N1,0.14811514695149608
+whole_feature_matched,hron,304,n,N2,0.14798268258023378
+whole_feature_matched,hron,304,n,N3,0.07535066040741799
+whole_feature_matched,tsagris,304,continent,Africa,0.18885563513848622
+whole_feature_matched,tsagris,304,continent,Asia,0.1272240623648856
+whole_feature_matched,tsagris,304,continent,Europe,0.041725722701666496
+whole_feature_matched,tsagris,304,continent,North America,0.0968334760003576
+whole_feature_matched,tsagris,304,continent,Oceania,0.02127211505862823
+whole_feature_matched,tsagris,304,continent,South America,0.1555059759724128
+whole_feature_matched,tsagris,304,n,N1,0.19741453484314864
+whole_feature_matched,tsagris,304,n,N2,0.1404485211759044
+whole_feature_matched,tsagris,304,n,N3,0.08110582338357754
+whole_feature_matched,micoda,304,continent,Africa,0.16354264364992
+whole_feature_matched,micoda,304,continent,Asia,0.12142779399366295
+whole_feature_matched,micoda,304,continent,Europe,0.06831865158456815
+whole_feature_matched,micoda,304,continent,North America,0.0859447698011054
+whole_feature_matched,micoda,304,continent,Oceania,0.004704972970767249
+whole_feature_matched,micoda,304,continent,South America,0.1434756622051408
+whole_feature_matched,micoda,304,n,N1,0.16009123373282558
+whole_feature_matched,micoda,304,n,N2,0.13236335720275555
+whole_feature_matched,micoda,304,n,N3,0.09693190236750207
+whole_feature_matched,same_day_mean,304,continent,Africa,0.04774328494047716
+whole_feature_matched,same_day_mean,304,continent,Asia,0.026219950442473182
+whole_feature_matched,same_day_mean,304,continent,Europe,0.02897879807877988
+whole_feature_matched,same_day_mean,304,continent,North America,0.026005080131474623
+whole_feature_matched,same_day_mean,304,continent,Oceania,0.004558540715509043
+whole_feature_matched,same_day_mean,304,continent,South America,0.02070611194948845
+whole_feature_matched,same_day_mean,304,n,N1,0.04223000479937816
+whole_feature_matched,same_day_mean,304,n,N2,0.033181514093975385
+whole_feature_matched,same_day_mean,304,n,N3,0.02873745566021203
+whole_feature_matched,main,304,continent,Africa,0.11381285020743395
+whole_feature_matched,main,304,continent,Asia,0.03780906677709103
+whole_feature_matched,main,304,continent,Europe,0.039299528361719724
+whole_feature_matched,main,304,continent,North America,0.04726190629581444
+whole_feature_matched,main,304,continent,Oceania,0.05779405405484839
+whole_feature_matched,main,304,continent,South America,0.034059654559737175
+whole_feature_matched,main,304,n,N1,0.09364359868230067
+whole_feature_matched,main,304,n,N2,0.0806143582383237
+whole_feature_matched,main,304,n,N3,0.03793718767493859
+whole_feature_matched,main_nometa,304,continent,Africa,0.09918776912989116
+whole_feature_matched,main_nometa,304,continent,Asia,0.033912892845577636
+whole_feature_matched,main_nometa,304,continent,Europe,0.027228619818316258
+whole_feature_matched,main_nometa,304,continent,North America,0.05669338575304822
+whole_feature_matched,main_nometa,304,continent,Oceania,0.04477389574617574
+whole_feature_matched,main_nometa,304,continent,South America,0.10693192713087037
+whole_feature_matched,main_nometa,304,n,N1,0.0975643857273298
+whole_feature_matched,main_nometa,304,n,N2,0.06645658039549973
+whole_feature_matched,main_nometa,304,n,N3,0.05490647287948573
+whole_feature_matched,hron,305,continent,Africa,0.12952117878277508
+whole_feature_matched,hron,305,continent,Asia,0.079601392838548
+whole_feature_matched,hron,305,continent,Europe,0.030138491343783668
+whole_feature_matched,hron,305,continent,North America,0.32912938563449223
+whole_feature_matched,hron,305,continent,Oceania,0.023030631724883722
+whole_feature_matched,hron,305,continent,South America,0.15366711270257868
+whole_feature_matched,hron,305,n,N1,0.20709738769404756
+whole_feature_matched,hron,305,n,N2,0.14831313483101002
+whole_feature_matched,hron,305,n,N3,0.03472056233851845
+whole_feature_matched,tsagris,305,continent,Africa,0.16326021575816801
+whole_feature_matched,tsagris,305,continent,Asia,0.08142778721259437
+whole_feature_matched,tsagris,305,continent,Europe,0.024310556030190156
+whole_feature_matched,tsagris,305,continent,North America,0.19536177713560296
+whole_feature_matched,tsagris,305,continent,Oceania,0.014327997367727642
+whole_feature_matched,tsagris,305,continent,South America,0.11650646342441433
+whole_feature_matched,tsagris,305,n,N1,0.18228804117475753
+whole_feature_matched,tsagris,305,n,N2,0.11736735948589253
+whole_feature_matched,tsagris,305,n,N3,0.030601530442445696
+whole_feature_matched,micoda,305,continent,Africa,0.15973534311889662
+whole_feature_matched,micoda,305,continent,Asia,0.08007767596047317
+whole_feature_matched,micoda,305,continent,Europe,0.016833546604739125
+whole_feature_matched,micoda,305,continent,North America,0.14223224381675556
+whole_feature_matched,micoda,305,continent,Oceania,0.00889827799038002
+whole_feature_matched,micoda,305,continent,South America,0.10797520061727425
+whole_feature_matched,micoda,305,n,N1,0.14812919182553871
+whole_feature_matched,micoda,305,n,N2,0.11542901650271774
+whole_feature_matched,micoda,305,n,N3,0.026505145636378964
+whole_feature_matched,same_day_mean,305,continent,Africa,0.05575919449349634
+whole_feature_matched,same_day_mean,305,continent,Asia,0.022836970157049913
+whole_feature_matched,same_day_mean,305,continent,Europe,0.013042710372225501
+whole_feature_matched,same_day_mean,305,continent,North America,0.02328203705643332
+whole_feature_matched,same_day_mean,305,continent,Oceania,0.007500146851799245
+whole_feature_matched,same_day_mean,305,continent,South America,0.015849267443571197
+whole_feature_matched,same_day_mean,305,n,N1,0.03926918426461191
+whole_feature_matched,same_day_mean,305,n,N2,0.029896287767365578
+whole_feature_matched,same_day_mean,305,n,N3,0.011686569716633293
+whole_feature_matched,main,305,continent,Africa,0.06667245690453318
+whole_feature_matched,main,305,continent,Asia,0.04889386098586985
+whole_feature_matched,main,305,continent,Europe,0.020596539077710644
+whole_feature_matched,main,305,continent,North America,0.06277792713532829
+whole_feature_matched,main,305,continent,Oceania,0.12382221425141311
+whole_feature_matched,main,305,continent,South America,0.06644519183959796
+whole_feature_matched,main,305,n,N1,0.07614514196976259
+whole_feature_matched,main,305,n,N2,0.05701525269639261
+whole_feature_matched,main,305,n,N3,0.026980364058932945
+whole_feature_matched,main_nometa,305,continent,Africa,0.05527625319819948
+whole_feature_matched,main_nometa,305,continent,Asia,0.04555034063153467
+whole_feature_matched,main_nometa,305,continent,Europe,0.015496391077971825
+whole_feature_matched,main_nometa,305,continent,North America,0.07421342314992427
+whole_feature_matched,main_nometa,305,continent,Oceania,0.03374956445234649
+whole_feature_matched,main_nometa,305,continent,South America,0.03078883371066411
+whole_feature_matched,main_nometa,305,n,N1,0.06189015059556778
+whole_feature_matched,main_nometa,305,n,N2,0.04294577880669279
+whole_feature_matched,main_nometa,305,n,N3,0.026307009761354024
+whole_feature_matched,hron,306,continent,Africa,0.15710038778808502
+whole_feature_matched,hron,306,continent,Asia,0.10982293920816426
+whole_feature_matched,hron,306,continent,Europe,0.060630603470678605
+whole_feature_matched,hron,306,continent,North America,0.06219024092342312
+whole_feature_matched,hron,306,continent,Oceania,0.14723107725586623
+whole_feature_matched,hron,306,continent,South America,0.17708600215098383
+whole_feature_matched,hron,306,n,N1,0.1649948135286129
+whole_feature_matched,hron,306,n,N2,0.15992552047260702
+whole_feature_matched,hron,306,n,N3,0.047988821992560576
+whole_feature_matched,tsagris,306,continent,Africa,0.17522139306993167
+whole_feature_matched,tsagris,306,continent,Asia,0.11643841475754524
+whole_feature_matched,tsagris,306,continent,Europe,0.07033872855446727
+whole_feature_matched,tsagris,306,continent,North America,0.10153534932952461
+whole_feature_matched,tsagris,306,continent,Oceania,0.17559655605537067
+whole_feature_matched,tsagris,306,continent,South America,0.11249019126037421
+whole_feature_matched,tsagris,306,n,N1,0.2046792676605215
+whole_feature_matched,tsagris,306,n,N2,0.14036181595527528
+whole_feature_matched,tsagris,306,n,N3,0.04597392597215246
+whole_feature_matched,micoda,306,continent,Africa,0.17426331358940156
+whole_feature_matched,micoda,306,continent,Asia,0.14881058420303805
+whole_feature_matched,micoda,306,continent,Europe,0.0902604213339258
+whole_feature_matched,micoda,306,continent,North America,0.1324452576712455
+whole_feature_matched,micoda,306,continent,Oceania,0.1405670424528741
+whole_feature_matched,micoda,306,continent,South America,0.12214767325538178
+whole_feature_matched,micoda,306,n,N1,0.1712774392482869
+whole_feature_matched,micoda,306,n,N2,0.1544651094719451
+whole_feature_matched,micoda,306,n,N3,0.09331015990732382
+whole_feature_matched,same_day_mean,306,continent,Africa,0.07107890348682828
+whole_feature_matched,same_day_mean,306,continent,Asia,0.030077613977841405
+whole_feature_matched,same_day_mean,306,continent,Europe,0.01482389908190386
+whole_feature_matched,same_day_mean,306,continent,North America,0.05148074083651371
+whole_feature_matched,same_day_mean,306,continent,Oceania,0.10575948140509207
+whole_feature_matched,same_day_mean,306,continent,South America,0.028430227031712326
+whole_feature_matched,same_day_mean,306,n,N1,0.05990783212691709
+whole_feature_matched,same_day_mean,306,n,N2,0.04961532745950002
+whole_feature_matched,same_day_mean,306,n,N3,0.023651934429260477
+whole_feature_matched,main,306,continent,Africa,0.08491303098874459
+whole_feature_matched,main,306,continent,Asia,0.03680880958943518
+whole_feature_matched,main,306,continent,Europe,0.034319634177716274
+whole_feature_matched,main,306,continent,North America,0.05933133356917298
+whole_feature_matched,main,306,continent,Oceania,0.06944307318299048
+whole_feature_matched,main,306,continent,South America,0.04408706990235406
+whole_feature_matched,main,306,n,N1,0.08254563092901537
+whole_feature_matched,main,306,n,N2,0.06413892273895508
+whole_feature_matched,main,306,n,N3,0.024263990407182703
+whole_feature_matched,main_nometa,306,continent,Africa,0.05415748909023321
+whole_feature_matched,main_nometa,306,continent,Asia,0.01858154980081657
+whole_feature_matched,main_nometa,306,continent,Europe,0.01650519208273997
+whole_feature_matched,main_nometa,306,continent,North America,0.05175889006745093
+whole_feature_matched,main_nometa,306,continent,Oceania,0.039414932186643416
+whole_feature_matched,main_nometa,306,continent,South America,0.09119872112371895
+whole_feature_matched,main_nometa,306,n,N1,0.05844746069780981
+whole_feature_matched,main_nometa,306,n,N2,0.05289982093737678
+whole_feature_matched,main_nometa,306,n,N3,0.020866233741341965
+whole_feature_matched,hron,307,continent,Africa,0.22327092145079097
+whole_feature_matched,hron,307,continent,Asia,0.06777506637128697
+whole_feature_matched,hron,307,continent,Europe,0.05953424186573761
+whole_feature_matched,hron,307,continent,North America,0.23111431658780407
+whole_feature_matched,hron,307,continent,Oceania,0.037065655639960234
+whole_feature_matched,hron,307,continent,South America,0.08728072176009409
+whole_feature_matched,hron,307,n,N1,0.17937177666842885
+whole_feature_matched,hron,307,n,N2,0.11936617931159005
+whole_feature_matched,hron,307,n,N3,0.05134276774241115
+whole_feature_matched,tsagris,307,continent,Africa,0.23211461557842317
+whole_feature_matched,tsagris,307,continent,Asia,0.0984633546743568
+whole_feature_matched,tsagris,307,continent,Europe,0.059992389899394476
+whole_feature_matched,tsagris,307,continent,North America,0.3329711693963928
+whole_feature_matched,tsagris,307,continent,Oceania,0.03923267056551232
+whole_feature_matched,tsagris,307,continent,South America,0.12313289107066167
+whole_feature_matched,tsagris,307,n,N1,0.22060027882289077
+whole_feature_matched,tsagris,307,n,N2,0.13110879481060636
+whole_feature_matched,tsagris,307,n,N3,0.05989219714416786
+whole_feature_matched,micoda,307,continent,Africa,0.22188884170645726
+whole_feature_matched,micoda,307,continent,Asia,0.09142898677876464
+whole_feature_matched,micoda,307,continent,Europe,0.08433976796560035
+whole_feature_matched,micoda,307,continent,North America,0.24040724195434074
+whole_feature_matched,micoda,307,continent,Oceania,0.06500031397671335
+whole_feature_matched,micoda,307,continent,South America,0.11152644272031854
+whole_feature_matched,micoda,307,n,N1,0.17865966444067632
+whole_feature_matched,micoda,307,n,N2,0.13664083407398442
+whole_feature_matched,micoda,307,n,N3,0.0830792534279359
+whole_feature_matched,same_day_mean,307,continent,Africa,0.054695199298807375
+whole_feature_matched,same_day_mean,307,continent,Asia,0.018019614357948667
+whole_feature_matched,same_day_mean,307,continent,Europe,0.023390610485859175
+whole_feature_matched,same_day_mean,307,continent,North America,0.08750880403944951
+whole_feature_matched,same_day_mean,307,continent,Oceania,0.037638912698392785
+whole_feature_matched,same_day_mean,307,continent,South America,0.016852582881795836
+whole_feature_matched,same_day_mean,307,n,N1,0.03830581784512335
+whole_feature_matched,same_day_mean,307,n,N2,0.036377418198577594
+whole_feature_matched,same_day_mean,307,n,N3,0.022566284601585877
+whole_feature_matched,main,307,continent,Africa,0.06706426443271452
+whole_feature_matched,main,307,continent,Asia,0.01365165703407818
+whole_feature_matched,main,307,continent,Europe,0.01708473291860011
+whole_feature_matched,main,307,continent,North America,0.1731097914660213
+whole_feature_matched,main,307,continent,Oceania,0.018906821726353783
+whole_feature_matched,main,307,continent,South America,0.025451512161945123
+whole_feature_matched,main,307,n,N1,0.04203980685147564
+whole_feature_matched,main,307,n,N2,0.047178429980669706
+whole_feature_matched,main,307,n,N3,0.019907824571293944
+whole_feature_matched,main_nometa,307,continent,Africa,0.1306649480616352
+whole_feature_matched,main_nometa,307,continent,Asia,0.023346149098985775
+whole_feature_matched,main_nometa,307,continent,Europe,0.022188214317248517
+whole_feature_matched,main_nometa,307,continent,North America,0.10714598111370682
+whole_feature_matched,main_nometa,307,continent,Oceania,0.04507186460674764
+whole_feature_matched,main_nometa,307,continent,South America,0.15077989230900288
+whole_feature_matched,main_nometa,307,n,N1,0.08369076562035611
+whole_feature_matched,main_nometa,307,n,N2,0.05930978655566235
+whole_feature_matched,main_nometa,307,n,N3,0.07064869579340909
+whole_feature_matched,hron,308,continent,Africa,0.15042316259491084
+whole_feature_matched,hron,308,continent,Asia,0.1337520439057226
+whole_feature_matched,hron,308,continent,Europe,0.08631271103854628
+whole_feature_matched,hron,308,continent,North America,0.07130318196268676
+whole_feature_matched,hron,308,continent,Oceania,0.05168825612532392
+whole_feature_matched,hron,308,continent,South America,0.13094559784526702
+whole_feature_matched,hron,308,n,N1,0.16016804133721027
+whole_feature_matched,hron,308,n,N2,0.13863153932376804
+whole_feature_matched,hron,308,n,N3,0.0822829538881887
+whole_feature_matched,tsagris,308,continent,Africa,0.17825702115129197
+whole_feature_matched,tsagris,308,continent,Asia,0.13780071081949946
+whole_feature_matched,tsagris,308,continent,Europe,0.05784520820399419
+whole_feature_matched,tsagris,308,continent,North America,0.12276575237346804
+whole_feature_matched,tsagris,308,continent,Oceania,0.1026074555207085
+whole_feature_matched,tsagris,308,continent,South America,0.1131251376149236
+whole_feature_matched,tsagris,308,n,N1,0.19572242142385327
+whole_feature_matched,tsagris,308,n,N2,0.14179237506070705
+whole_feature_matched,tsagris,308,n,N3,0.07113987247730226
+whole_feature_matched,micoda,308,continent,Africa,0.18613491644742378
+whole_feature_matched,micoda,308,continent,Asia,0.11157249047271005
+whole_feature_matched,micoda,308,continent,Europe,0.09761741390917318
+whole_feature_matched,micoda,308,continent,North America,0.061385818146358184
+whole_feature_matched,micoda,308,continent,Oceania,0.016319133519680958
+whole_feature_matched,micoda,308,continent,South America,0.08173874835381051
+whole_feature_matched,micoda,308,n,N1,0.13624541946443944
+whole_feature_matched,micoda,308,n,N2,0.1313973158954546
+whole_feature_matched,micoda,308,n,N3,0.10993433363622614
+whole_feature_matched,same_day_mean,308,continent,Africa,0.06391979698140678
+whole_feature_matched,same_day_mean,308,continent,Asia,0.022539202800381686
+whole_feature_matched,same_day_mean,308,continent,Europe,0.02470110132404476
+whole_feature_matched,same_day_mean,308,continent,North America,0.0825065145524604
+whole_feature_matched,same_day_mean,308,continent,Oceania,0.02734060280788254
+whole_feature_matched,same_day_mean,308,continent,South America,0.02136049718700029
+whole_feature_matched,same_day_mean,308,n,N1,0.04170388148284242
+whole_feature_matched,same_day_mean,308,n,N2,0.04782003175608031
+whole_feature_matched,same_day_mean,308,n,N3,0.02817524379455223
+whole_feature_matched,main,308,continent,Africa,0.09350920347148824
+whole_feature_matched,main,308,continent,Asia,0.03052465325068091
+whole_feature_matched,main,308,continent,Europe,0.029059311401308397
+whole_feature_matched,main,308,continent,North America,0.11702213879523918
+whole_feature_matched,main,308,continent,Oceania,0.028194751804643137
+whole_feature_matched,main,308,continent,South America,0.03839671667990239
+whole_feature_matched,main,308,n,N1,0.06364846364385165
+whole_feature_matched,main,308,n,N2,0.059927636546777914
+whole_feature_matched,main,308,n,N3,0.04483738107437747
+whole_feature_matched,main_nometa,308,continent,Africa,0.1708871946175916
+whole_feature_matched,main_nometa,308,continent,Asia,0.02458160492620136
+whole_feature_matched,main_nometa,308,continent,Europe,0.032124101297457894
+whole_feature_matched,main_nometa,308,continent,North America,0.05929780670071352
+whole_feature_matched,main_nometa,308,continent,Oceania,0.01996174755714569
+whole_feature_matched,main_nometa,308,continent,South America,0.035015255051410045
+whole_feature_matched,main_nometa,308,n,N1,0.046753227999541236
+whole_feature_matched,main_nometa,308,n,N2,0.08290846242465051
+whole_feature_matched,main_nometa,308,n,N3,0.09131483341872108
+whole_feature_matched,hron,309,continent,Africa,0.12899491372751473
+whole_feature_matched,hron,309,continent,Asia,0.091291534415822
+whole_feature_matched,hron,309,continent,Europe,0.0493694278685632
+whole_feature_matched,hron,309,continent,North America,0.06220288559978677
+whole_feature_matched,hron,309,continent,South America,0.2174589068658064
+whole_feature_matched,hron,309,n,N1,0.13582125060406752
+whole_feature_matched,hron,309,n,N2,0.11715837284534004
+whole_feature_matched,hron,309,n,N3,0.04661915515737633
+whole_feature_matched,tsagris,309,continent,Africa,0.13012075801594936
+whole_feature_matched,tsagris,309,continent,Asia,0.10447466610574345
+whole_feature_matched,tsagris,309,continent,Europe,0.06551814585401632
+whole_feature_matched,tsagris,309,continent,North America,0.09880183497600947
+whole_feature_matched,tsagris,309,continent,South America,0.1569568709354407
+whole_feature_matched,tsagris,309,n,N1,0.15475791167731104
+whole_feature_matched,tsagris,309,n,N2,0.11256011455781766
+whole_feature_matched,tsagris,309,n,N3,0.043569556296555054
+whole_feature_matched,micoda,309,continent,Africa,0.09681094596511265
+whole_feature_matched,micoda,309,continent,Asia,0.11438220205153461
+whole_feature_matched,micoda,309,continent,Europe,0.08740523095701921
+whole_feature_matched,micoda,309,continent,North America,0.12201933813968369
+whole_feature_matched,micoda,309,continent,South America,0.12491426112048469
+whole_feature_matched,micoda,309,n,N1,0.11010198037334312
+whole_feature_matched,micoda,309,n,N2,0.12971884464469044
+whole_feature_matched,micoda,309,n,N3,0.06734893657639376
+whole_feature_matched,same_day_mean,309,continent,Africa,0.054732630538499846
+whole_feature_matched,same_day_mean,309,continent,Asia,0.018988463877378185
+whole_feature_matched,same_day_mean,309,continent,Europe,0.03159768899485079
+whole_feature_matched,same_day_mean,309,continent,North America,0.06465335813756157
+whole_feature_matched,same_day_mean,309,continent,South America,0.01013293621050664
+whole_feature_matched,same_day_mean,309,n,N1,0.039152527021595884
+whole_feature_matched,same_day_mean,309,n,N2,0.03620182653541997
+whole_feature_matched,same_day_mean,309,n,N3,0.020579079917625295
+whole_feature_matched,main,309,continent,Africa,0.04863363770966474
+whole_feature_matched,main,309,continent,Asia,0.027591682048077965
+whole_feature_matched,main,309,continent,Europe,0.045188158396251024
+whole_feature_matched,main,309,continent,North America,0.05201658120214007
+whole_feature_matched,main,309,continent,South America,0.026170383932159053
+whole_feature_matched,main,309,n,N1,0.03978308975470045
+whole_feature_matched,main,309,n,N2,0.04654000602210681
+whole_feature_matched,main,309,n,N3,0.024830752374133517
+whole_feature_matched,main_nometa,309,continent,Africa,0.05157814414049318
+whole_feature_matched,main_nometa,309,continent,Asia,0.02844909901313372
+whole_feature_matched,main_nometa,309,continent,Europe,0.026757199068861672
+whole_feature_matched,main_nometa,309,continent,North America,0.08844411328771852
+whole_feature_matched,main_nometa,309,continent,South America,0.014629377620075145
+whole_feature_matched,main_nometa,309,n,N1,0.034066549572265674
+whole_feature_matched,main_nometa,309,n,N2,0.05177630568154164
+whole_feature_matched,main_nometa,309,n,N3,0.01850328931878646

@@ -10,7 +10,7 @@ from longitudinal_impute import run, main_model
 from longitudinal_impute.data import load_csv, check_completed
 from test_run import call, write, FIXTURES, COVID_SCHEMA, MICROBIOME_SCHEMA
 
-MAIN = ('[main]\nchannels=8\nheads=2\nouter_iters=2\nepochs_per_iter=1\n'
+MAIN = ('[main]\nmetadata=false\nchannels=8\nheads=2\nouter_iters=2\nepochs_per_iter=1\n'
         'batch_size=2\nseed=0\ntol=0.0\n')
 ALL = '[hron]\n[tsagris]\n[micoda]\nother=true\n' + MAIN
 
@@ -124,6 +124,6 @@ def test_shipped_all_model_preset_preserves_baselines_and_main_recipe():
     baseline = run.read_models(root / 'configs/models_default.toml')
     main = run.read_models(root / 'configs/main.toml')
     combined = run.read_models(root / 'configs/models_all.toml')
-    assert set(combined) == {'hron', 'tsagris', 'micoda', 'same_day_mean', 'main'}
+    assert set(combined) == {'hron', 'tsagris', 'micoda', 'same_day_mean', 'main', 'main_nometa'}
     assert {k: combined[k] for k in baseline} == baseline
     assert combined['main'] == main['main']

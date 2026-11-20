@@ -1,0 +1,15 @@
+\begin{frame}{Tier 3 checks warnings and selection --- exploratory}
+\fontsize{7.6}{9.2}\selectfont
+Tier 3 tests the Tier 2 diagnostics on hidden cells where the true value is known. The table reports local-reference means over ten seeds.
+\par\medskip
+\begin{center}\begin{tabular}{lrrr}\hline
+The test & Whole feature & Random cell & Matched \\\hline
+U1: D1 under-fill agreement & 0.56 & 0.44 & 0.55 \\
+U1: D1 over-fill agreement & 0.72 & 0.76 & 0.77 \\
+U2: D2 agreement & 0.87 & 0.94 & 0.86 \\
+U2: regret at most 0.005 & 7/10 & 7/10 & 8/10 \\
+U3: gap at least 0.2 & 10/10 & 10/10 & 10/10 \\
+\hline\end{tabular}\end{center}U1 checks each real-model pair: does the D1 difference agree with the true MAE difference? Higher D1 should warn of under-fill on true-positive cells; lower D1 should warn of over-fill on true-zero cells. Each mean must reach 0.8, with no seed below 0.5.\par\medskip U2 compares D2-distance rankings with true MAE rankings. Mean agreement exceeds 0.8, but regret meets 0.005 in only 7--8 seeds; at least 9 of 10 are required. Regret is selected-model MAE minus the lowest MAE.\par\medskip U3 compares true-zero rates among positive fills: D3-flagged cells have a higher rate than unflagged cells. The gap reaches 0.2 in all ten seeds.\par\medskip U4 checks mean fill, zero fill, and a marginal sampler; it is descriptive only.
+\par\medskip
+\textbf{Positive fills flagged by D3 have a higher true-zero rate than unflagged positive fills in every seed. D1 and D2 are not reliable enough for model selection.}
+\end{frame}

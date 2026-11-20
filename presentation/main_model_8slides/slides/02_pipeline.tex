@@ -1,0 +1,14 @@
+\begin{frame}{Imputation Framework}
+\TightMath
+We estimate missing counts over time. For example, a country reports case counts.
+\begin{KeyPoints}
+\item Each row has counts, a known total, an entity and a time.
+\item $D$ targets and an internal Other category form $K=D+1$ parts.
+\end{KeyPoints}
+\SlideFigure{02_pipeline}
+\FigureCaption{Figure 1 shows the pipeline. Source: \texttt{main\_model.py}, initialization and prediction. The network does not initialize or restore counts. R2 is the count-restoration rule.}
+The centered log-ratio (CLR) transform uses proportions $\widetilde a$ after zero replacement \RefLink{martin2003}{5}. It creates features, not counts.
+\[
+z_{ij}=\log\widetilde a_{ij}-\frac1K\sum\nolimits_{k=1}^K\log\widetilde a_{ik}.
+\]
+\end{frame}

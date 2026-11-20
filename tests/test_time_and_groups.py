@@ -120,7 +120,7 @@ def test_group_map_provenance_is_the_hash_of_the_file_read(tmp_path):
     data = load_csv(FIXTURES / 'covid_small.csv',
                     write(tmp_path, 's.toml', COVID_SCHEMA + 'group_col="continent"\ngroup_map="map.csv"\n'))
     assert data.group_map == {'path': str((tmp_path / 'map.csv').resolve()),
-                              'sha256': hashlib.sha256(text.encode()).hexdigest(),
+                              'sha256': hashlib.sha256((tmp_path / 'map.csv').read_bytes()).hexdigest(),
                               'entries': 3, 'rows_resolved': 24, 'groups': 2}
     column = small(tmp_path, ['1', '2'], SMALL + 'group_col="grp"\n', extra=',G1')
     assert column.groups == ('G1', 'G1') and column.group_map is None

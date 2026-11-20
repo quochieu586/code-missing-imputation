@@ -1,0 +1,45 @@
+\documentclass[tikz,border=5pt]{standalone}
+\usepackage{fix-cm}
+\input{figure_style.tex}
+\begin{document}
+% Initializer is outside f_theta. The lower local rail is scrubbed-view
+% information, never raw held-out truth. The output glyph omits internal Other.
+\begin{tikzpicture}[y=.8cm]
+  \node[panelletter] at (0,2.43) {(a)};
+  \node[label,anchor=west] at (.63,2.43) {Initialization};
+  \node[panelletter] at (5.65,2.43) {(b)};
+  \node[label,anchor=west] at (6.28,2.43) {Neural restoration};
+
+  \begin{scope}[shift={(0,.40)}]\DataGrid{0}\end{scope}
+  \node[label,anchor=west] at (0,1.96) {Visible counts};
+  \begin{scope}[shift={(2.80,.40)}]\DataGrid{1}\end{scope}
+  \node[label] at (3.575,1.96) {Initialized counts};
+  \draw[flow] (1.66,1.02) -- (2.69,1.02);
+  \node[small] at (2.175,1.39) {Tsagris};
+
+  % Packed features: three offset token strips, not additional network layers.
+  \begin{scope}[shift={(6.00,.77)}]
+    \begin{scope}[shift={(.14,.18)}]\ChannelStrip{Observed}\end{scope}
+    \begin{scope}[shift={(.07,.09)}]\ChannelStrip{Observed}\end{scope}
+    \ChannelStrip{Observed}
+  \end{scope}
+  \node[label] at (6.51,1.96) {Features};
+  \node[small] at (6.51,.31) {$K=D+1$};
+  \draw[flow] (4.46,1.02) -- (5.85,1.02);
+  \node[small] at (5.175,1.39) {CLR/pack};
+
+  \node[operator,minimum width=.74cm] (f) at (7.95,1.02) {$f_\theta$};
+  \draw[flow] (7.16,1.02) -- (f.west);
+  \draw[flow] (f.east) -- (10.17,1.02);
+  \node[small] at (9.245,1.39) {Unpack + R2};
+  \begin{scope}[shift={(10.28,.40)}]\DataGrid{2}\end{scope}
+  \node[label,anchor=east] at (11.83,1.96) {Restored counts};
+
+  % Short restoration-only rail. No return route across the full figure.
+  \fill[Observed!60] (8.63,.12) rectangle (8.79,.28);
+  \fill[Observed!30] (8.82,.12) rectangle (8.98,.28);
+  \fill[Muted!22] (9.01,.12) rectangle (9.17,.28);
+  \draw[flow] (9.28,.20) -- (9.88,.20) -- (9.88,1.02);
+  \node[small] at (9.23,-.20) {Anchors + total};
+\end{tikzpicture}
+\end{document}

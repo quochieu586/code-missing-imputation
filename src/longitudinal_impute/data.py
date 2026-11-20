@@ -13,7 +13,8 @@ from tempfile import NamedTemporaryFile
 import numpy as np
 
 MISSING = ('', 'na', 'nan', 'none')
-SCHEMA_KEYS = {'entity', 'time', 'total', 'targets', 'time_format', 'group_col', 'group_map'}
+SCHEMA_KEYS = {'entity', 'time', 'total', 'targets', 'time_format', 'group_col', 'group_map', 'metadata_path'}
+METADATA_FIELDS = ('continent', 'location', 'median_age', 'classification', 'group')
 ISO_DATE = re.compile(r'\d{4}-\d{2}-\d{2}')
 
 
@@ -39,6 +40,8 @@ class Dataset:
     # parsed, map entries, rows and groups resolved); None when no map file was used.
     group_map: dict | None = None
     times: tuple[str, ...] | None = None  # raw schema time, parsed only by the main model
+    metadata: dict | None = None
+    metadata_provenance: dict | None = None
 
 
 def read_schema(path):
@@ -116,9 +119,47 @@ def load_csv(path, schema_config):
     if 'group_col' in spec:
         groups, group_map = read_groups(rows, lines, fields, entity, spec['group_col'], spec.get('group_map'),
                                         Path(schema_config).parent)
+    metadata, metadata_provenance = None, None
+    if 'metadata_path' in spec:
+        metadata, metadata_provenance = read_metadata(
+            Path(schema_config).parent / spec['metadata_path'], {row[entity] for row in rows})
     return Dataset(counts, totals, targets, tuple(row[entity] for row in rows), fields, rows, lines,
                    days, week, kind, groups, group_map,
-                   times=tuple(row[time] for row in rows) if time is not None else None)
+                   times=tuple(row[time] for row in rows) if time is not None else None,
+                   metadata=metadata, metadata_provenance=metadata_provenance)
+
+
+def read_metadata(path, entities):
+    """Read only static entity covariates; hash the exact bytes parsed."""
+    path = path.resolve()
+    payload = path.read_bytes()
+    reader = csv.DictReader(io.StringIO(payload.decode('utf-8-sig')))
+    if not set(METADATA_FIELDS) <= set(reader.fieldnames or ()):
+        raise ValueError('metadata: requires the five static fields')
+    records = {}
+    for row in reader:
+        record = {field: (row.get(field) or '').strip() for field in METADATA_FIELDS}
+        if any(value.lower() in MISSING for value in record.values()):
+            raise ValueError('metadata: missing static field')
+        record['classification'] = {'LOWER-MIDDLE INCOME': 'LOWER-MIDDLE-INCOME'}.get(
+            record['classification'], record['classification'])
+        try:
+            record['median_age'] = float(record['median_age'])
+        except ValueError:
+            raise ValueError('metadata: median_age must be finite numeric') from None
+        if not np.isfinite(record['median_age']):
+            raise ValueError('metadata: median_age must be finite numeric')
+        location = record['location']
+        if location in records and records[location] != record:
+            raise ValueError(f'metadata: nonstatic fields for {location!r}')
+        records[location] = record
+    if entities - records.keys():
+        raise ValueError(f'metadata: missing entities {sorted(entities - records.keys())}')
+    records = {entity: records[entity] for entity in sorted(entities)}
+    sd = np.std([record['median_age'] for record in records.values()])
+    if not np.isfinite(sd) or sd <= 0:
+        raise ValueError('metadata: age sd must be positive and finite')
+    return records, {'path': str(path), 'sha256': hashlib.sha256(payload).hexdigest()}
 
 
 def parse_times(texts, lines, column, time_format=None):

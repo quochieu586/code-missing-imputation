@@ -1,0 +1,22 @@
+\begin{frame}{Static Facts About Each Location}
+Each location has static facts that may help the model predict variant fractions: continent, income classification, group, and median age.
+\par\medskip
+\begin{center}
+\small
+\begin{tabular}{llll}
+\hline
+Field & Values & Encoding & Output size \\\hline
+Continent & 6 categories & Learned lookup table & 32 numbers \\
+Income class & 4 categories & Learned lookup table & 32 numbers \\
+Group & 4 categories & Learned lookup table & 32 numbers \\
+Median age & 1 standardized number & Linear layer & 32 numbers \\
+\hline
+\end{tabular}
+\end{center}
+\medskip
+The model adds the four vectors to form $s$. It adds $s$ to every time step and part of the location.
+\par\medskip
+The model does not use location identity. A separate code for each location can memorize countries.
+\par\smallskip
+\FigureCaption{Sources: \texttt{original\_long\_format.csv}; \texttt{main\_model.py:290--312, 403--421}; \texttt{network.py:29--32, 60--67}.}
+\end{frame}

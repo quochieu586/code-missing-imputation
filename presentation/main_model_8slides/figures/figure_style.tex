@@ -1,0 +1,75 @@
+% v3: data-led scientific illustration grammar. No dashboard cards or banners.
+\usepackage{fix-cm}
+\usepackage{amsmath,amssymb,graphicx}
+\usepackage{tikz}
+\usetikzlibrary{positioning,calc,fit,backgrounds,patterns,decorations.pathreplacing}
+\renewcommand{\familydefault}{\sfdefault}
+\definecolor{Ink}{HTML}{203848}
+\definecolor{Muted}{HTML}{657884}
+\definecolor{Rule}{HTML}{D2DDE3}
+\definecolor{Observed}{HTML}{4E7897}
+\definecolor{Teal}{HTML}{318E83}
+\definecolor{Orange}{HTML}{C98542}
+\definecolor{PaleBlue}{HTML}{EAF1F6}
+\definecolor{PaleTeal}{HTML}{E8F3F0}
+\definecolor{PaleOrange}{HTML}{FBF1E7}
+\definecolor{GrayFill}{HTML}{F1F4F6}
+\newcommand{\figfont}{\sffamily\fontsize{9.5}{11.5}\selectfont}
+\newcommand{\figsmall}{\sffamily\fontsize{9}{10.5}\selectfont}
+\tikzset{
+ every node/.style={font=\figfont,text=Ink,inner sep=2pt},
+ label/.style={font=\figfont,align=center},
+ small/.style={font=\figsmall,text=Muted,align=center},
+ panelletter/.style={font=\sffamily\bfseries\fontsize{10}{12}\selectfont,anchor=west},
+ operator/.style={draw=Rule,fill=white,line width=.65pt,minimum height=.55cm,align=center,inner sep=4pt},
+ flow/.style={->,>=stealth,draw=Ink!85,line width=.75pt},
+ weight/.style={->,>=stealth,draw=Muted,dashed,line width=.65pt},
+ axis/.style={->,>=stealth,draw=Muted,line width=.5pt},
+ hair/.style={draw=Rule,line width=.5pt},
+ sum/.style={circle,draw=Ink,fill=white,line width=.65pt,minimum size=12pt,inner sep=0pt},
+}
+% Illustrative 4x5 target table, not learned weights or experimental measurements.
+% State 0: missing white; 1: initializer gray; 2: missing values restored in teal.
+% Coordinates span [0,1.55] x [0,1.24]. No Other column is implied in this glyph.
+\newcommand{\DataGrid}[1]{%
+ \foreach \r in {0,...,3}{\foreach \c in {0,...,4}{%
+  \pgfmathtruncatemacro{\tone}{25+mod(\r*17+\c*23,55)}
+  \pgfmathtruncatemacro{\miss}{(\r==0&&\c==3)||(\r==1&&\c==0)||(\r==2&&\c==2)}
+  \ifnum\miss=1
+   \ifnum#1=0 \fill[white] (\c*.31,\r*.31) rectangle ++(.31,.31);
+   \else\ifnum#1=1 \fill[Muted!22] (\c*.31,\r*.31) rectangle ++(.31,.31);
+   \else \fill[Teal!65] (\c*.31,\r*.31) rectangle ++(.31,.31);\fi\fi
+  \else \fill[Observed!\tone] (\c*.31,\r*.31) rectangle ++(.31,.31);\fi
+  \draw[white,line width=.7pt] (\c*.31,\r*.31) rectangle ++(.31,.31);
+ }}
+ \draw[draw=Rule,line width=.55pt] (0,0) rectangle (1.55,1.24);
+}
+% A C-channel token is shown as a compact stack of editable vector strips.
+\newcommand{\ChannelStrip}[1]{%
+ \foreach \j in {0,...,7}{\pgfmathtruncatemacro{\tone}{25+mod(\j*17,55)}
+  \fill[#1!\tone] (\j*.12,0) rectangle ++(.10,.43);}
+}
+\newcommand{\MaskGrid}{%
+ \foreach \r in {0,...,3}{\foreach \c in {0,...,4}{%
+  \pgfmathtruncatemacro{\miss}{(\r==0&&\c==3)||(\r==1&&\c==0)||(\r==2&&\c==2)}
+  \ifnum\miss=1 \fill[white] (\c*.31,\r*.31) rectangle ++(.31,.31);
+  \else \fill[Observed!55] (\c*.31,\r*.31) rectangle ++(.31,.31);\fi
+  \draw[white,line width=.7pt] (\c*.31,\r*.31) rectangle ++(.31,.31);}}
+ \draw[draw=Rule,line width=.55pt] (0,0) rectangle (1.55,1.24);
+}
+% Four parts x three real visits plus one padded row. Arrows identify axes,
+% not numerical/learned attention weights. Mode 0 temporal; mode 1 feature.
+\newcommand{\AxisGrid}[1]{%
+ \fill[PaleBlue] (0,0) rectangle (1.28,1.28);
+ \ifnum#1=0 \fill[Observed!22] (.32,.32) rectangle (.64,1.28);
+ \else \fill[Teal!23] (0,.64) rectangle (1.28,.96);\fi
+ \fill[GrayFill] (0,0) rectangle (1.28,.32);
+ \foreach \i in {0,...,4}{
+  \draw[draw=white,line width=.75pt] (\i*.32,0) -- (\i*.32,1.28);
+  \draw[draw=white,line width=.75pt] (0,\i*.32) -- (1.28,\i*.32);}
+ \draw[draw=Rule,line width=.5pt] (0,0) rectangle (1.28,1.28);
+ \ifnum#1=0
+  \draw[<->,>=stealth,draw=Observed,line width=1pt] (.48,.44) -- (.48,1.16);
+ \else
+  \draw[<->,>=stealth,draw=Teal,line width=1pt] (.12,.80) -- (1.16,.80);\fi
+}
